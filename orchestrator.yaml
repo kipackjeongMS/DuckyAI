@@ -1,0 +1,53 @@
+version: "0.0.18"
+orchestrator:
+  prompts_dir: _Settings_/Prompts
+  tasks_dir: _Settings_/Tasks
+  logs_dir: _Settings_/Logs
+  skills_dir: .claude/skills
+  bases_dir: _Settings_/Bases
+  chat_history_dir: _Settings_/History
+  max_concurrent: 3
+  poll_interval: 1
+  file_extensions:
+    - .md
+    - .pdf
+    - .docx
+    - .doc
+    - .txt
+defaults:
+  executor: copilot_cli
+  timeout_minutes: 30
+  max_parallel: 3
+  task_create: true
+  task_priority: medium
+  task_archived: false
+nodes:
+  - type: agent
+    name: Enrich Ingested Content (EIC)
+    input_path: 00-Inbox
+    output_path: 03-Knowledge/Documentation
+    output_type: new_file
+    enabled: true
+  - type: agent
+    name: Extract Document to Markdown (EDM)
+    input_path: 00-Inbox
+    output_path: 03-Knowledge/Documentation
+    executor: copilot_cli
+    input_type: new_file
+    input_pattern: "*.pdf|*.docx|*.doc|*.txt"
+    trigger_exclude_pattern: "*.md"
+    output_naming: "{title}.md"
+    enabled: true
+  - type: agent
+    name: Generate Daily Roundup (GDR)
+    cron: 0 18 * * 1-5
+    output_path: 04-Periodic/Daily
+    enabled: true
+  - type: agent
+    name: Topic Index Update (TIU)
+    cron: 30 18 * * 5
+    input_path: 04-Periodic/Daily
+    output_path: 03-Knowledge/Topics
+    enabled: true
+id: duckyai_vault
+name: duckyai_vault

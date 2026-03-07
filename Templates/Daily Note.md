@@ -14,20 +14,23 @@ tags:
 ## Carried from yesterday
 - (none)
 
+## PRs & Code Reviews
+- 
+
 ## Meetings
 - 
 
 ## Tasks Completed
 - [x] 
 
-## Notes
-
-
-## End of Day
-### What went well?
+## Technical Notes
 - 
 
-### What could improve?
+## End of Day
+### What shipped?
+- 
+
+### Blockers / Risks
 - 
 
 ### Carry forward to tomorrow

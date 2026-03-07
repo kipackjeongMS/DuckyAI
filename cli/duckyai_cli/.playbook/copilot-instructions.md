@@ -432,6 +432,91 @@ When working with [DOMAIN]:
 
 ---
 
+## DuckyAI CLI Orchestrator
+
+The vault includes a Python CLI orchestrator (`cli/`) for automated workflows:
+
+- **Run daemon:** `duckyai -o` — watches vault for file changes and triggers agents
+- **Trigger agent:** `duckyai trigger EIC --file 00-Inbox/article.md`
+- **Config:** `orchestrator.yaml` at vault root — defines agents, triggers, schedules
+- **Hot-reload:** Edit `orchestrator.yaml` while daemon runs — zero-downtime updates
+
+The CLI handles automation (file triggers + cron scheduling). Copilot + MCP handles interactive work. Both coexist.
+
+---
+
+## Prompts & Workflows
+
+- Orchestrator config in `orchestrator.yaml` (root)
+- Prompts can be found in `_Settings_/Prompts/`
+- Skills can be found in `_Settings_/Skills/`
+- Templates in `_Settings_/Templates/` and `Templates/`
+- Each prompt/agent can be called using abbreviations (e.g., EIC, GDR, TIU)
+- Check `_Settings_/Prompts/` first for new commands (especially abbreviations)
+
+### Skills
+
+Skills are located in `_Settings_/Skills/`. Each skill folder contains a `SKILL.md` with instructions. To use a skill, read the corresponding `SKILL.md` file first. Available skills include:
+- `obsidian-links` — Wiki link formatting
+- `obsidian-yaml-frontmatter` — YAML frontmatter standards
+- `obsidian-markdown-structure` — Markdown structure guidelines
+- `obsidian-mermaid` — Mermaid diagram standards
+- `obsidian-canvas` — Canvas operations
+- `epub-to-markdown` / `docx-to-markdown` — Document conversion
+- `markdown-video` / `markdown-slides` — Content generation
+- `gemini-image-skill` — Image generation
+- `gobi-cli` / `gobi-onboarding` — Gobi integration
+
+---
+
+## Content Creation Standards
+
+### General Guidelines
+- **Include original quotes** in blockquote format
+- **Add detailed analysis** explaining significance
+- Structure by themes with clear categories
+- **Use wiki links with full filenames**: `[[YYYY-MM-DD Filename]]`
+- **Tags use plain text in YAML frontmatter**: `tag` not `#tag`
+
+### Writing Style
+- **Tight layout**: Do not use horizontal dividers (`---`) between sections
+- **Paragraph cohesion**: Write related sentences as a single paragraph (minimum 2-3 sentences)
+  - Avoid paragraphs with only one sentence standing alone
+  - Combine short sentences logically into one
+
+### Table vs Diagram Selection
+- **Use tables for**: Attribute-value mappings, comparisons, option listings (structured data)
+- **Use Mermaid for**: Flows, processes, relationships, time sequences (visual flows)
+- **Optimize document length**: Choose the format that expresses the same information more compactly
+- **Blank line required before tables**: Markdown tables must have a blank line immediately before them
+
+### Inline Links for Research Documents
+- **Insert related links throughout the body of research/analysis documents**
+- Add contextual links where relevant content is mentioned, not just in the References section
+- **Link format**: `→ **Deep analysis**: [[path/to/file|display text]]`
+
+### Wiki Links Must Be Valid
+- **All wiki links must point to existing files**
+- Use complete filename: `[[2026-03-07 Meeting Topic]]` not just `[[Meeting Topic]]`
+- **Section-level links required when citing sources**: `[[Note Name#Section|Display]]`
+- Verify file existence before linking; fix broken links immediately
+- **Link to original sources, not topic indices**
+
+---
+
+## Continuous Improvement
+
+### Find Rooms for Improvement
+- Evaluate output based on prompt quality
+- Use user feedback to improve
+
+### Suggest Ways to Improve
+- Improvement to existing prompts
+- New or revised workflows
+- When noticing patterns in user corrections, generalize them into rules
+
+---
+
 ## Response Style
 
 - Be concise and actionable
@@ -439,6 +524,8 @@ When working with [DOMAIN]:
 - Include file paths when creating/modifying notes
 - Suggest links to create when relevant
 - Don't over-explain obvious steps
+- Include original quotes in blockquote format when referencing content
+- Use Mermaid diagrams over ASCII art for visual flows
 
 ---
 

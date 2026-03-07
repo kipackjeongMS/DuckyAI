@@ -10,10 +10,16 @@ tags:
 
 # Week {{date:ww, YYYY}}
 
-## Goals This Week
+## Sprint Goals
 - [ ] 
 
 ## Key Accomplishments
+- 
+
+## PRs Shipped
+- 
+
+## Code Reviews Done
 - 
 
 ## Tasks Completed
@@ -31,14 +37,14 @@ WHERE date >= this.start AND date <= this.end
 SORT date ASC
 ```
 
-## Blockers / Challenges
+## Incidents / On-Call
 - 
 
-## Learnings
+## Blockers / Tech Debt
+- 
+
+## Technical Learnings
 - 
 
 ## Next Week
 - [ ] 
-
-## Notes
-

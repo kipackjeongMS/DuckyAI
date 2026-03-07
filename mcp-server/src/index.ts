@@ -881,6 +881,351 @@ server.tool(
   }
 );
 
+// SKILL: triageInbox
+// =============================================================================
+server.tool(
+  "triageInbox",
+  "Scan 00-Inbox/ and categorize items into appropriate vault folders (Tasks, Knowledge, Meetings, etc.)",
+  {
+    dryRun: z.boolean()
+      .default(true)
+      .describe("If true, only report what would be moved without making changes"),
+  },
+  async ({ dryRun }) => {
+    const INBOX_DIR = path.join(VAULT_ROOT, "00-Inbox");
+
+    let files: string[];
+    try {
+      files = (await fs.readdir(INBOX_DIR)).filter(f => f.endsWith(".md"));
+    } catch {
+      return { content: [{ type: "text", text: "00-Inbox/ directory not found or empty." }] };
+    }
+
+    if (files.length === 0) {
+      return { content: [{ type: "text", text: "Inbox is empty — nothing to triage." }] };
+    }
+
+    const results: string[] = [];
+    for (const file of files) {
+      const filePath = path.join(INBOX_DIR, file);
+      const content = normalizeLineEndings(await fs.readFile(filePath, "utf-8"));
+
+      // Determine destination based on frontmatter type or content heuristics
+      let destination = "";
+      let category = "unknown";
+
+      const typeMatch = content.match(/^type:\s*(.+)$/m);
+      const type = typeMatch ? typeMatch[1].trim() : "";
+
+      if (type === "task" || /\b(todo|task|fix|implement|bug)\b/i.test(content.split("\n").slice(0, 5).join(" "))) {
+        destination = TASKS_DIR;
+        category = "task";
+      } else if (type === "meeting" || /\b(meeting|standup|sync|retro)\b/i.test(content.split("\n").slice(0, 5).join(" "))) {
+        destination = MEETINGS_DIR;
+        category = "meeting";
+      } else if (type === "documentation" || type === "reference") {
+        destination = path.join(VAULT_ROOT, "03-Knowledge/Documentation");
+        category = "documentation";
+      } else {
+        destination = path.join(VAULT_ROOT, "03-Knowledge/Topics");
+        category = "knowledge";
+      }
+
+      if (!dryRun) {
+        await fs.mkdir(destination, { recursive: true });
+        await fs.rename(filePath, path.join(destination, file));
+        results.push(`✅ Moved "${file}" → ${category} (${path.relative(VAULT_ROOT, destination)}/)`);
+      } else {
+        results.push(`📋 "${file}" → ${category} (${path.relative(VAULT_ROOT, destination)}/)`);
+      }
+    }
+
+    const header = dryRun ? "Triage preview (dry run):" : "Triage complete:";
+    return {
+      content: [{ type: "text", text: `${header}\n${results.join("\n")}` }],
+    };
+  }
+);
+
+// SKILL: enrichNote
+// =============================================================================
+server.tool(
+  "enrichNote",
+  "Enrich a note by adding frontmatter, wiki links, summary section, and structure improvements",
+  {
+    filePath: z.string().describe("Path to the note file relative to vault root"),
+  },
+  async ({ filePath }) => {
+    const fullPath = path.join(VAULT_ROOT, filePath);
+    let content: string;
+    try {
+      content = normalizeLineEndings(await fs.readFile(fullPath, "utf-8"));
+    } catch {
+      return { content: [{ type: "text", text: `File not found: ${filePath}` }] };
+    }
+
+    const today = getTodayDate();
+    const changes: string[] = [];
+
+    // Add frontmatter if missing
+    if (!content.startsWith("---")) {
+      const title = path.basename(filePath, ".md");
+      const frontmatter = `---\ncreated: ${today}\nmodified: ${today}\ntype: documentation\ncategory: reference\ntags:\n  - enriched\n---\n\n`;
+      content = frontmatter + content;
+      changes.push("Added frontmatter");
+    } else {
+      // Update modified date
+      content = content.replace(/^(modified:\s*).+$/m, `$1${today}`);
+      // Add enriched tag if not present
+      if (!content.includes("enriched")) {
+        content = content.replace(/^(tags:\s*\n)/m, `$1  - enriched\n`);
+      }
+      changes.push("Updated modified date and tags");
+    }
+
+    // Add Summary section if missing
+    if (!/^## Summary/m.test(content)) {
+      const endOfFrontmatter = content.indexOf("---", 4);
+      if (endOfFrontmatter !== -1) {
+        const insertPos = content.indexOf("\n", endOfFrontmatter) + 1;
+        content = content.slice(0, insertPos) + "\n## Summary\n\n*Summary to be written.*\n\n" + content.slice(insertPos);
+        changes.push("Added Summary section placeholder");
+      }
+    }
+
+    // Scan for potential wiki links (capitalized multi-word phrases that might be note names)
+    const existingLinks = content.match(/\[\[.+?\]\]/g) || [];
+    changes.push(`Found ${existingLinks.length} existing wiki links`);
+
+    await fs.writeFile(fullPath, content, "utf-8");
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Enriched "${filePath}":\n${changes.map(c => `- ${c}`).join("\n")}`,
+        },
+      ],
+    };
+  }
+);
+
+// SKILL: updateTopicIndex
+// =============================================================================
+server.tool(
+  "updateTopicIndex",
+  "Update or create a topic index file in 03-Knowledge/Topics/ by scanning for related notes across the vault",
+  {
+    topic: z.string().describe("Topic name to create or update index for"),
+  },
+  async ({ topic }) => {
+    const TOPICS_DIR = path.join(VAULT_ROOT, "03-Knowledge/Topics");
+    const topicFile = path.join(TOPICS_DIR, `${topic}.md`);
+    const today = getTodayDate();
+
+    await fs.mkdir(TOPICS_DIR, { recursive: true });
+
+    // Scan vault for files mentioning this topic
+    const dirsToScan = [
+      "01-Work/Tasks",
+      "01-Work/Investigations",
+      "01-Work/Projects",
+      "02-People/Meetings",
+      "03-Knowledge/Documentation",
+      "04-Periodic/Daily",
+    ];
+
+    const relatedNotes: { file: string; context: string }[] = [];
+    const topicLower = topic.toLowerCase();
+
+    for (const dir of dirsToScan) {
+      const fullDir = path.join(VAULT_ROOT, dir);
+      let files: string[];
+      try {
+        files = (await fs.readdir(fullDir)).filter(f => f.endsWith(".md"));
+      } catch {
+        continue;
+      }
+
+      for (const file of files) {
+        try {
+          const fileContent = await fs.readFile(path.join(fullDir, file), "utf-8");
+          if (fileContent.toLowerCase().includes(topicLower)) {
+            // Extract a snippet of context
+            const lines = fileContent.split("\n");
+            const matchLine = lines.find(l => l.toLowerCase().includes(topicLower));
+            const context = matchLine ? matchLine.trim().slice(0, 100) : "";
+            relatedNotes.push({ file: `${dir}/${file.replace(".md", "")}`, context });
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+
+    // Build topic index content
+    let existingContent = "";
+    try {
+      existingContent = normalizeLineEndings(await fs.readFile(topicFile, "utf-8"));
+    } catch {
+      // New file
+    }
+
+    const refsSection = relatedNotes.length > 0
+      ? relatedNotes.map(n => `- [[${n.file}]]${n.context ? ` — ${n.context}` : ""}`).join("\n")
+      : "*No related notes found yet.*";
+
+    let newContent: string;
+    if (existingContent) {
+      // Update existing: replace or append Related Notes section
+      if (/^## Related Notes/m.test(existingContent)) {
+        newContent = existingContent.replace(
+          /^## Related Notes[\s\S]*?(?=\n## |\n---|\Z)/m,
+          `## Related Notes\n\n${refsSection}\n`
+        );
+      } else {
+        newContent = existingContent.trimEnd() + `\n\n## Related Notes\n\n${refsSection}\n`;
+      }
+      newContent = newContent.replace(/^(modified:\s*).+$/m, `$1${today}`);
+    } else {
+      newContent = `---\ncreated: ${today}\nmodified: ${today}\ntype: documentation\ncategory: reference\ntags:\n  - topic\n  - ${topicLower.replace(/\s+/g, "-")}\n---\n\n## ${topic}\n\n*Topic overview to be written.*\n\n## Related Notes\n\n${refsSection}\n`;
+    }
+
+    await fs.writeFile(topicFile, newContent, "utf-8");
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Updated topic index: ${topic} — found ${relatedNotes.length} related notes across the vault`,
+        },
+      ],
+    };
+  }
+);
+
+// SKILL: generateRoundup
+// =============================================================================
+server.tool(
+  "generateRoundup",
+  "Generate a rich daily roundup by aggregating completed tasks, meetings, and key notes from today's daily note and vault activity",
+  {
+    date: z.string()
+      .optional()
+      .describe("Date to generate roundup for (YYYY-MM-DD). Defaults to today."),
+  },
+  async ({ date }) => {
+    const targetDate = date || getTodayDate();
+    const dailyPath = path.join(DAILY_DIR, `${targetDate}.md`);
+
+    let dailyContent: string;
+    try {
+      dailyContent = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
+    } catch {
+      return {
+        content: [{ type: "text", text: `No daily note found for ${targetDate}. Create one first with prepareDailyNote.` }],
+      };
+    }
+
+    // Extract sections from daily note
+    const completedTasks: string[] = [];
+    const meetings: string[] = [];
+    const notes: string[] = [];
+    const carryForward: string[] = [];
+
+    const lines = dailyContent.split("\n");
+    let currentSection = "";
+
+    for (const line of lines) {
+      if (/^##\s/.test(line)) {
+        const heading = line.replace(/^#+\s*/, "").toLowerCase();
+        if (heading.includes("completed") || heading.includes("done")) currentSection = "completed";
+        else if (heading.includes("meeting")) currentSection = "meetings";
+        else if (heading.includes("note") || heading.includes("log")) currentSection = "notes";
+        else if (heading.includes("carry") || heading.includes("tomorrow")) currentSection = "carry";
+        else currentSection = "";
+        continue;
+      }
+
+      if (line.trim().startsWith("-") && currentSection) {
+        const item = line.trim();
+        if (currentSection === "completed") completedTasks.push(item);
+        else if (currentSection === "meetings") meetings.push(item);
+        else if (currentSection === "notes") notes.push(item);
+        else if (currentSection === "carry") carryForward.push(item);
+      }
+    }
+
+    // Scan for tasks modified today
+    let tasksModifiedToday: string[] = [];
+    try {
+      const taskFiles = (await fs.readdir(TASKS_DIR)).filter(f => f.endsWith(".md"));
+      for (const tf of taskFiles) {
+        try {
+          const tc = await fs.readFile(path.join(TASKS_DIR, tf), "utf-8");
+          if (tc.includes(`modified: ${targetDate}`)) {
+            const statusMatch = tc.match(/^status:\s*(.+)$/m);
+            tasksModifiedToday.push(`- [[${tf.replace(".md", "")}]] (${statusMatch?.[1]?.trim() || "unknown"})`);
+          }
+        } catch { continue; }
+      }
+    } catch { /* Tasks dir may not exist */ }
+
+    // Scan for meetings created today
+    let meetingsToday: string[] = [];
+    try {
+      const meetingFiles = (await fs.readdir(MEETINGS_DIR)).filter(f => f.startsWith(targetDate));
+      meetingsToday = meetingFiles.map(f => `- [[${f.replace(".md", "")}]]`);
+    } catch { /* Meetings dir may not exist */ }
+
+    // Build roundup
+    const heading = formatDateHeading(targetDate);
+    const sections = [
+      `# Daily Roundup — ${heading}`,
+      "",
+      "## Accomplishments",
+      completedTasks.length > 0 ? completedTasks.join("\n") : "*None logged yet.*",
+      "",
+      "## Meetings",
+      meetingsToday.length > 0 ? meetingsToday.join("\n") : meetings.length > 0 ? meetings.join("\n") : "*No meetings.*",
+      "",
+      "## Tasks Updated",
+      tasksModifiedToday.length > 0 ? tasksModifiedToday.join("\n") : "*No task files modified.*",
+      "",
+      "## Notes & Context",
+      notes.length > 0 ? notes.join("\n") : "*No notes logged.*",
+      "",
+      "## Carry Forward",
+      carryForward.length > 0 ? carryForward.join("\n") : "*Nothing to carry forward.*",
+    ];
+
+    const roundupContent = sections.join("\n") + "\n";
+
+    // Append roundup to daily note (or create separate section)
+    const separator = "\n---\n\n";
+    if (dailyContent.includes("# Daily Roundup")) {
+      // Replace existing roundup
+      const updated = dailyContent.replace(/# Daily Roundup[\s\S]*$/, roundupContent);
+      await fs.writeFile(dailyPath, updated, "utf-8");
+    } else {
+      await fs.writeFile(dailyPath, dailyContent.trimEnd() + separator + roundupContent, "utf-8");
+    }
+
+    const stats = [
+      `${completedTasks.length} completed tasks`,
+      `${meetingsToday.length || meetings.length} meetings`,
+      `${tasksModifiedToday.length} tasks updated`,
+      `${carryForward.length} items to carry forward`,
+    ].join(", ");
+
+    return {
+      content: [
+        { type: "text", text: `Generated roundup for ${targetDate}: ${stats}` },
+      ],
+    };
+  }
+);
+
 // =============================================================================
 // Start the server
 // =============================================================================

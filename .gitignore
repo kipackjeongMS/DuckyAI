@@ -1,15 +1,14 @@
 # Personal content (never committed)
-04-Periodic/Daily/*.md
-04-Periodic/Weekly/*.md
-01-Work/Tasks/*.md
-01-Work/Projects/*.md
-01-Work/Investigations/*.md
-01-Work/Plans/*.md
-02-People/1-on-1s/*.md
-02-People/Meetings/*.md
-02-People/Contacts/*.md
-05-Archive/*.md
-00-Inbox/*.md
+04-Periodic/**/*.md
+01-Work/**/*.md
+01-Work/**/*.md
+01-Work/**/*.md
+01-Work/**/*.md
+02-People/**/*.md
+02-People/**/*.md
+02-People/**/*.md
+05-Archive/**/*.md
+00-Inbox/**/*.md
 
 # Keep .gitkeep files
 !**/.gitkeep

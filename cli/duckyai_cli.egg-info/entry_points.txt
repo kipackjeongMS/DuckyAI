@@ -1,0 +1,2 @@
+[console_scripts]
+duckyai = duckyai_cli.main.cli:main
