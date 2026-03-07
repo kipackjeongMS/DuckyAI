@@ -1,0 +1,12 @@
+schemaVersion: 1.0.0
+providers:
+- provider: InventoryAsCode
+  version: 1.0.0
+  metadata:
+    isProduction: false
+    accountableOwners:
+      service: 45a7d954-eede-467d-b4f9-1f77feeec23c
+    routing:
+      defaultAreaPath:
+        org: msazure
+        path: Azure AppConfig\Triage
