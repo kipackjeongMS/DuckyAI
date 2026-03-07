@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Main entry point for PKM CLI."""
+"""Main entry point for DuckyAI CLI — an AI-powered developer assistant."""
 
+import json
+import os
 import signal
+import subprocess
 import sys
 import click
 import logging
@@ -9,7 +12,7 @@ from pathlib import Path
 
 from .list_agents import list_agents as list_agents_handler
 from .show_config import show_config as show_config_handler
-from .orchestrator import run_orchestrator_daemon, show_orchestrator_status, execute_prompt_with_session
+from .orchestrator import run_orchestrator_daemon, show_orchestrator_status
 from .update import update_cli
 from .template import template_group
 from .trigger import trigger_cli
@@ -17,10 +20,90 @@ from .run import run_command
 from .init import init_vault
 
 
+VAULT_MARKERS = ['orchestrator.yaml', 'Home.md']
+
+
 def signal_handler(sig, frame):
     """Handle SIGINT (Ctrl+C) gracefully."""
-    print("\n\nShutting down PKM CLI...")
+    print("\n\nShutting down DuckyAI...")
     sys.exit(0)
+
+
+def find_vault_root(start: Path = None) -> Path:
+    """Walk up from start to find the vault root."""
+    current = start or Path.cwd()
+    while current != current.parent:
+        if any((current / m).exists() for m in VAULT_MARKERS):
+            return current
+        current = current.parent
+    return start or Path.cwd()
+
+
+def ensure_init(vault_root: Path):
+    """Auto-init .github symlink if missing."""
+    github_dir = vault_root / '.github'
+    cli_playbook = Path(__file__).parent.parent / '.playbook'
+
+    if github_dir.is_symlink() or not cli_playbook.exists():
+        return
+
+    rel_path = os.path.relpath(cli_playbook, vault_root)
+    if github_dir.exists():
+        return  # Don't overwrite an existing .github directory
+    os.symlink(rel_path, github_dir)
+
+
+def get_mcp_config(vault_root: Path) -> str:
+    """Build MCP config JSON for the DuckyAI vault MCP server."""
+    mcp_index = vault_root / 'mcp-server' / 'dist' / 'index.js'
+    if not mcp_index.exists():
+        return None
+    config = {
+        "mcpServers": {
+            "duckyai-vault": {
+                "command": "node",
+                "args": [str(mcp_index)],
+                "env": {"DUCKYAI_VAULT_ROOT": str(vault_root)}
+            }
+        }
+    }
+    return json.dumps(config)
+
+
+def launch_copilot(vault_root: Path, prompt: str = None, interactive_prompt: str = None,
+                   mcp_config: tuple = None, session_id: str = None, model: str = None):
+    """Launch GitHub Copilot CLI from the vault root."""
+    cmd = ['copilot']
+
+    if prompt:
+        cmd.extend(['--prompt', prompt])
+    elif interactive_prompt:
+        cmd.extend(['-i', interactive_prompt])
+    # else: no args = fully interactive
+
+    # Auto-configure vault MCP server
+    auto_mcp = get_mcp_config(vault_root)
+    if auto_mcp:
+        cmd.extend(['--additional-mcp-config', auto_mcp])
+
+    # Additional MCP configs from CLI flags
+    if mcp_config:
+        for config in mcp_config:
+            cmd.extend(['--additional-mcp-config', config])
+
+    if session_id:
+        cmd.extend(['--session-id', session_id])
+
+    if model:
+        cmd.extend(['--model', model])
+
+    try:
+        result = subprocess.run(cmd, cwd=str(vault_root))
+        return result.returncode
+    except FileNotFoundError:
+        click.echo("Error: 'copilot' CLI not found. Install GitHub Copilot CLI first.", err=True)
+        click.echo("  brew install gh && gh extension install github/gh-copilot", err=True)
+        return 1
 
 
 @click.group(invoke_without_command=True)
@@ -29,7 +112,7 @@ def signal_handler(sig, frame):
     "--orchestrator",
     "orchestrator",
     is_flag=True,
-    help="Run orchestrator daemon (new multi-agent system)",
+    help="Run orchestrator daemon (file watcher + cron scheduler)",
 )
 @click.option(
     "--orchestrator-status",
@@ -41,7 +124,7 @@ def signal_handler(sig, frame):
     "--config-file",
     "config_file",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
-    help="Path to orchestrator config file (default: orchestrator.yaml in working directory)",
+    help="Path to orchestrator config file (default: orchestrator.yaml)",
 )
 @click.option("-d", "--debug", is_flag=True, help="Enable debug logging")
 @click.option(
@@ -52,61 +135,41 @@ def signal_handler(sig, frame):
     "-w",
     "--working-dir",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=str),
-    help="Working directory to launch the agent from",
-)
-@click.option(
-    "-sp",
-    "--system-prompt",
-    "system_prompt",
-    type=str,
-    help="System prompt to use for the agent",
-)
-@click.option(
-    "-spf",
-    "--system-prompt-file",
-    "system_prompt_file",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
-    help="Path to file containing system prompt to use for the agent",
-)
-@click.option(
-    "-asp",
-    "--append-system-prompt",
-    "append_system_prompt",
-    type=str,
-    help="Additional system prompt to append to the base system prompt",
-)
-@click.option(
-    "-aspf",
-    "--append-system-prompt-file",
-    "append_system_prompt_file",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
-    help="Path to file containing additional system prompt to append",
+    help="Working directory for the vault",
 )
 @click.option(
     "-p",
     "--prompt",
     "prompt_text",
     type=str,
-    help="Execute a one-time prompt with Claude agent",
+    help="Execute a one-time prompt (non-interactive)",
+)
+@click.option(
+    "-i",
+    "--interactive",
+    "interactive_prompt",
+    type=str,
+    help="Start interactive session and execute this prompt first",
 )
 @click.option(
     "-s",
     "--session-id",
     "session_id",
     type=str,
-    help="Session ID - automatically resumes if exists, creates if not",
+    help="Session ID — resumes if exists, creates if not",
 )
 @click.option(
     "--mcp-config",
     "mcp_config",
     multiple=True,
-    help="Load MCP servers from JSON files or strings (can be specified multiple times)",
+    help="Additional MCP server config (JSON file or string, repeatable)",
 )
 @click.option(
-    "--claude-settings",
-    "claude_settings",
+    "-m",
+    "--model",
+    "model",
     type=str,
-    help="Path to a settings JSON file or a JSON string for Claude Code (passed as --settings to claude CLI)",
+    help="AI model to use",
 )
 @click.pass_context
 def main(
@@ -118,60 +181,71 @@ def main(
     list_agents,
     show_config,
     working_dir,
-    system_prompt,
-    system_prompt_file,
-    append_system_prompt,
-    append_system_prompt_file,
     prompt_text,
+    interactive_prompt,
     session_id,
     mcp_config,
-    claude_settings,
+    model,
 ):
-    """PKM CLI - Personal Knowledge Management framework."""
-    # Set up signal handler for graceful shutdown
+    """DuckyAI — AI-powered developer assistant.
+
+    \b
+    Run with no arguments to start an interactive AI session.
+    The assistant has full access to your vault, skills, and tools.
+
+    \b
+    Examples:
+        duckyai                          # Interactive AI session
+        duckyai -p "create a new task"   # One-shot prompt
+        duckyai -o                       # Start orchestrator daemon
+        duckyai run new-task             # Run a specific prompt
+        duckyai trigger GDR              # Trigger an agent
+    """
     signal.signal(signal.SIGINT, signal_handler)
 
     if debug:
         logging.basicConfig(level=logging.DEBUG)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.WARNING)
 
-    # Store common options in context for subcommands
+    # Resolve vault root
+    vault_root = find_vault_root(Path(working_dir) if working_dir else None)
+
+    # Store context for subcommands
     ctx.ensure_object(dict)
     ctx.obj["working_dir"] = working_dir
     ctx.obj["config_file"] = config_file
     ctx.obj["debug"] = debug
     ctx.obj["mcp_config"] = mcp_config
-    ctx.obj["claude_settings"] = claude_settings
+    ctx.obj["vault_root"] = vault_root
 
     # If a subcommand was invoked, let it handle execution
     if ctx.invoked_subcommand is not None:
         return
 
-    # Handle legacy flag-based commands
+    # Handle flag-based commands
     if orchestrator_status:
         show_orchestrator_status(working_dir=working_dir, config_file=config_file)
     elif orchestrator:
-        run_orchestrator_daemon(debug=debug, working_dir=working_dir, config_file=config_file, mcp_config=mcp_config, claude_settings=claude_settings)
-    elif prompt_text:
-        execute_prompt_with_session(
-            prompt=prompt_text,
-            session_id=session_id,
-            working_dir=working_dir,
-            config_file=config_file,
-            system_prompt=system_prompt,
-            system_prompt_file=system_prompt_file,
-            append_system_prompt=append_system_prompt,
-            append_system_prompt_file=append_system_prompt_file,
-            mcp_config=mcp_config,
-            claude_settings=claude_settings
-        )
+        run_orchestrator_daemon(debug=debug, working_dir=working_dir, config_file=config_file, mcp_config=mcp_config)
     elif list_agents:
         list_agents_handler()
     elif show_config:
         show_config_handler()
-    else:
-        click.echo(ctx.get_help())
+    elif prompt_text or interactive_prompt or not any([orchestrator, orchestrator_status, list_agents, show_config]):
+        # Auto-init .github symlink
+        ensure_init(vault_root)
+
+        # Launch Copilot (interactive if no -p flag)
+        returncode = launch_copilot(
+            vault_root,
+            prompt=prompt_text,
+            interactive_prompt=interactive_prompt,
+            mcp_config=mcp_config,
+            session_id=session_id,
+            model=model,
+        )
+        sys.exit(returncode)
 
 
 # Register subcommands
