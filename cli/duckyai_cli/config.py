@@ -130,35 +130,35 @@ class Config:
         """Directory containing agent prompt definitions."""
         return self.get(
             "orchestrator.prompts_dir",
-            "_Settings_/Prompts",
+            ".github/prompts-agent",
         )
 
     def get_orchestrator_tasks_dir(self) -> str:
         """Directory containing task tracking files."""
         return self.get(
             "orchestrator.tasks_dir",
-            "_Settings_/Tasks",
+            ".duckyai/tasks",
         )
 
     def get_orchestrator_logs_dir(self) -> str:
         """Directory where orchestrator writes execution logs."""
         return self.get(
             "orchestrator.logs_dir",
-            "_Settings_/Logs",
+            ".duckyai/logs",
         )
 
     def get_orchestrator_skills_dir(self) -> str:
         """Directory for orchestrator skills library."""
         return self.get(
             "orchestrator.skills_dir",
-            "_Settings_/Skills",
+            ".github/skills",
         )
 
     def get_orchestrator_bases_dir(self) -> str:
         """Directory for orchestrator knowledge bases."""
         return self.get(
             "orchestrator.bases_dir",
-            "_Settings_/Bases",
+            ".github/bases",
         )
 
     def get_orchestrator_max_concurrent(self) -> int:

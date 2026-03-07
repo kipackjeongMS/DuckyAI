@@ -1,0 +1,1066 @@
+PKM CLI Log - Started at 2026-03-07T01:43:39.151482
+============================================================
+[2026-03-07 01:43:45] [MainThread] INFO: Created directory: .claude/skills
+[2026-03-07 01:43:45] [MainThread] INFO: Created 1 missing directory: .claude/skills
+[2026-03-07 01:43:45] [MainThread] INFO: Loading 5 agents from orchestrator.yaml
+[2026-03-07 01:43:45] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.md', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 01:43:45] [MainThread] INFO: Loaded agent: EIC (Enrich Ingested Content (EIC))
+[2026-03-07 01:43:45] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.pdf|00-Inbox/*.docx|00-Inbox/*.doc|00-Inbox/*.txt|00-Inbox/*.epub', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 01:43:45] [MainThread] INFO: Loaded agent: EDM (Extract Document to Markdown (EDM))
+[2026-03-07 01:43:45] [MainThread] DEBUG: Manual agent: no file trigger (input_type=manual)
+[2026-03-07 01:43:45] [MainThread] INFO: Loaded agent: GDR (Generate Daily Roundup (GDR))
+[2026-03-07 01:43:45] [MainThread] DEBUG: Derived trigger: pattern='04-Periodic/Daily/*.md', event='created' from input_paths=['04-Periodic/Daily'], input_type=new_file
+[2026-03-07 01:43:45] [MainThread] INFO: Loaded agent: TIU (Topic Index Update (TIU))
+[2026-03-07 01:43:45] [MainThread] DEBUG: Derived trigger: pattern='_Settings_/History/Ambient/*.md', event='created' from input_paths=['_Settings_/History/Ambient'], input_type=new_file
+[2026-03-07 01:43:45] [MainThread] INFO: Loaded agent: ACB (Ambient Canvas Brainstorming (ACB))
+[2026-03-07 01:43:45] [MainThread] INFO: Total agents loaded: 5
+[2026-03-07 01:43:45] [MainThread] DEBUG: No pollers configuration found
+[2026-03-07 01:43:45] [MainThread] INFO: Orchestrator initialized for vault: /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/DuckyAI
+[2026-03-07 01:43:45] [MainThread] INFO: Loaded 5 agents
+[2026-03-07 01:43:45] [MainThread] INFO: Loaded 0 poller(s)
+[2026-03-07 01:43:45] [MainThread] INFO: <rich.table.Table object at 0x103586780>
+[2026-03-07 01:43:50] [MainThread] INFO: <rich.panel.Panel object at 0x1013ef4a0>
+[2026-03-07 01:43:50] [MainThread] INFO: 
+[bold]Raw YAML:[/bold]
+[2026-03-07 01:43:50] [MainThread] INFO: <rich.syntax.Syntax object at 0x102619bb0>
+[2026-03-07 01:43:56] [MainThread] INFO: Loading 5 agents from orchestrator.yaml
+[2026-03-07 01:43:56] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.md', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 01:43:56] [MainThread] INFO: Loaded agent: EIC (Enrich Ingested Content (EIC))
+[2026-03-07 01:43:56] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.pdf|00-Inbox/*.docx|00-Inbox/*.doc|00-Inbox/*.txt|00-Inbox/*.epub', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 01:43:56] [MainThread] INFO: Loaded agent: EDM (Extract Document to Markdown (EDM))
+[2026-03-07 01:43:56] [MainThread] DEBUG: Manual agent: no file trigger (input_type=manual)
+[2026-03-07 01:43:56] [MainThread] INFO: Loaded agent: GDR (Generate Daily Roundup (GDR))
+[2026-03-07 01:43:56] [MainThread] DEBUG: Derived trigger: pattern='04-Periodic/Daily/*.md', event='created' from input_paths=['04-Periodic/Daily'], input_type=new_file
+[2026-03-07 01:43:56] [MainThread] INFO: Loaded agent: TIU (Topic Index Update (TIU))
+[2026-03-07 01:43:56] [MainThread] DEBUG: Derived trigger: pattern='_Settings_/History/Ambient/*.md', event='created' from input_paths=['_Settings_/History/Ambient'], input_type=new_file
+[2026-03-07 01:43:56] [MainThread] INFO: Loaded agent: ACB (Ambient Canvas Brainstorming (ACB))
+[2026-03-07 01:43:56] [MainThread] INFO: Total agents loaded: 5
+[2026-03-07 01:43:56] [MainThread] DEBUG: No pollers configuration found
+[2026-03-07 01:43:56] [MainThread] INFO: Orchestrator initialized for vault: /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/DuckyAI
+[2026-03-07 01:43:56] [MainThread] INFO: Loaded 5 agents
+[2026-03-07 01:43:56] [MainThread] INFO: Loaded 0 poller(s)
+[2026-03-07 01:43:56] [MainThread] INFO: <rich.panel.Panel object at 0x10702e9c0>
+[2026-03-07 01:43:56] [MainThread] INFO: 
+[bold]Available Agents:[/bold]
+[2026-03-07 01:43:56] [MainThread] INFO:   • [EIC] Enrich Ingested Content (EIC)
+    Category: workflow
+[2026-03-07 01:43:56] [MainThread] INFO:   • [EDM] Extract Document to Markdown (EDM)
+    Category: ingestion
+[2026-03-07 01:43:56] [MainThread] INFO:   • [GDR] Generate Daily Roundup (GDR)
+    Category: research
+[2026-03-07 01:43:56] [MainThread] INFO:   • [TIU] Topic Index Update (TIU)
+    Category: workflow
+[2026-03-07 01:43:56] [MainThread] INFO:   • [ACB] Ambient Canvas Brainstorming (ACB)
+    Category: visualization
+[2026-03-07 01:50:13] [MainThread] INFO: Loading 5 agents from orchestrator.yaml
+[2026-03-07 01:50:13] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.md', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 01:50:13] [MainThread] INFO: Loaded agent: EIC (Enrich Ingested Content (EIC))
+[2026-03-07 01:50:13] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.pdf|00-Inbox/*.docx|00-Inbox/*.doc|00-Inbox/*.txt|00-Inbox/*.epub', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 01:50:13] [MainThread] INFO: Loaded agent: EDM (Extract Document to Markdown (EDM))
+[2026-03-07 01:50:13] [MainThread] DEBUG: Manual agent: no file trigger (input_type=manual)
+[2026-03-07 01:50:13] [MainThread] INFO: Loaded agent: GDR (Generate Daily Roundup (GDR))
+[2026-03-07 01:50:13] [MainThread] DEBUG: Derived trigger: pattern='04-Periodic/Daily/*.md', event='created' from input_paths=['04-Periodic/Daily'], input_type=new_file
+[2026-03-07 01:50:13] [MainThread] INFO: Loaded agent: TIU (Topic Index Update (TIU))
+[2026-03-07 01:50:13] [MainThread] DEBUG: Derived trigger: pattern='_Settings_/History/Ambient/*.md', event='created' from input_paths=['_Settings_/History/Ambient'], input_type=new_file
+[2026-03-07 01:50:13] [MainThread] INFO: Loaded agent: ACB (Ambient Canvas Brainstorming (ACB))
+[2026-03-07 01:50:13] [MainThread] INFO: Total agents loaded: 5
+[2026-03-07 01:50:13] [MainThread] DEBUG: No pollers configuration found
+[2026-03-07 01:50:13] [MainThread] INFO: Orchestrator initialized for vault: /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/DuckyAI
+[2026-03-07 01:50:13] [MainThread] INFO: Loaded 5 agents
+[2026-03-07 01:50:13] [MainThread] INFO: Loaded 0 poller(s)
+[2026-03-07 01:50:13] [MainThread] INFO: <rich.table.Table object at 0x11262c770>
+[2026-03-07 01:50:19] [MainThread] INFO: <rich.panel.Panel object at 0x1030cc680>
+[2026-03-07 01:50:19] [MainThread] INFO: 
+[bold]Raw YAML:[/bold]
+[2026-03-07 01:50:24] [MainThread] INFO: <rich.panel.Panel object at 0x1051276e0>
+[2026-03-07 01:50:24] [MainThread] INFO: 
+[bold]Raw YAML:[/bold]
+[2026-03-07 01:50:24] [MainThread] INFO: <rich.syntax.Syntax object at 0x1067faea0>
+[2026-03-07 09:12:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:12:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:12:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:12:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:13:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:13:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:13:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:13:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:14:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:14:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:14:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:14:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:15:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:15:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:15:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:15:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:16:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:16:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:16:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:16:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:17:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:17:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:17:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:17:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:18:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:18:41] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:18:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Generate Daily Roundup (GDR) (0 18 * * 1-5)
+[2026-03-07 09:18:43] [Thread-3 (_scheduler_loop)] DEBUG: Checking cron job: Topic Index Update (TIU) (30 18 * * 5)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing created event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:53] [Thread-5] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-71] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-7] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:53] [Thread-73] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:53] [Thread-9] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-75] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:53] [Thread-77] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:53] [Thread-11] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-79] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-13] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-81] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:53] [Thread-15] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:53] [Thread-17] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:53] [Thread-83] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:53] [Thread-85] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:53] [Thread-19] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:53] [Thread-21] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:53] [Thread-87] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:53] [Thread-23] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:53] [Thread-89] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:53] [Thread-91] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:53] [Thread-25] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:53] [Thread-93] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:53] [Thread-27] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:53] [Thread-95] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:53] [Thread-29] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:53] [Thread-97] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:53] [Thread-31] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:53] [Thread-99] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:53] [Thread-33] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:53] [Thread-101] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:53] [Thread-35] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:53] [Thread-103] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:53] [Thread-37] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:53] [Thread-105] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:53] [Thread-39] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:53] [Thread-41] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:53] [Thread-107] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:53] [Thread-43] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:53] [Thread-109] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:53] [Thread-111] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:53] [Thread-45] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:53] [Thread-113] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:53] [Thread-47] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:53] [Thread-49] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:53] [Thread-117] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:53] [Thread-115] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:53] [Thread-51] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:53] [Thread-119] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-53] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:53] [Thread-55] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:53] [Thread-121] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:53] [Thread-123] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-57] DEBUG: Processed debounced created event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:53] [Thread-127] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-59] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:53] [Thread-125] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-60] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:53] [Thread-61] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-126] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:53] [Thread-128] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:53] [Thread-62] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:53] [Thread-129] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:53] [Thread-64] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:53] [Thread-130] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:53] [Thread-63] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:53] [Thread-132] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:53] [Thread-65] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:53] [Thread-131] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:53] [Thread-66] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:53] [Thread-67] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:53] [Thread-133] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:53] [Thread-68] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:53] [Thread-134] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:53] [Thread-69] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:53] [Thread-135] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:53] [Thread-136] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:53] [Thread-71] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:53] [Thread-137] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:53] [Thread-70] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:53] [Thread-138] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:53] [Thread-72] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:53] [Thread-139] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:53] [Thread-73] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-74] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:53] [Thread-140] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-75] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:53] [Thread-141] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:53] [Thread-77] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:53] [Thread-142] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:53] [Thread-76] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:53] [Thread-143] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: created cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-78] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:53] [Thread-144] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:53] [Thread-145] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:53] [Thread-79] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-146] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:53] [Thread-80] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:53] [Thread-81] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:53] [Thread-147] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-148] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:53] [Thread-82] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:53] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:54] [Thread-149] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-83] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:54] [Thread-151] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-85] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:54] [Thread-150] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:54] [Thread-84] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:54] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:55] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-87] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:56] [Thread-152] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:56] [Thread-153] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:56] [Thread-86] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:56] [Thread-88] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:56] [Thread-154] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:56] [Thread-89] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:56] [Thread-155] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:56] [Thread-90] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:56] [Thread-156] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:56] [Thread-157] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:56] [Thread-91] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:56] [Thread-92] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:56] [Thread-158] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:56] [Thread-159] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:56] [Thread-93] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:56] [Thread-160] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:56] [Thread-161] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:56] [Thread-94] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:56] [Thread-162] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:56] [Thread-95] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:56] [Thread-163] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:56] [Thread-96] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:56] [Thread-97] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:56] [Thread-98] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:56] [Thread-164] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:56] [Thread-99] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:56] [Thread-165] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:56] [Thread-100] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:56] [Thread-101] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:56] [Thread-166] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:56] [Thread-167] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:56] [Thread-103] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:56] [Thread-168] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:56] [Thread-102] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:56] [Thread-104] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:56] [Thread-105] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:56] [Thread-169] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:56] [Thread-106] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:56] [Thread-170] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:56] [Thread-107] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:56] [Thread-171] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-172] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:56] [Thread-173] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:56] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:57] [Thread-108] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-174] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-175] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-109] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:57] [Thread-110] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:57] [Thread-111] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:57] [Thread-176] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:57] [Thread-177] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:57] [Thread-112] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:57] [Thread-178] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:57] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Journal Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Templates.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Social Media Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Topic Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Prompt Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Lifelog Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Task Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Folder Note Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:57] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Prompts.md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md (will process after 0.5s)
+[2026-03-07 09:18:58] [Thread-179] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:58] [Thread-113] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:58] [Thread-180] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:58] [Thread-114] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/AI4PKM Vault Design Spec.md
+[2026-03-07 09:18:58] [Thread-181] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:58] [Thread-115] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:58] [Thread-182] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:58] [Thread-116] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Prompts.md
+[2026-03-07 09:18:58] [Thread-117] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:58] [Thread-183] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:58] [Thread-118] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:58] [Thread-184] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/PKM Guidelines.md
+[2026-03-07 09:18:58] [Thread-119] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:58] [Thread-185] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:58] [Thread-186] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:58] [Thread-120] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Journal Template.md
+[2026-03-07 09:18:58] [Thread-121] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:58] [Thread-187] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:58] [Thread-122] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:58] [Thread-188] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Templates.md
+[2026-03-07 09:18:58] [Thread-190] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:58] [Thread-123] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:58] [Thread-124] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:58] [Thread-189] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Social Media Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Topic Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Prompt Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Lifelog Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Task Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Weekly Roundup Template.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/templates/Folder Note Template.md
+[2026-03-07 09:18:58] [Thread-125] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:58] [Thread-191] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:58] [Thread-192] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:58] [Thread-126] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Ingestion and Roundup (DIR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:58] [Thread-193] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:58] [Thread-127] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Prompts.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Weekly Roundup (GWR).md
+[2026-03-07 09:18:58] [Thread-194] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:58] [Thread-128] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:58] [Thread-129] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:58] [Thread-195] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/README_PROMPTS.md
+[2026-03-07 09:18:58] [Thread-130] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:58] [Thread-196] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:58] [Thread-197] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:58] [Thread-131] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Daily Research Briefing (DRB).md
+[2026-03-07 09:18:58] [Thread-199] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:58] [Thread-132] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:58] [Thread-198] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:58] [Thread-133] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Generate Daily Roundup (GDR).md
+[2026-03-07 09:18:58] [Thread-134] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:58] [Thread-200] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Enrich Ingested Content (EIC).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Ad-hoc Research within DuckyAI (ARD).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Extract Document to Markdown (EDM).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:58] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/Topic Index Update (TIU).md
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-1] DEBUG: Debouncing modified event for cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md (will process after 0.5s)
+[2026-03-07 09:18:59] [Thread-136] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-202] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-135] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-201] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-203] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:59] [Thread-137] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:59] [Thread-138] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-139] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:59] [Thread-204] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Writing Workflow.excalidraw.md
+[2026-03-07 09:18:59] [Thread-205] DEBUG: Processed debounced modified event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM Dashboard 2025-09-10 20.47.08.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/guidelines/_files_/PKM System Architecture.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: Processing event: modified cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:18:59] [Thread-4 (_event_loop)] DEBUG: No agents match event: cli/duckyai_cli/.playbook/prompts-agent/_files_/Daily Roundup 2025-07-20 17.29.29.excalidraw.md
+[2026-03-07 09:19:01] [Thread-1] DEBUG: Debouncing created event for .duckyai/tasks/2026-03-07 EIC - GraphRAG - Graph Retrieval Augmented Generation.md (will process after 0.5s)
+[2026-03-07 09:19:01] [Thread-1] DEBUG: Debouncing created event for .duckyai/tasks/2026-03-07 EIC - GraphRAG - Graph Retrieval Augmented Generation.md (will process after 0.5s)
+[2026-03-07 09:19:01] [Thread-1] DEBUG: Debouncing modified event for .duckyai/tasks/2026-03-07 EIC - GraphRAG - Graph Retrieval Augmented Generation.md (will process after 0.5s)
+[2026-03-07 09:19:01] [Thread-1] DEBUG: Debouncing modified event for .duckyai/tasks/2026-03-07 EIC - GraphRAG - Graph Retrieval Augmented Generation.md (will process after 0.5s)
+[2026-03-07 09:19:01] [Thread-1] DEBUG: Debouncing created event for .duckyai/tasks/2026-03-07 EIC - Test-Enrichment-Article.md (will process after 0.5s)
+[2026-03-07 09:19:01] [Thread-1] DEBUG: Debouncing created event for .duckyai/tasks/2026-03-07 EIC - Test-Enrichment-Article.md (will process after 0.5s)
+[2026-03-07 09:19:01] [Thread-1] DEBUG: Debouncing modified event for .duckyai/tasks/2026-03-07 EIC - Test-Enrichment-Article.md (will process after 0.5s)
+[2026-03-07 09:19:01] [Thread-1] DEBUG: Debouncing modified event for .duckyai/tasks/2026-03-07 EIC - Test-Enrichment-Article.md (will process after 0.5s)
+[2026-03-07 09:21:01] [MainThread] INFO: Loading 4 agents from orchestrator.yaml
+[2026-03-07 09:21:01] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.md', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:21:01] [MainThread] INFO: Loaded agent: EIC (Enrich Ingested Content (EIC))
+[2026-03-07 09:21:01] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.pdf|00-Inbox/*.docx|00-Inbox/*.doc|00-Inbox/*.txt', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:21:01] [MainThread] INFO: Loaded agent: EDM (Extract Document to Markdown (EDM))
+[2026-03-07 09:21:01] [MainThread] DEBUG: Manual agent: no file trigger (input_type=manual)
+[2026-03-07 09:21:01] [MainThread] INFO: Loaded agent: GDR (Generate Daily Roundup (GDR))
+[2026-03-07 09:21:01] [MainThread] DEBUG: Derived trigger: pattern='04-Periodic/Daily/*.md', event='created' from input_paths=['04-Periodic/Daily'], input_type=new_file
+[2026-03-07 09:21:01] [MainThread] INFO: Loaded agent: TIU (Topic Index Update (TIU))
+[2026-03-07 09:21:01] [MainThread] INFO: Total agents loaded: 4
+[2026-03-07 09:21:01] [MainThread] DEBUG: No pollers configuration found
+[2026-03-07 09:21:01] [MainThread] INFO: Orchestrator initialized for vault: /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/DuckyAI
+[2026-03-07 09:21:01] [MainThread] INFO: Loaded 4 agents
+[2026-03-07 09:21:01] [MainThread] INFO: Loaded 0 poller(s)
+[2026-03-07 09:21:01] [MainThread] INFO: <rich.table.Table object at 0x102132cf0>
+[2026-03-07 09:21:31] [MainThread] INFO: Loading 4 agents from orchestrator.yaml
+[2026-03-07 09:21:31] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.md', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:21:31] [MainThread] INFO: Loaded agent: EIC (Enrich Ingested Content (EIC))
+[2026-03-07 09:21:31] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.pdf|00-Inbox/*.docx|00-Inbox/*.doc|00-Inbox/*.txt', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:21:31] [MainThread] INFO: Loaded agent: EDM (Extract Document to Markdown (EDM))
+[2026-03-07 09:21:31] [MainThread] DEBUG: Manual agent: no file trigger (input_type=manual)
+[2026-03-07 09:21:31] [MainThread] INFO: Loaded agent: GDR (Generate Daily Roundup (GDR))
+[2026-03-07 09:21:31] [MainThread] DEBUG: Derived trigger: pattern='04-Periodic/Daily/*.md', event='created' from input_paths=['04-Periodic/Daily'], input_type=new_file
+[2026-03-07 09:21:31] [MainThread] INFO: Loaded agent: TIU (Topic Index Update (TIU))
+[2026-03-07 09:21:31] [MainThread] INFO: Total agents loaded: 4
+[2026-03-07 09:21:31] [MainThread] DEBUG: No pollers configuration found
+[2026-03-07 09:21:31] [MainThread] INFO: Orchestrator initialized for vault: /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/DuckyAI
+[2026-03-07 09:21:31] [MainThread] INFO: Loaded 4 agents
+[2026-03-07 09:21:31] [MainThread] INFO: Loaded 0 poller(s)
+[2026-03-07 09:21:31] [MainThread] INFO: <rich.table.Table object at 0x103a86240>
+[2026-03-07 09:21:31] [MainThread] INFO: <rich.panel.Panel object at 0x1034106b0>
+[2026-03-07 09:21:31] [MainThread] INFO: 
+[bold]Raw YAML:[/bold]
+[2026-03-07 09:21:31] [MainThread] INFO: <rich.syntax.Syntax object at 0x104ba3080>

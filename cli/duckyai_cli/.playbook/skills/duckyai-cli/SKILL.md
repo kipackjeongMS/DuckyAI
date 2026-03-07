@@ -90,10 +90,10 @@ Claude should automatically load this skill when:
 version: "1.0"
 
 orchestrator:
-  prompts_dir: _Settings_/Prompts
-  tasks_dir: _Settings_/Tasks
+  prompts_dir: .github/prompts-agent
+  tasks_dir: .duckyai/tasks
   logs_dir: _Settings_/Logs
-  skills_dir: _Settings_/Skills
+  skills_dir: .github/skills
   max_concurrent: 3
   poll_interval: 1
 
@@ -243,7 +243,7 @@ pollers:
     output_path: 03-Knowledge/Documentation
     executor: claude_code
 ```
-3. Create corresponding prompt in `_Settings_/Prompts/`
+3. Create corresponding prompt in `.github/prompts-agent/`
 
 #### Enable/Disable Agent
 
@@ -313,10 +313,10 @@ pollers:
 User: 볼트 업데이트
 Agent: 현재 버전: v3.4, 최신 버전: v3.5
        변경 사항:
-       - [추가] _Settings_/Skills/new-skill/SKILL.md
+       - [추가] .github/skills/new-skill/SKILL.md
        - [수정] AGENTS.md
        - [수정] orchestrator.yaml
-       - [삭제] _Settings_/Prompts/old-prompt.md
+       - [삭제] .github/prompts-agent/old-prompt.md
 
        로컬 수정 충돌: AGENTS.md (로컬에서도 수정됨)
        → AGENTS.md: 원격 적용 / 로컬 유지 / 차이점 보기?
@@ -398,14 +398,14 @@ Each prompt is independent but connected:
 ## Files Structure
 
 ```
-_Settings_/Skills/duckyai-cli/
+.github/skills/duckyai-cli/
 ├── SKILL.md                    # This file
 └── modules/                    # (Future: detailed module guides)
     ├── orchestrator.md
     ├── tasks.md
     └── vault-update.md
 
-_Settings_/Prompts/
+.github/prompts-agent/
 ├── DUCKYAI - Orchestrator Setup.md
 ├── DUCKYAI - Add Task.md
 └── ...

@@ -1,4 +1,4 @@
-"""Initialize DuckyAI vault — sets up symlinks so Copilot CLI uses the CLI-bundled config."""
+"""Initialize DuckyAI vault - sets up symlinks and runtime directories."""
 
 import os
 import click
@@ -18,44 +18,54 @@ def find_vault_root(start: Path = None) -> Path:
 @click.command('init')
 @click.option('--force', is_flag=True, help='Overwrite existing .github/ if present')
 def init_vault(force):
-    """Initialize vault by linking .github/ to the CLI-bundled Copilot config.
+    """Initialize vault: link .github/ to CLI playbook and create runtime dirs.
 
     \b
-    This creates a symlink so Copilot CLI auto-discovers:
-      - copilot-instructions.md (vault context)
-      - skills/ (all workflow + knowledge skills)
-      - prompts/ (all available commands)
+    Sets up:
+      1. .github -> cli/.playbook (symlink for Copilot discovery)
+      2. .duckyai/ runtime dirs (tasks, logs, history)
     """
     vault_root = find_vault_root()
 
-    # Find the CLI package's .github directory
-    cli_github = Path(__file__).parent.parent / '.playbook'
-    if not cli_github.exists():
+    # --- 1. Symlink .github -> .playbook ---
+    cli_playbook = Path(__file__).parent.parent / '.playbook'
+    if not cli_playbook.exists():
         click.echo("Error: CLI .playbook/ not found in package.", err=True)
         return
 
     target = vault_root / '.github'
-    rel_path = os.path.relpath(cli_github, vault_root)
+    rel_path = os.path.relpath(cli_playbook, vault_root)
 
     if target.is_symlink():
         current = os.readlink(target)
         if current == rel_path:
-            click.echo(f"✅ Already initialized — .github → {rel_path}")
-            return
-        if not force:
-            click.echo(f"⚠️  .github symlink exists pointing to: {current}")
-            click.echo(f"   Run with --force to overwrite.")
-            return
-        target.unlink()
-
+            click.echo(f"  .github -> {rel_path}")
+        elif force:
+            target.unlink()
+            os.symlink(rel_path, target)
+            click.echo(f"  .github -> {rel_path} (overwritten)")
+        else:
+            click.echo(f"  .github symlink exists -> {current}. Use --force to overwrite.")
     elif target.exists():
-        if not force:
-            click.echo(f"⚠️  .github/ directory already exists (not a symlink).")
-            click.echo(f"   Run with --force to replace it with a symlink.")
-            return
-        import shutil
-        shutil.rmtree(target)
+        if force:
+            import shutil
+            shutil.rmtree(target)
+            os.symlink(rel_path, target)
+            click.echo(f"  .github -> {rel_path} (replaced directory)")
+        else:
+            click.echo(f"  .github/ directory exists. Use --force to replace.")
+    else:
+        os.symlink(rel_path, target)
+        click.echo(f"  .github -> {rel_path}")
 
-    os.symlink(rel_path, target)
-    click.echo(f"✅ Initialized: .github → {rel_path}")
-    click.echo(f"   Copilot CLI will now auto-discover instructions, skills, and prompts.")
+    # --- 2. Create .duckyai/ runtime dirs ---
+    runtime_dirs = ['.duckyai/tasks', '.duckyai/logs', '.duckyai/history']
+    for d in runtime_dirs:
+        full = vault_root / d
+        if not full.exists():
+            full.mkdir(parents=True, exist_ok=True)
+            click.echo(f"  Created {d}/")
+        else:
+            click.echo(f"  {d}/ exists")
+
+    click.echo("\nDuckyAI initialized. Run `duckyai` to start.")

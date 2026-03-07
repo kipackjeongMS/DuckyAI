@@ -40,17 +40,18 @@ def find_vault_root(start: Path = None) -> Path:
 
 
 def ensure_init(vault_root: Path):
-    """Auto-init .github symlink if missing."""
-    github_dir = vault_root / '.github'
+    """Auto-init .github symlink and .duckyai runtime dirs if missing."""
     cli_playbook = Path(__file__).parent.parent / '.playbook'
 
-    if github_dir.is_symlink() or not cli_playbook.exists():
-        return
+    # Symlink .github
+    github_dir = vault_root / '.github'
+    if not github_dir.is_symlink() and cli_playbook.exists() and not github_dir.exists():
+        rel_path = os.path.relpath(cli_playbook, vault_root)
+        os.symlink(rel_path, github_dir)
 
-    rel_path = os.path.relpath(cli_playbook, vault_root)
-    if github_dir.exists():
-        return  # Don't overwrite an existing .github directory
-    os.symlink(rel_path, github_dir)
+    # Create .duckyai runtime dirs
+    for d in ['.duckyai/tasks', '.duckyai/logs', '.duckyai/history']:
+        (vault_root / d).mkdir(parents=True, exist_ok=True)
 
 
 def get_mcp_config(vault_root: Path) -> str:

@@ -124,8 +124,8 @@ class Orchestrator:
             self.config.get_orchestrator_prompts_dir(),
             self.config.get_orchestrator_tasks_dir(),
             self.config.get_orchestrator_logs_dir(),
-            self.config.get('orchestrator.skills_dir', '_Settings_/Skills'),
-            self.config.get('orchestrator.bases_dir', '_Settings_/Bases'),
+            self.config.get('orchestrator.skills_dir', '.github/skills'),
+            self.config.get('orchestrator.bases_dir', '.github/bases'),
         ]
 
         created = []

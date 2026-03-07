@@ -36,9 +36,9 @@ class Logger:
         """Read logs directory from orchestrator.yaml without importing Config.
 
         Returns the configured ``orchestrator.logs_dir`` value, or the default
-        ``_Settings_/Logs`` when the file is missing or unparseable.
+        ``.duckyai/logs`` when the file is missing or unparseable.
         """
-        default = os.path.join("_Settings_", "Logs")
+        default = os.path.join(".duckyai", "logs")
         try:
             import yaml
             config_path = Path(os.getcwd()) / "orchestrator.yaml"

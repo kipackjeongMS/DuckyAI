@@ -36,7 +36,7 @@ def load_prompt_file(prompt_path: Path) -> str:
 
 
 def get_available_prompts(vault_root: Path) -> dict:
-    """Discover all available prompts from .github/prompts/ and _Settings_/Prompts/."""
+    """Discover all available prompts from .github/prompts/ and .github/prompts-agent/."""
     prompts = {}
 
     # .github/prompts/ — Copilot-style prompts (new-task, code-review, etc.)
@@ -46,8 +46,8 @@ def get_available_prompts(vault_root: Path) -> dict:
             name = f.stem.replace('.prompt', '')
             prompts[name] = {'path': f, 'source': 'prompts'}
 
-    # _Settings_/Prompts/ — Orchestrator prompts (EIC, GDR, etc.)
-    settings_prompts = vault_root / '_Settings_' / 'Prompts'
+    # .github/prompts-agent/ — Orchestrator prompts (EIC, GDR, etc.)
+    settings_prompts = vault_root / '.github' / 'prompts-agent'
     if settings_prompts.exists():
         for f in sorted(settings_prompts.glob('*.md')):
             if f.name in ('Prompts.md', 'README_PROMPTS.md'):
@@ -111,7 +111,7 @@ def run_command(ctx, command, args, list_cmds):
         for name, info in sorted(prompts.items()):
             if info['source'] == 'prompts':
                 click.echo(f"    {name:25s} ← {info['path'].name}")
-        click.echo("\n  Agent prompts (_Settings_/Prompts/):")
+        click.echo("\n  Agent prompts (.github/prompts-agent/):")
         for name, info in sorted(prompts.items()):
             if info['source'] == 'agents':
                 click.echo(f"    {name:25s} ← {info['path'].name}")

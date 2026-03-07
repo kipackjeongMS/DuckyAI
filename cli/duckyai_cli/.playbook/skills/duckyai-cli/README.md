@@ -13,8 +13,8 @@ This skill provides orchestrator configuration, worker management, and vault upd
 
 ## Quick Links
 
-- **Main Skill**: [[_Settings_/Skills/duckyai-cli/SKILL.md]]
-- **Prompts**: `_Settings_/Prompts/DUCKYAI - Onboarding - Step *.md`
+- **Main Skill**: [[.github/skills/duckyai-cli/SKILL.md]]
+- **Prompts**: `.github/prompts-agent/DUCKYAI - Onboarding - Step *.md`
 - **Templates**: `_Settings_/Templates/AGENTS_beginner.md`, `daily_journal_template.md`
 
 ## Usage

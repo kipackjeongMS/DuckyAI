@@ -1,0 +1,176 @@
+# Execution Log: EIC
+# Start: 2026-03-07 01:57:41.831918
+# Execution ID: 2161716d-61f5-4935-a77e-9d70d3c5308f
+# Status: completed
+# Prompt:
+Improve captured content through transcript correction, summarization, and knowledge linking.
+
+## Input
+- Target note file (typically in 00-Inbox/)
+- Long articles may need chunking to avoid partial processing
+- Original content with potential grammar/transcript errors
+
+## Output
+- Create a NEW file in the output directory (specified in Output Configuration)
+- Do NOT modify the input file inline
+- Use naming pattern: `{title} - {agent}.md` (e.g., "Article Title - EIC.md")
+- Frontmatter must include:
+  - `clippings: "[[00-Inbox/{입력파일명}]]"` - 원본 Clippings 파일 링크
+  - `status: processed` - 처리 완료 표시
+- Summary section added at beginning
+- Improved formatting and structure
+- Links to existing KB topics
+
+## Main Process
+```
+1. IMPROVE CAPTURE & TRANSCRIPT (ICT)
+   - Fix all grammar or transcript errors
+   - Translate to the vault's default language (primaryLanguage in .gobi/settings.yaml) for Clippings
+   - Remove extra/duplicated newlines
+   - Add chapters using heading3 (###)
+   - Add formatting (lists, highlights)
+   - Keep overall length equal to original
+   - Set status property to processed
+
+2. ADD SUMMARY FOR THREAD
+   - Add Summary section at beginning (##)
+   - Write catchy summaries for Threads sharing
+   - Use quotes verbatim to convey author's voice
+   - Don't add highlights in summary
+
+3. ENRICH USING TOPICS
+   - Link related KB topics (existing only)
+   - Add one-line summary to relevant KB topics
+   - Link to related summaries (books, etc.)
+```
+
+## Caveats
+
+### Content Completeness - CRITICAL
+
+⚠️ **CRITICAL**: ICT section must be COMPLETE - not truncated
+
+**Common failure pattern:**
+- Agent starts ICT section
+- Hits token/context limit mid-processing
+- ICT cuts off mid-sentence: "Since I last wrote at the beginning of the summer, my methodol..."
+- Agent marks status as PROCESSED anyway ❌ WRONG
+
+**Prevention measures:**
+1. **Check article length FIRST** before starting
+2. **If source >3000 words**, process in chunks OR request context extension
+3. **VERIFY ICT ends at natural stopping point** (end of paragraph/section, not mid-sentence)
+4. **Self-check before marking PROCESSED**: "Does the last paragraph in ICT feel complete?"
+5. **If truncated**, FINISH it before updating status to PROCESSED
+
+**Quality verification:**
+- ICT section should have multiple ### subsections (not just one incomplete section)
+- Last sentence should end with proper punctuation, not "..." or cut-off text
+- Length should be comparable to original source (not 30-50% shorter due to truncation)
+
+**If you cannot complete full ICT:**
+- Mark task as NEEDS_INPUT explaining length/complexity issue
+- DO NOT mark PROCESSED with incomplete work
+
+### Rename Filenames
+* Convert " " (curly/typographic quotes) to " (straight quote)
+   * Same for single quotes
+* Remove incomplete words -- 40살 전에 알았다면 `얼마ᄂ`
+* Remove `Readwise` at the end
+
+### Formatting Standards
+- Use heading3 (###) for chapters
+- Limit highlights to essence (one per chapter)
+- Preserve original prose structure
+- Overall length should equal original
+
+### Topic Linking
+- Only link to existing topics in KB
+- Validate all topic links before adding
+- Add meaningful one-line summaries to topics
+- **Tip**: Use `obsidian search query="keyword" path="Topics"` to discover existing topics; `obsidian unresolved` to verify all links resolve (see `obsidian-cli` skill)
+
+
+# Trigger Context
+- Event: created
+- Input Path: 00-Inbox/GraphRAG - Graph Retrieval Augmented Generation.md
+- Task File: [[_Settings_/Tasks/2026-03-07 EIC - GraphRAG - Graph Retrieval Augmented Generation]]
+- **Update upon completion**: Set `status:` and `output:` fields
+
+# Output Configuration
+- Output Directory: 03-Knowledge/Documentation
+- Output Type: new_file
+
+**IMPORTANT**: Create a NEW file in the `03-Knowledge/Documentation` directory.
+Do NOT modify the input file inline. The output should be a separate file.
+Use naming pattern: {title} - {agent}.md
+
+# File Metadata
+- created: 2026-03-07
+- type: documentation
+- category: reference
+- tags: ['graphrag', 'rag', 'knowledge-graph', 'ai', 'microsoft']
+- source: https://microsoft.github.io/graphrag/
+
+
+# Response:
+[GitHub Copilot CLI] ● Read 00-Inbox/GraphRAG - Graph Retrieval Augmented Generation.md
+[GitHub Copilot CLI] └ 122 lines read
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● Read _Settings_/Tasks/2026-03-07 EIC - GraphRAG - Graph Retrieval Augmented Generation.md
+[GitHub Copilot CLI] └ 115 lines read
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● Read vault settings for primary language
+[GitHub Copilot CLI] $ cat /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/Duck
+[GitHub Copilot CLI] yAI/.gobi/settings.yaml 2>/dev/null || echo "NO_SETTINGS_FILE"
+[GitHub Copilot CLI] └ 2 lines...
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● List existing KB topics
+[GitHub Copilot CLI] $ ls /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/Ducky
+[GitHub Copilot CLI] AI/03-Knowledge/Topics/ 2>/dev/null | head -60
+[GitHub Copilot CLI] └ 1 line...
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● Count words in source file
+[GitHub Copilot CLI] $ wc -w "/Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/D
+[GitHub Copilot CLI] uckyAI/00-Inbox/GraphRAG - Graph Retrieval Augmented Generation.md"
+[GitHub Copilot CLI] └ 2 lines...
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● List existing knowledge files
+[GitHub Copilot CLI] $ find "/Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/Du
+[GitHub Copilot CLI] ckyAI/03-Knowledge" -name "*.md" | head -40
+[GitHub Copilot CLI] └ 4 lines...
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● Check output directory
+[GitHub Copilot CLI] $ ls "/Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/Duck
+[GitHub Copilot CLI] yAI/03-Knowledge/Documentation/" 2>/dev/null
+[GitHub Copilot CLI] └ 3 lines...
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● Find all topic/knowledge files
+[GitHub Copilot CLI] $ find
+[GitHub Copilot CLI] "/Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/DuckyAI"
+[GitHub Copilot CLI] -path "*/Topics/*.md" -o -path "*/03-Knowledge/*.md" | head -60
+[GitHub Copilot CLI] └ 4 lines...
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● Read 03-Knowledge/Documentation/The Rise of Personal Knowledge Management - EIC.md lines 1-30
+[GitHub Copilot CLI] └ 29 lines read
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● Create 03-Knowledge/Documentation/GraphRAG - Graph Retrieval Augmented Generation - EIC.md (+130)
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] Now update the task file with completion status:
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] ● Edit _Settings_/Tasks/2026-03-07 EIC - GraphRAG - Graph Retrieval Augmented Generation.md (+2 -2)
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] EIC processing complete.
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] - **Output**: `03-Knowledge/Documentation/GraphRAG - Graph Retrieval Augmented Generation - EIC.md`
+[GitHub Copilot CLI] - **ICT**: Full transcript improved with `###` chapters, cleaned formatting, Mermaid diagram preserved, and all content intact (830 words source → comparable output length verified).
+[GitHub Copilot CLI] - **No existing KB topics** were found to link; task file updated to `PROCESSED` with output path.
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] 
+[GitHub Copilot CLI] Total usage est:        6 Premium requests
+[GitHub Copilot CLI] API time spent:         1m 11s
+[GitHub Copilot CLI] Total session time:     1m 15s
+[GitHub Copilot CLI] Total code changes:     +132 -2
+[GitHub Copilot CLI] Breakdown by AI model:
+[GitHub Copilot CLI] claude-opus-4.6-1m      227.2k in, 3.7k out, 197.8k cached (Est. 6 Premium requests)
+

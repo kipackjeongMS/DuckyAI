@@ -201,7 +201,7 @@ def install_template(template_name: str, target_dir: Path, force: bool, target_v
                 click.echo("Next steps:")
                 click.echo("  1. Open the folder in Obsidian")
                 click.echo("  2. Trust the vault when prompted")
-                click.echo("  3. Explore _Settings_ for configuration")
+                click.echo("  3. Explore .github/ for configuration")
                 click.echo("=" * 50)
             else:
                 click.echo("Installation failed.", err=True)

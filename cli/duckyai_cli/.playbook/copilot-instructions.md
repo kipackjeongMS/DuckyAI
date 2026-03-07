@@ -479,15 +479,15 @@ The CLI handles automation (file triggers + cron scheduling). Copilot + MCP hand
 ## Prompts & Workflows
 
 - Orchestrator config in `orchestrator.yaml` (root)
-- Prompts can be found in `_Settings_/Prompts/`
-- Skills can be found in `_Settings_/Skills/`
-- Templates in `_Settings_/Templates/` and `Templates/`
+- Prompts can be found in `.github/prompts-agent/`
+- Skills can be found in `.github/skills/`
+- Templates in `.github/templates/` and `Templates/`
 - Each prompt/agent can be called using abbreviations (e.g., EIC, GDR, TIU)
-- Check `_Settings_/Prompts/` first for new commands (especially abbreviations)
+- Check `.github/prompts-agent/` first for new commands (especially abbreviations)
 
 ### Skills
 
-Skills are located in `_Settings_/Skills/`. Each skill folder contains a `SKILL.md` with instructions. To use a skill, read the corresponding `SKILL.md` file first. Available skills include:
+Skills are located in `.github/skills/`. Each skill folder contains a `SKILL.md` with instructions. To use a skill, read the corresponding `SKILL.md` file first. Available skills include:
 - `obsidian-links` — Wiki link formatting
 - `obsidian-yaml-frontmatter` — YAML frontmatter standards
 - `obsidian-markdown-structure` — Markdown structure guidelines

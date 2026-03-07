@@ -1,7 +1,7 @@
 """
 Agent registry for orchestrator.
 
-Loads and manages agent definitions from _Settings_/Agents/.
+Loads and manages agent definitions from .github/prompts-agent/.
 """
 import json
 import re
@@ -41,7 +41,7 @@ class AgentRegistry:
     """
     Registry of all available agents.
     
-    Loads agent definitions from _Settings_/Agents/ directory.
+    Loads agent definitions from .github/prompts-agent/ directory.
     """
 
     def __init__(self, agents_dir: Path, vault_path: Path, config: Optional['Config'] = None):
