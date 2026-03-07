@@ -1,0 +1,34 @@
+# Personal content (never committed)
+04-Periodic/Daily/*.md
+04-Periodic/Weekly/*.md
+01-Work/Tasks/*.md
+01-Work/Projects/*.md
+01-Work/Investigations/*.md
+01-Work/Plans/*.md
+02-People/1-on-1s/*.md
+02-People/Meetings/*.md
+02-People/Contacts/*.md
+05-Archive/*.md
+00-Inbox/*.md
+
+# Keep .gitkeep files
+!**/.gitkeep
+
+# User configuration
+.env
+scripts/repos.json
+
+# Synced repos (local only)
+.repos/*/
+
+# Obsidian
+.obsidian/
+
+# MCP server build artifacts
+mcp-server/node_modules/
+mcp-server/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini

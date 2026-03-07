@@ -1,0 +1,26 @@
+{
+  "folders": [
+    {
+      "name": "DuckyAI",
+      "path": "."
+    },
+    {
+      "name": "Doc Repos",
+      "path": ".repos"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.git": true,
+      "**/.obsidian/plugins": true,
+      "**/.obsidian/workspace*.json": true
+    },
+    "search.exclude": {
+      "**/.obsidian": true
+    },
+    "chat.tools.terminal.autoApprove": {
+      "git push": true,
+      "az": true
+    }
+  }
+}

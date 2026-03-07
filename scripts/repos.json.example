@@ -1,0 +1,22 @@
+{
+  "$schema": "./repos.schema.json",
+  "description": "Documentation repositories to sync for Copilot context. Copy this file to repos.json and customize.",
+  "reposDir": ".repos",
+  "repositories": [
+    {
+      "name": "example-docs",
+      "url": "https://dev.azure.com/your-org/your-project/_git/your-docs-repo",
+      "branch": "main",
+      "sparse": "docs",
+      "enabled": false,
+      "description": "Example: sparse checkout of a docs folder"
+    },
+    {
+      "name": "example-full-repo",
+      "url": "https://dev.azure.com/your-org/your-project/_git/your-repo",
+      "branch": "dev",
+      "enabled": false,
+      "description": "Example: full clone of a repo"
+    }
+  ]
+}

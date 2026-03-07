@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "duckyai-vault": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/mcp-server/dist/index.js"]
+    }
+  }
+}
