@@ -9,7 +9,7 @@
 02-People/**/*.md
 05-Archive/**/*.md
 00-Inbox/**/*.md
-_Settings_/**/*.log
+_Settings_/Logs/*
 
 # Keep .gitkeep files
 !**/.gitkeep
