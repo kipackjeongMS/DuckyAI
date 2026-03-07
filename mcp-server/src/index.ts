@@ -1226,6 +1226,199 @@ server.tool(
   }
 );
 
+// SKILL: startOrchestrator
+// =============================================================================
+server.tool(
+  "startOrchestrator",
+  "Start the DuckyAI orchestrator daemon (file watcher + cron scheduler for automated agents)",
+  {},
+  async () => {
+    const { exec } = await import("child_process");
+    const orchestratorYaml = path.join(VAULT_ROOT, "orchestrator.yaml");
+
+    try {
+      await fs.access(orchestratorYaml);
+    } catch {
+      return { content: [{ type: "text", text: "orchestrator.yaml not found. Run 'duckyai init' first." }] };
+    }
+
+    // Check if already running
+    const pidFile = path.join(VAULT_ROOT, ".orchestrator.pid");
+    try {
+      const pid = (await fs.readFile(pidFile, "utf-8")).trim();
+      try {
+        process.kill(parseInt(pid), 0);
+        return { content: [{ type: "text", text: `Orchestrator already running (PID ${pid}).` }] };
+      } catch {
+        // PID not running, clean up stale pid file
+      }
+    } catch {
+      // No pid file
+    }
+
+    return new Promise((resolve) => {
+      const child = exec(
+        `cd "${VAULT_ROOT}" && python -m duckyai_cli.main.cli -o &`,
+        { cwd: VAULT_ROOT },
+        (error) => {
+          if (error) {
+            resolve({ content: [{ type: "text", text: `Failed to start orchestrator: ${error.message}` }] });
+          }
+        }
+      );
+      if (child.pid) {
+        fs.writeFile(pidFile, String(child.pid), "utf-8").catch(() => {});
+      }
+      setTimeout(() => {
+        resolve({ content: [{ type: "text", text: `✅ Orchestrator daemon started. File watcher and cron scheduler are active.` }] });
+      }, 2000);
+    });
+  }
+);
+
+// SKILL: stopOrchestrator
+// =============================================================================
+server.tool(
+  "stopOrchestrator",
+  "Stop the running DuckyAI orchestrator daemon",
+  {},
+  async () => {
+    const pidFile = path.join(VAULT_ROOT, ".orchestrator.pid");
+    try {
+      const pid = (await fs.readFile(pidFile, "utf-8")).trim();
+      try {
+        process.kill(parseInt(pid), "SIGTERM");
+        await fs.unlink(pidFile).catch(() => {});
+        return { content: [{ type: "text", text: `✅ Orchestrator stopped (PID ${pid}).` }] };
+      } catch {
+        await fs.unlink(pidFile).catch(() => {});
+        return { content: [{ type: "text", text: "Orchestrator was not running (stale PID file cleaned up)." }] };
+      }
+    } catch {
+      return { content: [{ type: "text", text: "No orchestrator is currently running." }] };
+    }
+  }
+);
+
+// SKILL: orchestratorStatus
+// =============================================================================
+server.tool(
+  "orchestratorStatus",
+  "Show the current status of the DuckyAI orchestrator (running/stopped, loaded agents, schedules)",
+  {},
+  async () => {
+    const orchestratorYaml = path.join(VAULT_ROOT, "orchestrator.yaml");
+    let configContent: string;
+    try {
+      configContent = await fs.readFile(orchestratorYaml, "utf-8");
+    } catch {
+      return { content: [{ type: "text", text: "orchestrator.yaml not found." }] };
+    }
+
+    // Check if running
+    const pidFile = path.join(VAULT_ROOT, ".orchestrator.pid");
+    let running = false;
+    let pid = "";
+    try {
+      pid = (await fs.readFile(pidFile, "utf-8")).trim();
+      process.kill(parseInt(pid), 0);
+      running = true;
+    } catch {
+      running = false;
+    }
+
+    // Parse agents from yaml (simple regex extraction)
+    const agentNames = [...configContent.matchAll(/name:\s*(.+)/g)].map(m => m[1].trim());
+    const cronJobs = [...configContent.matchAll(/cron:\s*(.+)/g)].map(m => m[1].trim());
+
+    const status = [
+      `**Orchestrator**: ${running ? `🟢 Running (PID ${pid})` : "🔴 Stopped"}`,
+      `**Vault**: ${VAULT_ROOT}`,
+      `**Agents**: ${agentNames.length}`,
+      ...agentNames.map(a => `  - ${a}`),
+      `**Scheduled jobs**: ${cronJobs.length}`,
+      ...cronJobs.map(c => `  - ${c}`),
+    ].join("\n");
+
+    return { content: [{ type: "text", text: status }] };
+  }
+);
+
+// SKILL: triggerAgent
+// =============================================================================
+server.tool(
+  "triggerAgent",
+  "Manually trigger a DuckyAI orchestrator agent by abbreviation (e.g., EIC, GDR, TIU, EDM)",
+  {
+    agent: z.string().describe("Agent abbreviation (e.g., EIC, GDR, TIU, EDM)"),
+    file: z.string().optional().describe("Optional input file path relative to vault root"),
+  },
+  async ({ agent, file }) => {
+    const { execSync } = await import("child_process");
+    let cmd = `python -m duckyai_cli.main.cli trigger ${agent}`;
+    if (file) {
+      cmd += ` --file "${file}"`;
+    }
+
+    try {
+      const output = execSync(cmd, {
+        cwd: VAULT_ROOT,
+        timeout: 10000,
+        encoding: "utf-8",
+      });
+      return { content: [{ type: "text", text: `✅ Triggered agent: ${agent}\n${output}` }] };
+    } catch (error: any) {
+      return { content: [{ type: "text", text: `Failed to trigger ${agent}: ${error.message}` }] };
+    }
+  }
+);
+
+// SKILL: listAgents
+// =============================================================================
+server.tool(
+  "listAgents",
+  "List all available DuckyAI orchestrator agents with their triggers, input/output paths, and schedules",
+  {},
+  async () => {
+    const orchestratorYaml = path.join(VAULT_ROOT, "orchestrator.yaml");
+    let configContent: string;
+    try {
+      configContent = await fs.readFile(orchestratorYaml, "utf-8");
+    } catch {
+      return { content: [{ type: "text", text: "orchestrator.yaml not found." }] };
+    }
+
+    // Parse nodes section
+    const lines = configContent.split("\n");
+    const agents: string[] = [];
+    let currentAgent = "";
+
+    for (const line of lines) {
+      const nameMatch = line.match(/^\s+name:\s*(.+)/);
+      const inputMatch = line.match(/^\s+input_path:\s*(.+)/);
+      const outputMatch = line.match(/^\s+output_path:\s*(.+)/);
+      const cronMatch = line.match(/^\s+cron:\s*(.+)/);
+      const enabledMatch = line.match(/^\s+enabled:\s*(.+)/);
+
+      if (nameMatch) {
+        if (currentAgent) agents.push(currentAgent);
+        currentAgent = `**${nameMatch[1].trim()}**`;
+      }
+      if (inputMatch && currentAgent) currentAgent += ` | Input: \`${inputMatch[1].trim()}\``;
+      if (outputMatch && currentAgent) currentAgent += ` | Output: \`${outputMatch[1].trim()}\``;
+      if (cronMatch && currentAgent) currentAgent += ` | Cron: \`${cronMatch[1].trim()}\``;
+      if (enabledMatch && currentAgent) currentAgent += ` | Enabled: ${enabledMatch[1].trim()}`;
+    }
+    if (currentAgent) agents.push(currentAgent);
+
+    return {
+      content: [
+        { type: "text", text: `Available agents:\n${agents.map(a => `- ${a}`).join("\n")}` },
+      ],
+    };
+  }
+);
+
 // =============================================================================
 // Start the server
 // =============================================================================
