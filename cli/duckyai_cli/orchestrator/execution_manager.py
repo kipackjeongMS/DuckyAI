@@ -187,20 +187,10 @@ class ExecutionManager:
             logger.debug(f"Starting execution: {agent.abbreviation} (ID: {ctx.execution_id})")
 
             # Execute based on executor type
-            if agent.executor == 'claude_code':
-                self._execute_claude_code(agent, ctx, trigger_data)
-            elif agent.executor == 'gemini_cli':
-                self._execute_gemini_cli(agent, ctx, trigger_data)
-            elif agent.executor == 'codex_cli':
-                self._execute_codex_cli(agent, ctx, trigger_data)
-            elif agent.executor == 'cursor_agent':
-                self._execute_cursor_agent(agent, ctx, trigger_data)
-            elif agent.executor == 'continue_cli':
-                self._execute_continue_cli(agent, ctx, trigger_data)
-            elif agent.executor == 'grok_cli':
-                self._execute_grok_cli(agent, ctx, trigger_data)
-            elif agent.executor == 'copilot_cli':
+            if agent.executor == 'copilot_cli':
                 self._execute_copilot_cli(agent, ctx, trigger_data)
+            elif agent.executor == 'claude_code':
+                self._execute_claude_code(agent, ctx, trigger_data)
             else:
                 raise ValueError(f"Unknown executor: {agent.executor}")
 
@@ -392,149 +382,6 @@ class ExecutionManager:
             else:
                 # Re-raise if it's a different error
                 raise
-
-    def _execute_gemini_cli(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
-        """
-        Execute agent using Gemini CLI.
-
-        Args:
-            agent: Agent definition
-            ctx: Execution context
-            trigger_data: Trigger event data
-        """
-        # Build prompt
-        ctx.prompt = self._build_prompt(agent, trigger_data, ctx)
-
-        # GEMINI_API_KEY 환경변수가 있으면 전달 (Gemini CLI는 이 환경변수 사용)
-        env = None
-        if os.environ.get('GEMINI_API_KEY'):
-            env = os.environ.copy()
-
-        self._execute_subprocess(ctx, 'Gemini CLI', ['gemini', '--yolo'], agent.timeout_minutes * 60, stdin_input=ctx.prompt, env=env)
-
-    def _execute_codex_cli(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
-        """
-        Execute agent using Codex CLI.
-
-        Args:
-            agent: Agent definition
-            ctx: Execution context
-            trigger_data: Trigger event data
-        """
-        # Build prompt
-        ctx.prompt = self._build_prompt(agent, trigger_data, ctx)
-
-        # OPENAI_API_KEY 환경변수가 있으면 전달
-        env = None
-        if os.environ.get('OPENAI_API_KEY'):
-            env = os.environ.copy()
-
-        self._execute_subprocess(ctx, 'Codex CLI', ['codex', '--search', '--enable', 'web_search_request', 'exec', '--skip-git-repo-check', '--full-auto'], agent.timeout_minutes * 60, stdin_input=ctx.prompt, env=env)
-
-    def _execute_cursor_agent(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
-        """
-        Execute agent using Cursor Agent CLI.
-
-        Args:
-            agent: Agent definition
-            ctx: Execution context
-            trigger_data: Trigger event data
-        """
-        # Build prompt
-        ctx.prompt = self._build_prompt(agent, trigger_data, ctx)
-        
-        # Build command: cursor-agent --print --output-format text [prompt]
-        cmd = ['cursor-agent', '--print', '--output-format', 'text']
-        
-        # Add model if specified in agent_params
-        if agent.agent_params and 'model' in agent.agent_params:
-            cmd.extend(['--model', agent.agent_params['model']])
-        
-        # Add MCP approval if specified in agent_params
-        if agent.agent_params and agent.agent_params.get('approve_mcps', False):
-            cmd.append('--approve-mcps')
-        
-        # Add browser support if specified in agent_params
-        if agent.agent_params and agent.agent_params.get('browser', False):
-            cmd.append('--browser')
-        
-        self._execute_subprocess(ctx, 'Cursor Agent', cmd, agent.timeout_minutes * 60, stdin_input=ctx.prompt)
-
-    def _execute_continue_cli(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
-        """
-        Execute agent using Continue CLI (cn).
-
-        Args:
-            agent: Agent definition
-            ctx: Execution context
-            trigger_data: Trigger event data
-        """
-        # Build prompt
-        ctx.prompt = self._build_prompt(agent, trigger_data, ctx)
-        
-        # Build command: cn --print [options] [prompt]
-        cmd = ['cn', '--print']
-        
-        # Add format if specified in agent_params (default: json for structured output)
-        if agent.agent_params and 'format' in agent.agent_params:
-            output_format = agent.agent_params['format']
-            cmd.extend(['--format', output_format])
-        else:
-            # Default to json for structured output if not specified
-            cmd.extend(['--format', 'json'])
-        
-        # Add silent flag if specified in agent_params
-        if agent.agent_params and agent.agent_params.get('silent', False):
-            cmd.append('--silent')
-        
-        # Add model if specified in agent_params
-        if agent.agent_params and 'model' in agent.agent_params:
-            cmd.extend(['--model', agent.agent_params['model']])
-        
-        # Add MCP servers if specified in agent_params
-        if agent.agent_params and 'mcp' in agent.agent_params:
-            mcp_servers = agent.agent_params['mcp']
-            if isinstance(mcp_servers, list):
-                for mcp in mcp_servers:
-                    cmd.extend(['--mcp', mcp])
-            elif isinstance(mcp_servers, str):
-                cmd.extend(['--mcp', mcp_servers])
-        
-        # Add rules if specified in agent_params
-        if agent.agent_params and 'rule' in agent.agent_params:
-            rules = agent.agent_params['rule']
-            if isinstance(rules, list):
-                for rule in rules:
-                    cmd.extend(['--rule', rule])
-            elif isinstance(rules, str):
-                cmd.extend(['--rule', rules])
-        
-        # Add config if specified in agent_params
-        if agent.agent_params and 'config' in agent.agent_params:
-            cmd.extend(['--config', agent.agent_params['config']])
-        
-        # Add auto mode if specified in agent_params
-        if agent.agent_params and agent.agent_params.get('auto', False):
-            cmd.append('--auto')
-        
-        # Add readonly mode if specified in agent_params
-        if agent.agent_params and agent.agent_params.get('readonly', False):
-            cmd.append('--readonly')
-        
-        self._execute_subprocess(ctx, 'Continue CLI', cmd, agent.timeout_minutes * 60, stdin_input=ctx.prompt)
-
-    def _execute_grok_cli(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
-        """
-        Execute agent using Grok CLI.
-
-        Args:
-            agent: Agent definition
-            ctx: Execution context
-            trigger_data: Trigger event data
-        """
-        # Build prompt
-        ctx.prompt = self._build_prompt(agent, trigger_data, ctx)
-        self._execute_subprocess(ctx, 'Grok CLI', ['grok'], agent.timeout_minutes * 60, stdin_input=ctx.prompt)
 
     def _execute_copilot_cli(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
         """

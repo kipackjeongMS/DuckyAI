@@ -1,25 +1,15 @@
 """Dynamic command runner — turns .github/prompts/ into CLI commands and auto-loads skills."""
 
-import os
+import re
 import subprocess
 import click
 from pathlib import Path
-from ..config import Config
 from ..logger import Logger
+from .vault import find_vault_root
 
 logger = Logger()
 
-VAULT_MARKERS = ['orchestrator.yaml', '.github', 'Home.md']
 
-
-def find_vault_root(start: Path = None) -> Path:
-    """Walk up from start to find the vault root."""
-    current = start or Path.cwd()
-    while current != current.parent:
-        if any((current / m).exists() for m in VAULT_MARKERS):
-            return current
-        current = current.parent
-    return start or Path.cwd()
 
 
 
@@ -53,7 +43,6 @@ def get_available_prompts(vault_root: Path) -> dict:
             if f.name in ('Prompts.md', 'README_PROMPTS.md'):
                 continue
             # Extract abbreviation from name like "Enrich Ingested Content (EIC).md"
-            import re
             abbrev_match = re.search(r'\((\w+)\)', f.stem)
             if abbrev_match:
                 name = abbrev_match.group(1).lower()

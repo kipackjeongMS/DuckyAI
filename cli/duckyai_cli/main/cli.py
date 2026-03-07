@@ -18,25 +18,13 @@ from .template import template_group
 from .trigger import trigger_cli
 from .run import run_command
 from .init import init_vault
-
-
-VAULT_MARKERS = ['orchestrator.yaml', 'Home.md']
+from .vault import find_vault_root
 
 
 def signal_handler(sig, frame):
     """Handle SIGINT (Ctrl+C) gracefully."""
     print("\n\nShutting down DuckyAI...")
     sys.exit(0)
-
-
-def find_vault_root(start: Path = None) -> Path:
-    """Walk up from start to find the vault root."""
-    current = start or Path.cwd()
-    while current != current.parent:
-        if any((current / m).exists() for m in VAULT_MARKERS):
-            return current
-        current = current.parent
-    return start or Path.cwd()
 
 
 def ensure_init(vault_root: Path):

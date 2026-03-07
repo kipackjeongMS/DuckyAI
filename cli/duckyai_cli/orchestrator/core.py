@@ -1136,7 +1136,7 @@ class Orchestrator:
         from datetime import datetime
         from .models import AgentDefinition
 
-        # Create a temporary agent definition with claude_code executor
+        # Create a temporary agent definition with the configured executor
         agent = AgentDefinition(
             name="One-time prompt",
             system_prompt=system_prompt,
@@ -1148,7 +1148,7 @@ class Orchestrator:
             trigger_pattern="",
             trigger_event="manual",
             prompt_body=prompt,
-            executor="claude_code",  # Always use claude
+            executor=self.config.get("defaults.executor", "copilot_cli"),
             max_parallel=1,
             timeout_minutes=30,
             output_path="",
@@ -1156,7 +1156,7 @@ class Orchestrator:
             task_create=False  # Don't create task files for one-time prompts
         )
 
-        logger.info(f"Executing one-time prompt with Claude (session_id: {session_id or 'none'}, auto resume/create)")
+        logger.info(f"Executing one-time prompt (session_id: {session_id or 'none'}, auto resume/create)")
 
         # Create event data with session_id
         event_data = {

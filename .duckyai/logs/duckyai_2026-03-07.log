@@ -1064,3 +1064,61 @@ PKM CLI Log - Started at 2026-03-07T01:43:39.151482
 [2026-03-07 09:21:31] [MainThread] INFO: 
 [bold]Raw YAML:[/bold]
 [2026-03-07 09:21:31] [MainThread] INFO: <rich.syntax.Syntax object at 0x104ba3080>
+[2026-03-07 09:24:47] [MainThread] INFO: Loading 4 agents from orchestrator.yaml
+[2026-03-07 09:24:47] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.md', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:24:47] [MainThread] INFO: Loaded agent: EIC (Enrich Ingested Content (EIC))
+[2026-03-07 09:24:47] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.pdf|00-Inbox/*.docx|00-Inbox/*.doc|00-Inbox/*.txt', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:24:47] [MainThread] INFO: Loaded agent: EDM (Extract Document to Markdown (EDM))
+[2026-03-07 09:24:47] [MainThread] DEBUG: Manual agent: no file trigger (input_type=manual)
+[2026-03-07 09:24:47] [MainThread] INFO: Loaded agent: GDR (Generate Daily Roundup (GDR))
+[2026-03-07 09:24:47] [MainThread] DEBUG: Derived trigger: pattern='04-Periodic/Daily/*.md', event='created' from input_paths=['04-Periodic/Daily'], input_type=new_file
+[2026-03-07 09:24:47] [MainThread] INFO: Loaded agent: TIU (Topic Index Update (TIU))
+[2026-03-07 09:24:47] [MainThread] INFO: Total agents loaded: 4
+[2026-03-07 09:24:47] [MainThread] DEBUG: No pollers configuration found
+[2026-03-07 09:24:47] [MainThread] INFO: Orchestrator initialized for vault: /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/DuckyAI
+[2026-03-07 09:24:47] [MainThread] INFO: Loaded 4 agents
+[2026-03-07 09:24:47] [MainThread] INFO: Loaded 0 poller(s)
+[2026-03-07 09:24:47] [MainThread] INFO: <rich.table.Table object at 0x103ee4e60>
+[2026-03-07 09:24:47] [MainThread] INFO: <rich.panel.Panel object at 0x103734980>
+[2026-03-07 09:24:47] [MainThread] INFO: 
+[bold]Raw YAML:[/bold]
+[2026-03-07 09:25:12] [MainThread] INFO: Loading 4 agents from orchestrator.yaml
+[2026-03-07 09:25:12] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.md', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:25:12] [MainThread] INFO: Loaded agent: EIC (Enrich Ingested Content (EIC))
+[2026-03-07 09:25:12] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.pdf|00-Inbox/*.docx|00-Inbox/*.doc|00-Inbox/*.txt', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:25:12] [MainThread] INFO: Loaded agent: EDM (Extract Document to Markdown (EDM))
+[2026-03-07 09:25:12] [MainThread] DEBUG: Manual agent: no file trigger (input_type=manual)
+[2026-03-07 09:25:12] [MainThread] INFO: Loaded agent: GDR (Generate Daily Roundup (GDR))
+[2026-03-07 09:25:12] [MainThread] DEBUG: Derived trigger: pattern='04-Periodic/Daily/*.md', event='created' from input_paths=['04-Periodic/Daily'], input_type=new_file
+[2026-03-07 09:25:12] [MainThread] INFO: Loaded agent: TIU (Topic Index Update (TIU))
+[2026-03-07 09:25:12] [MainThread] INFO: Total agents loaded: 4
+[2026-03-07 09:25:12] [MainThread] DEBUG: No pollers configuration found
+[2026-03-07 09:25:12] [MainThread] INFO: Orchestrator initialized for vault: /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/DuckyAI
+[2026-03-07 09:25:12] [MainThread] INFO: Loaded 4 agents
+[2026-03-07 09:25:12] [MainThread] INFO: Loaded 0 poller(s)
+[2026-03-07 09:25:12] [MainThread] INFO: <rich.panel.Panel object at 0x103e64f80>
+[2026-03-07 09:25:12] [MainThread] INFO: 
+[bold]Available Agents:[/bold]
+[2026-03-07 09:25:12] [MainThread] INFO:   • [EIC] Enrich Ingested Content (EIC)
+    Category: workflow
+[2026-03-07 09:25:12] [MainThread] INFO:   • [EDM] Extract Document to Markdown (EDM)
+    Category: ingestion
+[2026-03-07 09:25:12] [MainThread] INFO:   • [GDR] Generate Daily Roundup (GDR)
+    Category: research
+[2026-03-07 09:25:12] [MainThread] INFO:   • [TIU] Topic Index Update (TIU)
+    Category: workflow
+[2026-03-07 09:42:31] [MainThread] INFO: Loading 4 agents from orchestrator.yaml
+[2026-03-07 09:42:31] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.md', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:42:31] [MainThread] INFO: Loaded agent: EIC (Enrich Ingested Content (EIC))
+[2026-03-07 09:42:31] [MainThread] DEBUG: Derived trigger: pattern='00-Inbox/*.pdf|00-Inbox/*.docx|00-Inbox/*.doc|00-Inbox/*.txt', event='created' from input_paths=['00-Inbox'], input_type=new_file
+[2026-03-07 09:42:31] [MainThread] INFO: Loaded agent: EDM (Extract Document to Markdown (EDM))
+[2026-03-07 09:42:31] [MainThread] DEBUG: Manual agent: no file trigger (input_type=manual)
+[2026-03-07 09:42:31] [MainThread] INFO: Loaded agent: GDR (Generate Daily Roundup (GDR))
+[2026-03-07 09:42:31] [MainThread] DEBUG: Derived trigger: pattern='04-Periodic/Daily/*.md', event='created' from input_paths=['04-Periodic/Daily'], input_type=new_file
+[2026-03-07 09:42:31] [MainThread] INFO: Loaded agent: TIU (Topic Index Update (TIU))
+[2026-03-07 09:42:31] [MainThread] INFO: Total agents loaded: 4
+[2026-03-07 09:42:31] [MainThread] DEBUG: No pollers configuration found
+[2026-03-07 09:42:31] [MainThread] INFO: Orchestrator initialized for vault: /Users/kipackjeong/Library/CloudStorage/OneDrive-Personal/CloudProjects/AI4PKMWorkspace/DuckyAI
+[2026-03-07 09:42:31] [MainThread] INFO: Loaded 4 agents
+[2026-03-07 09:42:31] [MainThread] INFO: Loaded 0 poller(s)
+[2026-03-07 09:42:31] [MainThread] INFO: <rich.table.Table object at 0x10040c770>

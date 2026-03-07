@@ -1,0 +1,69 @@
+ev2_api:
+  base_url: "https://azureservicedeploy.msft.net/api"
+  api_version: "2016-07-01"
+  resource_id: "https://azureservicedeploy.msft.net"
+  scope: "https://azureservicedeploy.msft.net/Rollouts.ReadWrite.User"
+  service_identifier: "45a7d954-eede-467d-b4f9-1f77feeec23c"
+  rollout_lookback_days: 21
+
+auth:
+  client_id: "6c8b7f22-f247-4a85-8024-6f6a3373e01f"
+  authority: "https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47"
+
+service_groups:
+  - "Microsoft.Azure.AppConfiguration.ACSAgent"
+  - "Microsoft.Azure.AppConfiguration.AppConfigService"
+  - "Microsoft.Azure.AppConfiguration.GenevaAction"
+  - "Microsoft.Azure.AppConfiguration.Infrastructure"
+  - "Microsoft.Azure.AppConfiguration.Notification"
+  - "Microsoft.Azure.AppConfiguration.Patch"
+  - "Microsoft.Azure.AppConfiguration.Replication"
+  - "Microsoft.Azure.AppConfiguration.ResourceProvider"
+  - "Microsoft.Azure.AppConfiguration.RPAgent"
+  - "Microsoft.Azure.AppConfiguration.Runner"
+  - "Microsoft.Azure.AppConfiguration.Statistics"
+
+stages:
+  - name: "Stage 1"
+    regions:
+      - "East US 2 EUAP"
+
+  - name: "Stage 2"
+    regions:
+      - "Canada Central"
+      - "France Central"
+      - "West Central US"
+      - "Mexico Central"
+
+  - name: "Stage 3"
+    regions:
+      - "Australia East"
+      - "Brazil South"
+      - "Canada East"
+      - "Central India"
+      - "Central US"
+      - "East Asia"
+      - "East US"
+      - "East US 2"
+      - "Germany West Central"
+      - "Israel Central"
+      - "Italy North"
+      - "Japan East"
+      - "Japan West"
+      - "Korea Central"
+      - "North Central US"
+      - "North Europe"
+      - "Norway East"
+      - "Poland Central"
+      - "South Africa North"
+      - "South Central US"
+      - "Southeast Asia"
+      - "Sweden Central"
+      - "Switzerland North"
+      - "UK South"
+      - "West Europe"
+      - "West US 2"
+
+  - name: "Stage 4"
+    regions:
+      - "REMAINING_REGIONS"
