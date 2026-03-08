@@ -10,6 +10,10 @@ import httpx
 
 from .auth import Ev2Auth
 from .config import AppConfig, StageConfig
+
+import logging
+
+logger = logging.getLogger("release-dashboard.ev2_client")
 from .models import (
     ActionDetail,
     ActionOperationInfo,
@@ -29,6 +33,26 @@ from .models import (
 _TIMEOUT = 30.0
 
 
+def _pascal_to_camel(key: str) -> str:
+    """Convert a PascalCase key to camelCase."""
+    if not key:
+        return key
+    return key[0].lower() + key[1:]
+
+
+def _normalize_keys(obj: Any) -> Any:
+    """Recursively convert PascalCase dict keys to camelCase.
+
+    The EV2 API returns PascalCase keys (e.g. ``RolloutId``, ``Status``)
+    but the rest of this module expects camelCase (``rolloutId``, ``status``).
+    """
+    if isinstance(obj, dict):
+        return {_pascal_to_camel(k): _normalize_keys(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_normalize_keys(item) for item in obj]
+    return obj
+
+
 class Ev2Client:
     """HTTP client for the EV2 Rollout Infrastructure API."""
 
@@ -46,14 +70,18 @@ class Ev2Client:
         token = await self._auth.get_token()
         headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
         url = f"{self._base}{path}"
+        logger.debug("GET %s params=%s", url, params)
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.get(url, headers=headers, params=params)
             if not resp.is_success:
                 body = resp.text
+                logger.error("EV2 API error %d: %s", resp.status_code, body[:200])
                 raise RuntimeError(f"EV2 API error {resp.status_code}: {body[:500]}")
-            return resp.json()
+            logger.debug("GET %s → %d", path, resp.status_code)
+            return _normalize_keys(resp.json())
 
     async def list_rollouts(self, service_group: str, start_from: datetime, start_to: datetime) -> list[dict]:
+        logger.info("list_rollouts sg=%s from=%s to=%s", service_group, start_from.isoformat(), start_to.isoformat())
         params = {
             "servicegroupname": service_group,
             "startTimeFrom": start_from.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
@@ -61,7 +89,14 @@ class Ev2Client:
             "api-version": self._version,
         }
         data = await self._get("/rollouts", params)
-        return data if isinstance(data, list) else data.get("value", [])
+        results = data if isinstance(data, list) else data.get("value", [])
+        logger.info("list_rollouts sg=%s returned %d rollouts", service_group, len(results))
+        if not results:
+            logger.warning("list_rollouts sg=%s returned EMPTY for range %s → %s", service_group, start_from.isoformat(), start_to.isoformat())
+        else:
+            ids = [r.get("rolloutId", "?") for r in results[:5]]
+            logger.debug("list_rollouts sg=%s first rollout IDs: %s", service_group, ids)
+        return results
 
     async def get_rollout(self, rollout_id: str, service_group: str) -> dict:
         params = {
@@ -160,6 +195,39 @@ class Ev2Client:
             ),
             resource_groups=resource_groups,
         )
+
+    # ------------------------------------------------------------------
+    # Time-range resolution
+    # ------------------------------------------------------------------
+
+    def _resolve_time_range(
+        self,
+        lookback_days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> tuple[datetime, datetime]:
+        """Convert optional start_date/end_date/lookback_days into a (start, end) UTC pair.
+
+        Priority: explicit dates > lookback_days > config default.
+        Accepts date strings in YYYY-MM-DD format.
+        """
+        now = datetime.now(timezone.utc)
+
+        if start_date:
+            start_from = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        elif lookback_days:
+            start_from = now - timedelta(days=lookback_days)
+        else:
+            start_from = now - timedelta(days=self._config.ev2_api.rollout_lookback_days)
+
+        if end_date:
+            start_to = datetime.strptime(end_date, "%Y-%m-%d").replace(
+                hour=23, minute=59, second=59, tzinfo=timezone.utc,
+            )
+        else:
+            start_to = now
+
+        return start_from, start_to
 
     # ------------------------------------------------------------------
     # Business logic (mirrors RolloutService.cs)
@@ -269,14 +337,18 @@ class Ev2Client:
     # Public high-level methods (exposed as MCP tools)
     # ------------------------------------------------------------------
 
-    async def get_service_groups(self) -> list[ServiceGroupDisplayInfo]:
+    async def get_service_groups(
+        self,
+        lookback_days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> list[ServiceGroupDisplayInfo]:
         """Fetch all service groups with their recent rollouts — mirrors the main endpoint."""
-        now = datetime.now(timezone.utc)
-        start_from = now - timedelta(days=self._config.ev2_api.rollout_lookback_days)
+        start_from, start_to = self._resolve_time_range(lookback_days, start_date, end_date)
         results: list[ServiceGroupDisplayInfo] = []
 
         for sg_name in self._config.service_groups:
-            raw_rollouts = await self.list_rollouts(sg_name, start_from, now)
+            raw_rollouts = await self.list_rollouts(sg_name, start_from, start_to)
             rollouts: list[RolloutDisplayInfo] = []
             for raw in raw_rollouts:
                 display = await self._build_rollout_display(raw, sg_name)
@@ -288,13 +360,15 @@ class Ev2Client:
         return results
 
     async def get_rollouts_for_group(
-        self, service_group: str, lookback_days: int | None = None,
+        self,
+        service_group: str,
+        lookback_days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
     ) -> list[RolloutDisplayInfo]:
         """Fetch rollouts for a single service group."""
-        days = lookback_days or self._config.ev2_api.rollout_lookback_days
-        now = datetime.now(timezone.utc)
-        start_from = now - timedelta(days=days)
-        raw_rollouts = await self.list_rollouts(service_group, start_from, now)
+        start_from, start_to = self._resolve_time_range(lookback_days, start_date, end_date)
+        raw_rollouts = await self.list_rollouts(service_group, start_from, start_to)
 
         rollouts: list[RolloutDisplayInfo] = []
         for raw in raw_rollouts:

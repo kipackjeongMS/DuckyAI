@@ -20,7 +20,7 @@ logger = Logger()
 
 class Orchestrator:
     """
-    Main orchestrator for multi-agent DuckyAI system.
+    Main orchestrator for DuckyAI system.
 
     Coordinates file monitoring, agent matching, and task execution.
     """

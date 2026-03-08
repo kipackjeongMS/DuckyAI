@@ -4,6 +4,11 @@
       "type": "stdio",
       "command": "node",
       "args": ["${workspaceFolder}/mcp-server/dist/index.js"]
+    },
+    "workiq": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@microsoft/workiq", "mcp"]
     }
   }
 }

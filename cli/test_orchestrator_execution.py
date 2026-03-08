@@ -754,8 +754,8 @@ class OrchestratorExecutionTestSuite:
         test_dir = self.vault_path / "Journals"
         test_dir.mkdir(parents=True, exist_ok=True)
         
-        test_file = test_dir / f"test_multi_agent_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        test_file.write_text("# Test Multi Agent\n\nThis might match multiple agents.")
+        test_file = test_dir / f"test_orchestrator_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        test_file.write_text("# Test Orchestrator\n\nThis might match multiple agents.")
         
         # Wait for processing
         time.sleep(5)

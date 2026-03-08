@@ -43,20 +43,37 @@ def ensure_init(vault_root: Path):
 
 
 def get_mcp_config(vault_root: Path) -> str:
-    """Build MCP config JSON for the DuckyAI vault MCP server."""
+    """Build MCP config JSON for DuckyAI MCP servers."""
+    config = {"mcpServers": {}}
+
+    # Vault MCP server (TypeScript/Node)
     mcp_index = vault_root / 'mcp-server' / 'dist' / 'index.js'
-    if not mcp_index.exists():
-        return None
-    config = {
-        "mcpServers": {
-            "duckyai-vault": {
-                "command": "node",
-                "args": [str(mcp_index)],
-                "env": {"DUCKYAI_VAULT_ROOT": str(vault_root)}
+    if mcp_index.exists():
+        config["mcpServers"]["duckyai-vault"] = {
+            "command": "node",
+            "args": [str(mcp_index)],
+            "env": {"DUCKYAI_VAULT_ROOT": str(vault_root)}
+        }
+
+    # Release Dashboard MCP server (Python)
+    rd_pkg = vault_root / 'mcp-server' / 'release-dashboard' / 'src' / 'release_dashboard_mcp' / 'server.py'
+    if rd_pkg.exists():
+        rd_config = vault_root / 'mcp-server' / 'release-dashboard' / 'config.yaml'
+        config["mcpServers"]["release-dashboard"] = {
+            "command": "release-dashboard-mcp",
+            "args": [],
+            "env": {
+                "RELEASE_DASHBOARD_CONFIG": str(rd_config),
             }
         }
+
+    # Microsoft WorkIQ MCP server (M365 Copilot data)
+    config["mcpServers"]["workiq"] = {
+        "command": "npx",
+        "args": ["-y", "@microsoft/workiq", "mcp"]
     }
-    return json.dumps(config)
+
+    return json.dumps(config) if config["mcpServers"] else None
 
 
 def launch_copilot(vault_root: Path, prompt: str = None, interactive_prompt: str = None,

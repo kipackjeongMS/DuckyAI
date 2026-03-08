@@ -155,7 +155,7 @@ Second agent prompt.
             assert status['agents_loaded'] == 2
 
             # Create trigger file
-            test_file = test_dir / "multi_agent_test.md"
+            test_file = test_dir / "orchestrator_test.md"
             test_file.write_text("# Test", encoding='utf-8')
 
             # Wait for processing
