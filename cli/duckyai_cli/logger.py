@@ -36,9 +36,10 @@ class Logger:
         """Read logs directory from orchestrator.yaml without importing Config.
 
         Returns the configured ``orchestrator.logs_dir`` value, or the default
-        ``.duckyai/logs`` when the file is missing or unparseable.
+        ``~/.duckyai/vaults/{vault_id}/logs`` when the file is missing or unparseable.
         """
-        default = os.path.join(".duckyai", "logs")
+        vault_id = "default"
+        default = os.path.join(str(Path.home()), ".duckyai", "vaults", vault_id, "logs")
         try:
             import yaml
             config_path = Path(os.getcwd()) / "orchestrator.yaml"
@@ -46,6 +47,9 @@ class Logger:
                 with config_path.open("r", encoding="utf-8") as fh:
                     data = yaml.safe_load(fh) or {}
                 if isinstance(data, dict):
+                    # Read vault_id for namespacing
+                    vault_id = data.get("id", "default")
+                    default = os.path.join(str(Path.home()), ".duckyai", "vaults", vault_id, "logs")
                     orch = data.get("orchestrator", {})
                     if isinstance(orch, dict):
                         return orch.get("logs_dir", default)
@@ -59,10 +63,10 @@ class Logger:
             return
 
         if log_file is None:
-            project_root = os.getcwd()
-
-            # Read logs directory from config instead of hard-coding
-            logs_dir = os.path.join(project_root, self._read_logs_dir_from_config())
+            # Read logs directory from config (returns absolute path to global dir)
+            logs_dir = self._read_logs_dir_from_config()
+            if not os.path.isabs(logs_dir):
+                logs_dir = os.path.join(os.getcwd(), logs_dir)
 
             # Ensure logs directory exists
             os.makedirs(logs_dir, exist_ok=True)

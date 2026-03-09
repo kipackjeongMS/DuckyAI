@@ -37,7 +37,9 @@ class TaskFileManager:
         else:
             tasks_dir = self.config.get_orchestrator_tasks_dir()
 
-        self.tasks_dir = self.vault_path / tasks_dir
+        # Support both absolute (global ~/.duckyai/) and relative (vault-local) paths
+        tasks_path = Path(tasks_dir)
+        self.tasks_dir = tasks_path if tasks_path.is_absolute() else self.vault_path / tasks_dir
         self.tasks_dir.mkdir(parents=True, exist_ok=True)
 
     def create_task_file(

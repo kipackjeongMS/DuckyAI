@@ -520,23 +520,29 @@ class ExecutionManager:
 
     def _load_system_prompt(self) -> str:
         """
-        Load system prompt from prompts_dir/System Prompt.md if it exists.
+        Load system prompt from playbook's prompts-agent/System Prompt.md.
         
-        Uses prompts_dir from orchestrator_settings or falls back to config.
+        Checks the package .playbook/ first, then falls back to vault-relative prompts_dir.
 
         Returns:
             System prompt content or empty string if not found
         """
-        # Get prompts_dir from orchestrator_settings or fallback to config
-        if self.orchestrator_settings and 'prompts_dir' in self.orchestrator_settings:
-            prompts_dir = self.orchestrator_settings['prompts_dir']
-        else:
-            prompts_dir = self.config.get_orchestrator_prompts_dir()
-        
-        system_prompt_path = self.vault_path / prompts_dir / "System Prompt.md"
+        from ..markdown_utils import extract_body
+
+        # Check playbook (system) path first
+        playbook_dir = Path(__file__).parent.parent / '.playbook' / 'prompts-agent'
+        system_prompt_path = playbook_dir / "System Prompt.md"
+
+        if not system_prompt_path.exists():
+            # Fallback to vault-relative prompts_dir
+            if self.orchestrator_settings and 'prompts_dir' in self.orchestrator_settings:
+                prompts_dir = self.orchestrator_settings['prompts_dir']
+            else:
+                prompts_dir = self.config.get_orchestrator_prompts_dir()
+            system_prompt_path = self.vault_path / prompts_dir / "System Prompt.md"
+
         if system_prompt_path.exists():
             try:
-                from ..markdown_utils import extract_body
                 content = system_prompt_path.read_text(encoding='utf-8')
                 return extract_body(content)
             except Exception as e:
@@ -634,6 +640,9 @@ class ExecutionManager:
             prompt += "\n# Agent Parameters\n"
             for key, value in agent.agent_params.items():
                 prompt += f"- {key}: {value}\n"
+
+        # Skills are auto-discovered by CLI executors from .github/skills/
+        # (built-in playbook skills are symlinked there by ensure_init)
 
         return prompt
 

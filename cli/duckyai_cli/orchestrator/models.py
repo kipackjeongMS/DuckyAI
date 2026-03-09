@@ -97,7 +97,7 @@ class ExecutionContext:
 
     # File paths
     log_file: Optional[Path] = None
-    task_file: Optional[Path] = None  # Path to task tracking file in .duckyai/tasks/
+    task_file: Optional[Path] = None  # Path to task tracking file in ~/.duckyai/vaults/{id}/tasks/
 
     system_prompt: Optional[str] = None
     system_prompt_file: Optional[Path] = None

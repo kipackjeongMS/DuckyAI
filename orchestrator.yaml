@@ -1,11 +1,8 @@
 version: "0.0.18"
 orchestrator:
   prompts_dir: .github/prompts-agent
-  tasks_dir: .duckyai/tasks
-  logs_dir: .duckyai/logs
   skills_dir: .github/skills
   bases_dir: .github/bases
-  chat_history_dir: .duckyai/history
   max_concurrent: 3
   poll_interval: 1
   file_extensions:
@@ -48,6 +45,12 @@ nodes:
     cron: 30 18 * * 5
     input_path: 04-Periodic/Daily
     output_path: 03-Knowledge/Topics
+    enabled: true
+  - type: agent
+    name: Teams Chat Summary (TCS)
+    cron: "0 * * * *"
+    output_path: 04-Periodic/Daily
+    output_type: update_file
     enabled: true
 id: duckyai_vault
 name: duckyai_vault

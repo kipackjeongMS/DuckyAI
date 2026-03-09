@@ -1653,3 +1653,1093 @@ azure.identity._exceptions.CredentialUnavailableError: VisualStudioCodeCredentia
 2026-03-07 15:58:24,062 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
 2026-03-07 15:58:24,141 [DEBUG] asyncio: Using selector: KqueueSelector
 2026-03-07 15:58:24,151 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-07 15:25:58,720 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-07 15:25:58,727 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-07 15:25:58,728 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-07 15:25:58,728 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-07 15:25:58,728 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-07 15:25:58,728 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-07 15:25:58,729 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-07 15:25:58,729 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-07 15:25:58,729 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-07 15:25:58,921 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-07 15:27:53,904 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-07 15:27:53,907 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-07 15:27:53,907 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-07 15:27:53,908 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-07 15:27:53,908 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-07 15:27:53,908 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-07 15:27:53,908 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-07 15:27:53,909 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-07 15:27:53,909 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-07 15:27:53,937 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-07 22:01:04,523 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-07 22:01:04,531 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-07 22:01:04,531 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-07 22:01:04,532 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-07 22:01:04,532 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-07 22:01:04,532 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-07 22:01:04,533 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-07 22:01:04,533 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-07 22:01:04,533 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-07 22:01:04,616 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-07 22:01:04,626 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-07 22:01:04,780 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000017707F1F4D0>
+2026-03-07 22:01:04,781 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-07 22:01:04,781 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-07 22:01:04,782 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 22:01:07,023 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000017707F1F610>
+2026-03-07 22:01:07,024 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-07 22:01:07,024 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-07 22:01:07,024 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 22:03:35,328 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-07 22:03:35,331 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-07 22:03:35,331 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-07 22:03:35,332 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-07 22:03:35,332 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-07 22:03:35,332 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-07 22:03:35,332 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-07 22:03:35,333 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-07 22:03:35,333 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-07 22:03:35,365 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-07 22:22:21,394 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-07 22:22:21,398 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-07 22:22:21,398 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-07 22:22:21,399 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-07 22:22:21,399 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-07 22:22:21,399 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-07 22:22:21,399 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-07 22:22:21,400 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-07 22:22:21,400 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-07 22:22:21,439 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-07 22:22:21,451 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-07 22:22:22,459 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000027E877DB4D0>
+2026-03-07 22:22:22,460 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-07 22:22:22,460 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-07 22:22:22,461 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 22:22:23,589 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-07 22:22:23,592 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-07 22:22:23,593 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-07 22:22:23,593 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-07 22:22:23,594 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-07 22:22:23,594 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-07 22:22:23,594 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-07 22:22:23,595 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-07 22:22:23,595 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-07 22:22:23,662 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-07 22:22:23,677 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-07 22:22:24,132 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002B0D5E3B4D0>
+2026-03-07 22:22:24,132 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-07 22:22:24,132 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-07 22:22:24,133 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 22:22:24,288 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002B0D5E3B610>
+2026-03-07 22:22:24,289 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-07 22:22:24,289 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-07 22:22:24,289 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 22:24:17,269 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002B0D5D07E10>
+2026-03-07 22:24:17,270 [INFO] mcp.server.lowlevel.server: Processing request of type CallToolRequest
+2026-03-07 22:24:17,270 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type CallToolRequest
+2026-03-07 22:24:17,272 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 22:24:17,283 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002B0D5D076F0>
+2026-03-07 22:24:17,283 [INFO] mcp.server.lowlevel.server: Processing request of type CallToolRequest
+2026-03-07 22:24:17,284 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type CallToolRequest
+2026-03-07 22:24:17,284 [INFO] release-dashboard: get_service_groups called — lookback=10 start= end=
+2026-03-07 22:24:17,284 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ACSAgent from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:17,285 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:23,547 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:23,547 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:23,547 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:23,547 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.ACSAgent', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:24,233 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:24,327 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D5F6B230>
+2026-03-07 22:24:24,327 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5EA63C0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:24,849 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D5F434D0>
+2026-03-07 22:24:24,851 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:24,852 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:24,852 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:24,852 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:24,852 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:25,109 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'e2ff8f22-6e6a-44e1-a9ac-0c4f95b0b107'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: B66D99F82E694B518E666F7D1D7901A8 Ref B: CO6AA3150220031 Ref C: 2026-03-08T07:24:24Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:24 GMT')])
+2026-03-07 22:24:25,109 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.ACSAgent&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:25,110 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:25,110 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:25,111 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:25,111 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:25,286 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:25,287 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:25,287 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ACSAgent returned 0 rollouts
+2026-03-07 22:24:25,290 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.AppConfigService from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:25,291 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:27,159 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:27,159 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:27,159 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:27,159 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.AppConfigService', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:27,188 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:27,193 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64B1A90>
+2026-03-07 22:24:27,193 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5EA6570> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:27,527 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D6009CD0>
+2026-03-07 22:24:27,528 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:27,529 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:27,529 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:27,529 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:27,529 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:27,810 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'0ef63c82-2f0c-4320-9612-56583339f0de'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 8087459070574593A3B49CB29A933335 Ref B: MWH011020806023 Ref C: 2026-03-08T07:24:27Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:27 GMT')])
+2026-03-07 22:24:27,810 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.AppConfigService&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:27,811 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:27,811 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:27,813 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:27,813 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:27,818 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:27,818 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:27,818 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.AppConfigService returned 0 rollouts
+2026-03-07 22:24:27,821 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.GenevaAction from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:27,822 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:29,551 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:29,551 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:29,551 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:29,551 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.GenevaAction', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:29,578 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:29,582 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D6009F30>
+2026-03-07 22:24:29,583 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5FC8BB0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:29,790 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D5DBF410>
+2026-03-07 22:24:29,792 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:29,793 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:29,793 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:29,793 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:29,793 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:30,116 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'aa23df48-4630-4b02-99e0-f910a63c3b5b'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 21B9F7DF43FA4FE78D068F65A85B5EDE Ref B: MWH011020806054 Ref C: 2026-03-08T07:24:29Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:29 GMT')])
+2026-03-07 22:24:30,116 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.GenevaAction&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:30,116 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:30,117 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:30,118 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:30,118 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:30,123 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:30,124 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:30,124 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.GenevaAction returned 0 rollouts
+2026-03-07 22:24:30,126 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Infrastructure from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:30,127 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:32,143 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:32,143 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:32,143 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:32,143 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Infrastructure', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:32,172 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:32,177 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D6059BF0>
+2026-03-07 22:24:32,177 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5FC9230> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:32,208 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D6059F20>
+2026-03-07 22:24:32,210 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:32,210 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:32,210 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:32,210 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:32,211 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:32,347 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'0f02eda4-1383-4fb4-9fc0-16775fced027'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 488491176D5946168995880E7F0E6861 Ref B: CO6AA3150219027 Ref C: 2026-03-08T07:24:32Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:31 GMT')])
+2026-03-07 22:24:32,348 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Infrastructure&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:32,348 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:32,348 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:32,349 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:32,349 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:32,355 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:32,356 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:32,356 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Infrastructure returned 0 rollouts
+2026-03-07 22:24:32,359 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Notification from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:32,359 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:34,248 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:34,249 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:34,249 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:34,249 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Notification', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:34,275 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:34,279 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D6037450>
+2026-03-07 22:24:34,279 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5F23D40> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:34,457 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D6037350>
+2026-03-07 22:24:34,459 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:34,459 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:34,459 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:34,459 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:34,459 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:34,765 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'932c76a5-38b1-4ea2-b1bf-8ac8fa526937'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 49AF1D8F8A48442590D7D446E50DB42A Ref B: MWH011020807029 Ref C: 2026-03-08T07:24:34Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:34 GMT')])
+2026-03-07 22:24:34,765 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Notification&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:34,765 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:34,765 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:34,767 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:34,767 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:34,772 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:34,772 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:34,772 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Notification returned 0 rollouts
+2026-03-07 22:24:34,775 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Patch from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:34,776 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:36,648 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:36,648 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:36,649 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:36,649 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Patch', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:36,677 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:36,697 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64B8B90>
+2026-03-07 22:24:36,697 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D6015310> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:37,009 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64B8E60>
+2026-03-07 22:24:37,011 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:37,012 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:37,012 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:37,012 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:37,012 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:37,336 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'c11d4240-052e-493f-8309-40d938296411'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 434A9076A69F4132BC07C6AECFC9FE87 Ref B: CO6AA3150218023 Ref C: 2026-03-08T07:24:37Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:36 GMT')])
+2026-03-07 22:24:37,337 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Patch&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:37,337 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:37,337 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:37,338 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:37,339 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:37,344 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:37,344 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:37,344 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Patch returned 0 rollouts
+2026-03-07 22:24:37,347 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Replication from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:37,348 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:39,211 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:39,212 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:39,212 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:39,212 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Replication', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:39,239 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:39,243 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D604B930>
+2026-03-07 22:24:39,243 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5E1A5D0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:39,272 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D604BA10>
+2026-03-07 22:24:39,274 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:39,274 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:39,274 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:39,275 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:39,275 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:39,511 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'3975630b-1f03-40f0-86d1-790c9753fcd2'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: B057E24C69CB4A368C88659420151E53 Ref B: MWH011020807025 Ref C: 2026-03-08T07:24:39Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:38 GMT')])
+2026-03-07 22:24:39,512 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Replication&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:39,512 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:39,512 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:39,513 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:39,513 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:39,519 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:39,519 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:39,519 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Replication returned 0 rollouts
+2026-03-07 22:24:39,523 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ResourceProvider from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:39,524 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:41,399 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:41,399 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:41,399 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:41,399 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.ResourceProvider', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:41,426 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:41,430 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D5FE6750>
+2026-03-07 22:24:41,430 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5E965B0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:41,479 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D5FADF10>
+2026-03-07 22:24:41,481 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:41,481 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:41,481 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:41,482 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:41,482 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:41,744 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'eee94da6-6a22-4491-97ea-fbe2ba47bb8c'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 601CA8CE506D42F0A0DB4E3CA902557B Ref B: CO6AA3150220053 Ref C: 2026-03-08T07:24:41Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:40 GMT')])
+2026-03-07 22:24:41,744 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.ResourceProvider&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:41,744 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:41,744 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:41,746 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:41,746 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:41,751 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:41,752 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:41,752 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ResourceProvider returned 0 rollouts
+2026-03-07 22:24:41,755 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.RPAgent from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:41,756 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:43,638 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:43,638 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:43,639 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:43,639 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.RPAgent', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:43,666 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:43,671 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D5FAD790>
+2026-03-07 22:24:43,671 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5E97130> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:43,697 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D5EDF8B0>
+2026-03-07 22:24:43,698 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:43,699 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:43,699 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:43,699 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:43,699 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:43,981 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'c9e51f4c-be51-4854-8702-15b5838eda70'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 76317644EC36449B870ED0654F70E256 Ref B: MWH011020807036 Ref C: 2026-03-08T07:24:43Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:43 GMT')])
+2026-03-07 22:24:43,981 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.RPAgent&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:43,981 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:43,981 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:43,982 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:43,983 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:43,987 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:43,988 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:43,988 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.RPAgent returned 0 rollouts
+2026-03-07 22:24:43,990 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Runner from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:43,991 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:45,885 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:45,885 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:45,885 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:45,885 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Runner', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:45,912 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:45,916 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D60759C0>
+2026-03-07 22:24:45,916 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5EB7070> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:45,945 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64311D0>
+2026-03-07 22:24:45,947 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:45,947 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:45,947 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:45,948 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:45,948 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:46,196 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'2463c3ef-c50e-431a-817d-fb1eda059885'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 7384E440CC124D38AA6C950CE6B505DB Ref B: CO6AA3150218037 Ref C: 2026-03-08T07:24:45Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:46 GMT')])
+2026-03-07 22:24:46,196 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Runner&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:46,197 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:46,197 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:46,198 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:46,198 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:46,204 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:46,204 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:46,204 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Runner returned 0 rollouts
+2026-03-07 22:24:46,208 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Statistics from=2026-02-26T07:24:17.284239+00:00 to=2026-03-08T07:24:17.284239+00:00
+2026-03-07 22:24:46,208 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:48,101 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:48,102 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:48,102 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:48,102 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Statistics', 'startTimeFrom': '2026-02-26T07:24:17.284239Z', 'startTimeTo': '2026-03-08T07:24:17.284239Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:48,129 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:48,133 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D6431810>
+2026-03-07 22:24:48,134 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5EB7A10> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:48,163 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D6028320>
+2026-03-07 22:24:48,165 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:48,165 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:48,166 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:48,166 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:48,166 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:48,304 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'bf6a4faf-f650-4ce8-b560-6da94a813688'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 7F36A8CCE57E480C9B58E85C03DC5062 Ref B: CO6AA3150219029 Ref C: 2026-03-08T07:24:48Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:47 GMT')])
+2026-03-07 22:24:48,304 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Statistics&startTimeFrom=2026-02-26T07%3A24%3A17.284239Z&startTimeTo=2026-03-08T07%3A24%3A17.284239Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:48,304 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:48,304 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:48,306 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:48,306 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:48,311 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:48,311 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:48,311 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Statistics returned 0 rollouts
+2026-03-07 22:24:48,314 [INFO] release-dashboard: get_service_groups returned 11 groups
+2026-03-07 22:24:48,316 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 22:24:52,787 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002B0D5DBFD10>
+2026-03-07 22:24:52,787 [INFO] mcp.server.lowlevel.server: Processing request of type CallToolRequest
+2026-03-07 22:24:52,787 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type CallToolRequest
+2026-03-07 22:24:52,787 [INFO] release-dashboard: get_service_groups called — lookback=30 start= end=
+2026-03-07 22:24:52,787 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ACSAgent from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:24:52,788 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:54,692 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:54,692 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:54,692 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:54,692 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.ACSAgent', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:54,719 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:54,774 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64C8D50>
+2026-03-07 22:24:54,774 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5E53230> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:54,801 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64C8C50>
+2026-03-07 22:24:54,803 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:54,803 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:54,803 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:54,803 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:54,803 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:55,020 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'450'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'c0f07b56-fd5c-4cd3-b929-b7947e0225b3'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 857CA80B280D4E1C9BFCC4D2F7769B2A Ref B: MWH011020806029 Ref C: 2026-03-08T07:24:54Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:54 GMT')])
+2026-03-07 22:24:55,020 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.ACSAgent&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:55,020 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:55,020 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:55,021 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:55,022 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:55,027 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:55,027 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:55,027 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ACSAgent returned 1 rollouts
+2026-03-07 22:24:55,028 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ACSAgent first rollout IDs: ['e30b1ec3-0f66-4f3a-9f90-93e7e0ff7dd0']
+2026-03-07 22:24:55,028 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:56,921 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:56,921 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:56,921 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:56,921 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/e30b1ec3-0f66-4f3a-9f90-93e7e0ff7dd0 params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.ACSAgent', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:24:56,948 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:56,956 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64A5860>
+2026-03-07 22:24:56,956 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5E52BA0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:56,985 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64A5D30>
+2026-03-07 22:24:56,987 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:56,987 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:56,987 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:56,987 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:56,987 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:57,278 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'190420'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-northcentral-az02.prod.azureservicedeploy.msft.net/api/rollouts/e30b1ec3-0f66-4f3a-9f90-93e7e0ff7dd0?servicegroupname=Microsoft.Azure.AppConfiguration.ACSAgent&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'0ac8b8e4-54e3-4799-849a-c2b811b1542b'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 578AA27ACB3240FD84B6EE50CEE1B828 Ref B: CO6AA3150217047 Ref C: 2026-03-08T07:24:57Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:56 GMT')])
+2026-03-07 22:24:57,279 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/e30b1ec3-0f66-4f3a-9f90-93e7e0ff7dd0?servicegroupname=Microsoft.Azure.AppConfiguration.ACSAgent&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:24:57,279 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:57,414 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:57,416 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:57,416 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:57,423 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:57,424 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:57,424 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.AppConfigService from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:24:57,425 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:24:59,377 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:24:59,377 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:24:59,377 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:24:59,377 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.AppConfigService', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:24:59,404 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:24:59,408 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64AF830>
+2026-03-07 22:24:59,408 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D64B0190> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:24:59,588 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64AF7D0>
+2026-03-07 22:24:59,589 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:59,590 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:24:59,590 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:24:59,590 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:24:59,590 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:24:59,826 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'458'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'1e0c3e19-2e9d-4674-a689-a879448826db'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 0DC4D27FA4C449B5B81E68FE8B0B9DD1 Ref B: CO6AA3150217025 Ref C: 2026-03-08T07:24:59Z'), (b'Date', b'Sun, 08 Mar 2026 07:24:59 GMT')])
+2026-03-07 22:24:59,826 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.AppConfigService&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:24:59,826 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:24:59,826 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:24:59,828 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:24:59,828 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:24:59,833 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:24:59,833 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:24:59,834 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.AppConfigService returned 1 rollouts
+2026-03-07 22:24:59,834 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.AppConfigService first rollout IDs: ['3483ebe0-8e8f-416f-8cae-28e8ed37ba15']
+2026-03-07 22:24:59,834 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:01,732 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:01,733 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:01,733 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:01,733 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/3483ebe0-8e8f-416f-8cae-28e8ed37ba15 params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.AppConfigService', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:01,760 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:01,764 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B0460>
+2026-03-07 22:25:01,764 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5D07820> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:01,809 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B0CD0>
+2026-03-07 22:25:01,811 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:01,811 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:01,811 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:01,811 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:01,811 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:02,115 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'213820'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-northcentral-az02.prod.azureservicedeploy.msft.net/api/rollouts/3483ebe0-8e8f-416f-8cae-28e8ed37ba15?servicegroupname=Microsoft.Azure.AppConfiguration.AppConfigService&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'7c10593d-1fed-469d-ade0-8546f702e2b0'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 3855DE6F16CF47E0881DBC504445D95B Ref B: CO6AA3150220011 Ref C: 2026-03-08T07:25:01Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:01 GMT')])
+2026-03-07 22:25:02,116 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/3483ebe0-8e8f-416f-8cae-28e8ed37ba15?servicegroupname=Microsoft.Azure.AppConfiguration.AppConfigService&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:02,116 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:02,252 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:02,254 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:02,254 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:02,261 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:02,262 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:02,263 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.GenevaAction from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:25:02,263 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:04,199 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:04,199 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:04,200 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:04,200 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.GenevaAction', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:25:04,225 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:04,230 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C2300>
+2026-03-07 22:25:04,230 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D600A2C0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:04,303 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C2030>
+2026-03-07 22:25:04,304 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:04,305 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:04,305 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:04,305 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:04,305 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:04,518 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'56c86bbf-75b1-4ef6-a5ce-b681b36e951b'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: DE1096671CCB4758B2805CAA3E07FDE6 Ref B: CO6AA3150219049 Ref C: 2026-03-08T07:25:04Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:04 GMT')])
+2026-03-07 22:25:04,518 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.GenevaAction&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:25:04,518 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:04,519 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:04,520 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:04,520 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:04,525 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:04,526 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:04,526 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.GenevaAction returned 0 rollouts
+2026-03-07 22:25:04,529 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Infrastructure from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:25:04,529 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:06,526 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:06,526 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:06,526 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:06,526 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Infrastructure', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:25:06,553 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:06,558 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C2F80>
+2026-03-07 22:25:06,558 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D5DBFBF0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:06,632 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C2350>
+2026-03-07 22:25:06,633 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:06,634 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:06,634 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:06,634 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:06,634 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:06,787 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'456'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'5da1f1e7-39ec-4e7a-ba4e-2bca16c1ce54'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 8FA231980AD246079D0F052D2C0AF6C0 Ref B: MWH011020807060 Ref C: 2026-03-08T07:25:06Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:06 GMT')])
+2026-03-07 22:25:06,787 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Infrastructure&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:25:06,787 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:06,787 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:06,789 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:06,789 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:06,795 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:06,795 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:06,796 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Infrastructure returned 1 rollouts
+2026-03-07 22:25:06,796 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Infrastructure first rollout IDs: ['8d7f7d85-b7ce-4469-a864-ac7ec0a9b2af']
+2026-03-07 22:25:06,796 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:08,752 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:08,752 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:08,752 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:08,752 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/8d7f7d85-b7ce-4469-a864-ac7ec0a9b2af params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Infrastructure', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:08,779 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:08,784 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C32F0>
+2026-03-07 22:25:08,784 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D6053410> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:08,814 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C2EE0>
+2026-03-07 22:25:08,816 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:08,816 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:08,816 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:08,816 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:08,817 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:09,451 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'909861'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-northcentral-az02.prod.azureservicedeploy.msft.net/api/rollouts/8d7f7d85-b7ce-4469-a864-ac7ec0a9b2af?servicegroupname=Microsoft.Azure.AppConfiguration.Infrastructure&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'2ab405ec-b233-4418-9b6d-13d8ed703f0a'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 406298B69D1446BCACF7EAEC498B383B Ref B: CO6AA3150218025 Ref C: 2026-03-08T07:25:08Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:08 GMT')])
+2026-03-07 22:25:09,451 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/8d7f7d85-b7ce-4469-a864-ac7ec0a9b2af?servicegroupname=Microsoft.Azure.AppConfiguration.Infrastructure&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:09,451 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:09,670 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:09,671 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:09,671 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:09,690 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:09,691 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:09,696 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Notification from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:25:09,697 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:11,667 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:11,667 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:11,667 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:11,667 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Notification', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:25:11,693 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:11,697 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B15E0>
+2026-03-07 22:25:11,697 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D605A360> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:12,005 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B1540>
+2026-03-07 22:25:12,006 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:12,007 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:12,007 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:12,007 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:12,007 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:12,219 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'454'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'cc4410e5-bb20-4e52-9798-77ffd951e630'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: BCD5C406CB3542178420F852360CC9BC Ref B: MWH011020807060 Ref C: 2026-03-08T07:25:12Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:11 GMT')])
+2026-03-07 22:25:12,219 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Notification&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:25:12,219 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:12,220 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:12,221 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:12,221 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:12,226 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:12,226 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:12,226 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Notification returned 1 rollouts
+2026-03-07 22:25:12,227 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Notification first rollout IDs: ['dc7d5274-9526-4a1f-8167-e2ee138b04f9']
+2026-03-07 22:25:12,227 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:14,139 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:14,139 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:14,139 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:14,139 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/dc7d5274-9526-4a1f-8167-e2ee138b04f9 params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Notification', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:14,167 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:14,172 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B3BB0>
+2026-03-07 22:25:14,172 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D6059E10> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:14,288 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B3FC0>
+2026-03-07 22:25:14,290 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:14,290 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:14,290 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:14,290 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:14,290 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:14,617 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'166101'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-northcentral-az02.prod.azureservicedeploy.msft.net/api/rollouts/dc7d5274-9526-4a1f-8167-e2ee138b04f9?servicegroupname=Microsoft.Azure.AppConfiguration.Notification&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'3075157f-7618-4fc4-92cf-a1fe77b2e8a6'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 32C436F13C684B4F9D91C26D691D33AD Ref B: MWH011020808062 Ref C: 2026-03-08T07:25:14Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:14 GMT')])
+2026-03-07 22:25:14,618 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/dc7d5274-9526-4a1f-8167-e2ee138b04f9?servicegroupname=Microsoft.Azure.AppConfiguration.Notification&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:14,618 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:14,744 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:14,746 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:14,746 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:14,754 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:14,754 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:14,755 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Patch from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:25:14,755 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:16,746 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:16,746 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:16,746 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:16,746 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Patch', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:25:16,771 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:16,776 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D781A800>
+2026-03-07 22:25:16,776 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D6037B50> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:16,805 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D781A760>
+2026-03-07 22:25:16,806 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:16,807 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:16,807 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:16,807 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:16,807 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:17,081 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'447'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'11a9523b-0400-499c-b973-41129f5bbbec'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: B4EA9B21A3B74F0BBEEA970AEF4EB3E5 Ref B: CO6AA3150220009 Ref C: 2026-03-08T07:25:16Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:16 GMT')])
+2026-03-07 22:25:17,082 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Patch&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:25:17,082 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:17,082 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:17,083 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:17,083 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:17,088 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:17,089 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:17,089 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Patch returned 1 rollouts
+2026-03-07 22:25:17,089 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Patch first rollout IDs: ['20577e74-00ac-4257-9d26-dee1c505fc67']
+2026-03-07 22:25:17,090 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:19,013 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:19,013 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:19,013 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:19,013 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/20577e74-00ac-4257-9d26-dee1c505fc67 params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Patch', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:19,039 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:19,043 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D781B200>
+2026-03-07 22:25:19,044 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D64CD650> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:19,070 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D781AC10>
+2026-03-07 22:25:19,072 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:19,073 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:19,073 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:19,073 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:19,073 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:19,467 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'163813'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-southcentral-az01.prod.azureservicedeploy.msft.net/api/rollouts/20577e74-00ac-4257-9d26-dee1c505fc67?servicegroupname=Microsoft.Azure.AppConfiguration.Patch&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'd8a16030-6d25-48c1-b1b9-0ff7188f166b'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 9C5201713BAD459F91D758F573711428 Ref B: MWH011020808025 Ref C: 2026-03-08T07:25:19Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:19 GMT')])
+2026-03-07 22:25:19,467 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/20577e74-00ac-4257-9d26-dee1c505fc67?servicegroupname=Microsoft.Azure.AppConfiguration.Patch&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:19,468 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:19,626 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:19,627 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:19,627 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:19,634 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:19,635 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:19,635 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Replication from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:25:19,636 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:21,582 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:21,582 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:21,582 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:21,582 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Replication', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:25:21,608 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:21,612 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B1A40>
+2026-03-07 22:25:21,612 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D74E0E60> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:21,727 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B3610>
+2026-03-07 22:25:21,729 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:21,729 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:21,729 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:21,730 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:21,730 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:21,985 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'905'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'81da1b12-630b-4b0b-a03e-acdd5991d643'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 158682A9B4004DA89AC72CADDC6FDDC0 Ref B: MWH011020809034 Ref C: 2026-03-08T07:25:21Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:21 GMT')])
+2026-03-07 22:25:21,985 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Replication&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:25:21,985 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:21,985 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:21,987 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:21,987 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:21,992 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:21,992 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:21,992 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Replication returned 2 rollouts
+2026-03-07 22:25:21,992 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Replication first rollout IDs: ['adab5b46-7d1e-4766-b102-ce59209e754b', 'f026a286-5de6-4e90-9663-b6b239904f7f']
+2026-03-07 22:25:21,993 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:23,893 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:23,893 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:23,893 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:23,893 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/adab5b46-7d1e-4766-b102-ce59209e754b params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Replication', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:23,918 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:23,922 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B2D00>
+2026-03-07 22:25:23,922 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D64DFE70> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:23,952 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B24E0>
+2026-03-07 22:25:23,953 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:23,954 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:23,954 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:23,954 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:23,954 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:24,915 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2319928'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-southcentral-az01.prod.azureservicedeploy.msft.net/api/rollouts/adab5b46-7d1e-4766-b102-ce59209e754b?servicegroupname=Microsoft.Azure.AppConfiguration.Replication&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'802eaecf-886b-4095-91d1-a17fa3cc2c76'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: CBE0906BD73A40E78F354514C4E29F6C Ref B: CO6AA3150220051 Ref C: 2026-03-08T07:25:23Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:24 GMT')])
+2026-03-07 22:25:24,915 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/adab5b46-7d1e-4766-b102-ce59209e754b?servicegroupname=Microsoft.Azure.AppConfiguration.Replication&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:24,915 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:25,395 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:25,396 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:25,397 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:25,419 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:25,420 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:25,430 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:27,425 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:27,425 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:27,425 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:27,425 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/f026a286-5de6-4e90-9663-b6b239904f7f params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Replication', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:27,451 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:27,471 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D781B250>
+2026-03-07 22:25:27,472 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D74E5010> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:27,542 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D781B1B0>
+2026-03-07 22:25:27,544 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:27,544 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:27,544 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:27,544 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:27,544 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:27,822 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'196469'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-northcentral-az02.prod.azureservicedeploy.msft.net/api/rollouts/f026a286-5de6-4e90-9663-b6b239904f7f?servicegroupname=Microsoft.Azure.AppConfiguration.Replication&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'f4dacd1f-9904-47d1-bec7-ac17db1711fe'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 39DD5E17386F44F99B8A879669A4F6EE Ref B: MWH011020807023 Ref C: 2026-03-08T07:25:27Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:27 GMT')])
+2026-03-07 22:25:27,822 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/f026a286-5de6-4e90-9663-b6b239904f7f?servicegroupname=Microsoft.Azure.AppConfiguration.Replication&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:27,822 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:27,959 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:27,960 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:27,960 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:27,967 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:27,968 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:27,968 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ResourceProvider from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:25:27,969 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:29,894 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:29,894 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:29,894 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:29,894 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.ResourceProvider', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:25:29,919 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:29,932 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C2D50>
+2026-03-07 22:25:29,932 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D7507790> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:29,961 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C0050>
+2026-03-07 22:25:29,962 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:29,963 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:29,963 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:29,963 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:29,963 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:30,077 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'915'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'ab1172a0-5e44-4607-b964-69c6d904a730'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: E4C8BC99191448A1BB7C5D02577DFF23 Ref B: CO6AA3150217047 Ref C: 2026-03-08T07:25:29Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:29 GMT')])
+2026-03-07 22:25:30,078 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.ResourceProvider&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:25:30,078 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:30,078 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:30,079 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:30,079 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:30,084 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:30,084 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:30,085 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ResourceProvider returned 2 rollouts
+2026-03-07 22:25:30,085 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.ResourceProvider first rollout IDs: ['33ed4030-e91f-4c4d-833d-01c19021bf0b', '609f80b1-38df-40c0-951e-b8a1c26dad09']
+2026-03-07 22:25:30,085 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:31,986 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:31,986 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:31,986 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:31,986 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/33ed4030-e91f-4c4d-833d-01c19021bf0b params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.ResourceProvider', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:32,011 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:32,016 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C0550>
+2026-03-07 22:25:32,016 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D7505300> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:32,041 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74C2E40>
+2026-03-07 22:25:32,043 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:32,043 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:32,043 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:32,043 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:32,043 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:32,991 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'2331287'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-southcentral-az01.prod.azureservicedeploy.msft.net/api/rollouts/33ed4030-e91f-4c4d-833d-01c19021bf0b?servicegroupname=Microsoft.Azure.AppConfiguration.ResourceProvider&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'770d09e9-ee55-45ea-b22f-f70cb22a88d7'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 2B732A3858194944ACF0CD243CD115EF Ref B: MWH011020806036 Ref C: 2026-03-08T07:25:32Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:32 GMT')])
+2026-03-07 22:25:32,992 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/33ed4030-e91f-4c4d-833d-01c19021bf0b?servicegroupname=Microsoft.Azure.AppConfiguration.ResourceProvider&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:32,992 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:33,383 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:33,384 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:33,385 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:33,409 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:33,409 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:33,419 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:35,433 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:35,433 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:35,433 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:35,433 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/609f80b1-38df-40c0-951e-b8a1c26dad09 params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.ResourceProvider', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:35,461 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:35,465 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B3250>
+2026-03-07 22:25:35,465 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D7515A90> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:35,501 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D74B3750>
+2026-03-07 22:25:35,502 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:35,503 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:35,503 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:35,503 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:35,503 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:35,677 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'192663'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-northcentral-az02.prod.azureservicedeploy.msft.net/api/rollouts/609f80b1-38df-40c0-951e-b8a1c26dad09?servicegroupname=Microsoft.Azure.AppConfiguration.ResourceProvider&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'b892be48-5af3-49cf-b451-de482b691c57'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 3E2F44A96B4947CBBA640B89E0C6143E Ref B: MWH011020806029 Ref C: 2026-03-08T07:25:35Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:35 GMT')])
+2026-03-07 22:25:35,678 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/609f80b1-38df-40c0-951e-b8a1c26dad09?servicegroupname=Microsoft.Azure.AppConfiguration.ResourceProvider&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:35,678 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:35,807 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:35,808 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:35,808 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:35,815 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:35,815 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:35,816 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.RPAgent from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:25:35,816 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:37,745 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:37,745 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:37,745 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:37,745 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.RPAgent', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:25:37,770 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:37,774 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D754C5A0>
+2026-03-07 22:25:37,775 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D7514AD0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:37,803 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D754C0A0>
+2026-03-07 22:25:37,804 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:37,805 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:37,805 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:37,805 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:37,805 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:37,916 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'449'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'82a1d267-f235-4548-abd5-646c32be1231'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 47E7AE9F93E8481599FD7910F7AD7534 Ref B: MWH011020807036 Ref C: 2026-03-08T07:25:37Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:37 GMT')])
+2026-03-07 22:25:37,917 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.RPAgent&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:25:37,917 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:37,917 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:37,918 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:37,918 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:37,923 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:37,924 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:37,924 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.RPAgent returned 1 rollouts
+2026-03-07 22:25:37,924 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.RPAgent first rollout IDs: ['8108d14d-06d8-4555-8eb3-2c0ca5c535dd']
+2026-03-07 22:25:37,925 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:39,843 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:39,843 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:39,843 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:39,843 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/8108d14d-06d8-4555-8eb3-2c0ca5c535dd params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.RPAgent', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:39,868 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:39,873 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D754D590>
+2026-03-07 22:25:39,873 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D7515490> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:39,901 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D754C9B0>
+2026-03-07 22:25:39,903 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:39,903 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:39,903 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:39,904 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:39,904 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:40,252 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'167846'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-southcentral-az01.prod.azureservicedeploy.msft.net/api/rollouts/8108d14d-06d8-4555-8eb3-2c0ca5c535dd?servicegroupname=Microsoft.Azure.AppConfiguration.RPAgent&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'ee96f180-4ebc-444b-81f7-96e901aa04dd'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 75F59008F44940EFBA1F5FB508084F8E Ref B: CO6AA3150217011 Ref C: 2026-03-08T07:25:39Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:39 GMT')])
+2026-03-07 22:25:40,253 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/8108d14d-06d8-4555-8eb3-2c0ca5c535dd?servicegroupname=Microsoft.Azure.AppConfiguration.RPAgent&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:40,253 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:40,397 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:40,398 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:40,398 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:40,405 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:40,405 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:40,406 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Runner from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:25:40,407 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:42,363 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:42,363 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:42,363 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:42,363 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Runner', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:25:42,389 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:42,394 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D78182D0>
+2026-03-07 22:25:42,394 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D7515CD0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:42,445 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D78194A0>
+2026-03-07 22:25:42,446 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:42,447 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:42,447 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:42,447 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:42,447 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:42,684 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'448'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'081262a2-89ac-4172-a955-c40b0eea2c20'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 1FB8CC19CFD9440698E68E73DB8BE803 Ref B: MWH011020806042 Ref C: 2026-03-08T07:25:42Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:42 GMT')])
+2026-03-07 22:25:42,684 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Runner&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:25:42,685 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:42,685 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:42,686 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:42,686 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:42,691 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:42,691 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:42,691 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Runner returned 1 rollouts
+2026-03-07 22:25:42,692 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Runner first rollout IDs: ['d92e8a1b-b0c1-4f17-a759-b622fd52f414']
+2026-03-07 22:25:42,692 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:44,747 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:44,747 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:44,747 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:44,747 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/d92e8a1b-b0c1-4f17-a759-b622fd52f414 params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Runner', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:44,775 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:44,779 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D781B930>
+2026-03-07 22:25:44,779 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D75150D0> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:45,418 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D781A0D0>
+2026-03-07 22:25:45,419 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:45,420 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:45,420 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:45,420 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:45,420 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:46,518 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'1540933'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-northcentral-az02.prod.azureservicedeploy.msft.net/api/rollouts/d92e8a1b-b0c1-4f17-a759-b622fd52f414?servicegroupname=Microsoft.Azure.AppConfiguration.Runner&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'f3074045-558f-4fab-8a51-2c82a4567aaf'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: AF572E7F2F5A4A30A374CE1B30B4A58D Ref B: CO6AA3150220053 Ref C: 2026-03-08T07:25:45Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:45 GMT')])
+2026-03-07 22:25:46,518 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/d92e8a1b-b0c1-4f17-a759-b622fd52f414?servicegroupname=Microsoft.Azure.AppConfiguration.Runner&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:46,519 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:46,808 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:46,810 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:46,810 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:46,847 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:46,847 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:46,860 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Statistics from=2026-02-06T07:24:52.787693+00:00 to=2026-03-08T07:24:52.787693+00:00
+2026-03-07 22:25:46,861 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:48,865 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:48,865 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:48,865 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:48,865 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Statistics', 'startTimeFrom': '2026-02-06T07:24:52.787693Z', 'startTimeTo': '2026-03-08T07:24:52.787693Z', 'api-version': '2016-07-01'}
+2026-03-07 22:25:48,891 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:48,895 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64D6760>
+2026-03-07 22:25:48,895 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D7516090> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:48,917 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64D66C0>
+2026-03-07 22:25:48,918 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:48,919 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:48,919 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:48,919 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:48,919 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:49,026 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'452'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'mise-correlation-id', b'e808b5de-4ef8-4476-904e-63bb3e64383f'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 961E40E0DE9B4BF4885BF06695811625 Ref B: MWH011020807036 Ref C: 2026-03-08T07:25:48Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:48 GMT')])
+2026-03-07 22:25:49,026 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts?servicegroupname=Microsoft.Azure.AppConfiguration.Statistics&startTimeFrom=2026-02-06T07%3A24%3A52.787693Z&startTimeTo=2026-03-08T07%3A24%3A52.787693Z&api-version=2016-07-01 "HTTP/1.1 200 OK"
+2026-03-07 22:25:49,026 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:49,026 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:49,027 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:49,028 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:49,033 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:49,033 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:49,034 [INFO] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Statistics returned 1 rollouts
+2026-03-07 22:25:49,034 [DEBUG] release-dashboard.ev2_client: list_rollouts sg=Microsoft.Azure.AppConfiguration.Statistics first rollout IDs: ['e13318d2-cb5f-4489-bcaf-eee5cc1e0c55']
+2026-03-07 22:25:49,034 [DEBUG] azure.identity._credentials.azure_cli: Executing subprocess with the following arguments ['C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin\\az.cmd', 'account', 'get-access-token', '--output', 'json', '--resource', 'https://azureservicedeploy.msft.net']
+2026-03-07 22:25:50,939 [INFO] azure.identity._internal.decorators: AzureCliCredential.get_token succeeded
+2026-03-07 22:25:50,939 [DEBUG] azure.identity._internal.decorators: [Authenticated account] Client ID: 04b07795-8ddb-461a-bbee-02f9e1bf7b46. Tenant ID: 72f988bf-86f1-41af-91ab-2d7cd011db47. User Principal Name: kipackjeong@microsoft.com. Object ID (user): 376bbc29-d3b6-4e92-919d-fade281f68f4
+2026-03-07 22:25:50,939 [DEBUG] release-dashboard.auth: Token acquired for scope https://azureservicedeploy.msft.net/.default
+2026-03-07 22:25:50,939 [DEBUG] release-dashboard.ev2_client: GET https://azureservicedeploy.msft.net/api/rollouts/e13318d2-cb5f-4489-bcaf-eee5cc1e0c55 params={'servicegroupname': 'Microsoft.Azure.AppConfiguration.Statistics', 'api-version': '2016-07-01', 'embed-detail': 'true'}
+2026-03-07 22:25:50,965 [DEBUG] httpcore.connection: connect_tcp.started host='azureservicedeploy.msft.net' port=443 local_address=None timeout=30.0 socket_options=None
+2026-03-07 22:25:50,969 [DEBUG] httpcore.connection: connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64D7890>
+2026-03-07 22:25:50,969 [DEBUG] httpcore.connection: start_tls.started ssl_context=<ssl.SSLContext object at 0x000002B0D7516150> server_hostname='azureservicedeploy.msft.net' timeout=30.0
+2026-03-07 22:25:51,015 [DEBUG] httpcore.connection: start_tls.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x000002B0D64D5EF0>
+2026-03-07 22:25:51,016 [DEBUG] httpcore.http11: send_request_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:51,017 [DEBUG] httpcore.http11: send_request_headers.complete
+2026-03-07 22:25:51,017 [DEBUG] httpcore.http11: send_request_body.started request=<Request [b'GET']>
+2026-03-07 22:25:51,017 [DEBUG] httpcore.http11: send_request_body.complete
+2026-03-07 22:25:51,017 [DEBUG] httpcore.http11: receive_response_headers.started request=<Request [b'GET']>
+2026-03-07 22:25:51,356 [DEBUG] httpcore.http11: receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Cache-Control', b'no-cache,no-store,no-cache'), (b'Pragma', b'no-cache'), (b'Content-Length', b'167528'), (b'Content-Type', b'application/json; charset=utf-8'), (b'Expires', b'-1'), (b'Location', b'https://origin-southcentral-az01.prod.azureservicedeploy.msft.net/api/rollouts/e13318d2-cb5f-4489-bcaf-eee5cc1e0c55?servicegroupname=Microsoft.Azure.AppConfiguration.Statistics&api-version=2016-07-01&embed-detail=True'), (b'Retry-After', b'120'), (b'mise-correlation-id', b'1f8f21b0-79db-4317-bbaf-69758db4a452'), (b'Strict-Transport-Security', b'max-age=15724800; includeSubDomains'), (b'X-Content-Type-Options', b'nosniff'), (b'X-Frame-Options', b'DENY'), (b'X-Cache', b'CONFIG_NOCACHE'), (b'X-MSEdge-Ref', b'Ref A: 4C9D837108244C9C9E9A19B31DE452DC Ref B: CO6AA3150218031 Ref C: 2026-03-08T07:25:51Z'), (b'Date', b'Sun, 08 Mar 2026 07:25:51 GMT')])
+2026-03-07 22:25:51,356 [INFO] httpx: HTTP Request: GET https://azureservicedeploy.msft.net/api/rollouts/e13318d2-cb5f-4489-bcaf-eee5cc1e0c55?servicegroupname=Microsoft.Azure.AppConfiguration.Statistics&api-version=2016-07-01&embed-detail=true "HTTP/1.1 200 OK"
+2026-03-07 22:25:51,357 [DEBUG] httpcore.http11: receive_response_body.started request=<Request [b'GET']>
+2026-03-07 22:25:51,501 [DEBUG] httpcore.http11: receive_response_body.complete
+2026-03-07 22:25:51,502 [DEBUG] httpcore.http11: response_closed.started
+2026-03-07 22:25:51,502 [DEBUG] httpcore.http11: response_closed.complete
+2026-03-07 22:25:51,509 [DEBUG] httpcore.connection: close.started
+2026-03-07 22:25:51,510 [DEBUG] httpcore.connection: close.complete
+2026-03-07 22:25:51,510 [INFO] release-dashboard: get_service_groups returned 11 groups
+2026-03-07 22:25:51,513 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 22:39:07,082 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-07 22:39:07,085 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-07 22:39:07,086 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-07 22:39:07,086 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-07 22:39:07,086 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-07 22:39:07,087 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-07 22:39:07,087 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-07 22:39:07,087 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-07 22:39:07,087 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-07 22:39:07,118 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-07 22:39:07,128 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-07 22:39:07,298 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000022D189574D0>
+2026-03-07 22:39:07,299 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-07 22:39:07,299 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-07 22:39:07,300 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 22:39:07,300 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000022D18956E90>
+2026-03-07 22:39:07,301 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-07 22:39:07,301 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-07 22:39:07,301 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 23:07:56,851 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-07 23:07:56,854 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-07 23:07:56,854 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-07 23:07:56,855 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-07 23:07:56,855 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-07 23:07:56,855 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-07 23:07:56,855 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-07 23:07:56,856 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-07 23:07:56,856 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-07 23:07:56,889 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-07 23:07:56,899 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-07 23:07:57,063 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002031028F4D0>
+2026-03-07 23:07:57,064 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-07 23:07:57,064 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-07 23:07:57,064 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-07 23:07:57,066 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002031028F610>
+2026-03-07 23:07:57,066 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-07 23:07:57,066 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-07 23:07:57,067 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 08:57:52,962 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 08:57:52,970 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 08:57:52,970 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 08:57:52,971 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 08:57:52,972 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 08:57:52,972 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 08:57:52,973 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 08:57:52,973 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 08:57:52,974 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 08:57:53,035 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 08:57:53,053 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 08:57:53,244 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000001FB6898B4D0>
+2026-03-09 08:57:53,245 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 08:57:53,245 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 08:57:53,246 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 08:57:53,248 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000001FB6898B610>
+2026-03-09 08:57:53,248 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 08:57:53,248 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 08:57:53,249 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 10:45:00,073 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 10:45:00,076 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 10:45:00,076 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 10:45:00,077 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 10:45:00,077 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 10:45:00,077 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 10:45:00,077 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 10:45:00,078 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 10:45:00,078 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 10:45:00,109 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 10:45:00,118 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 10:45:01,321 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000019E860BF4D0>
+2026-03-09 10:45:01,322 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 10:45:01,322 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 10:45:01,323 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 10:45:53,857 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 10:45:53,860 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 10:45:53,860 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 10:45:53,860 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 10:45:53,861 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 10:45:53,861 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 10:45:53,861 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 10:45:53,861 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 10:45:53,862 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 10:45:53,891 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 10:45:53,904 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 10:45:54,779 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002520FA6F4D0>
+2026-03-09 10:45:54,780 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 10:45:54,780 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 10:45:54,781 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 10:45:55,646 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002520FA6F610>
+2026-03-09 10:45:55,646 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 10:45:55,646 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 10:45:55,647 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 10:46:48,422 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 10:46:48,425 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 10:46:48,425 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 10:46:48,425 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 10:46:48,425 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 10:46:48,426 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 10:46:48,426 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 10:46:48,426 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 10:46:48,426 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 10:46:48,456 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 10:46:48,468 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 10:46:49,295 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000022B3807F4D0>
+2026-03-09 10:46:49,295 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 10:46:49,295 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 10:46:49,296 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 10:46:49,374 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000022B3807F610>
+2026-03-09 10:46:49,374 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 10:46:49,374 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 10:46:49,375 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 10:51:03,367 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 10:51:03,370 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 10:51:03,370 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 10:51:03,370 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 10:51:03,370 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 10:51:03,371 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 10:51:03,371 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 10:51:03,371 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 10:51:03,371 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 10:51:03,400 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 10:51:03,413 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 10:51:04,132 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002072F82B4D0>
+2026-03-09 10:51:04,133 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 10:51:04,133 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 10:51:04,133 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 10:51:04,189 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002072F82B610>
+2026-03-09 10:51:04,190 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 10:51:04,190 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 10:51:04,190 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 10:51:28,791 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 10:51:28,794 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 10:51:28,794 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 10:51:28,794 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 10:51:28,794 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 10:51:28,794 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 10:51:28,794 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 10:51:28,794 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 10:51:28,794 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 10:51:28,825 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 10:51:28,838 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 10:51:29,648 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000014FC6F3F4D0>
+2026-03-09 10:51:29,649 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 10:51:29,649 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 10:51:29,649 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 10:51:29,924 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000014FC6F3F610>
+2026-03-09 10:51:29,924 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 10:51:29,924 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 10:51:29,925 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 14:00:55,160 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 14:00:55,163 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 14:00:55,163 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 14:00:55,163 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 14:00:55,163 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 14:00:55,164 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 14:00:55,164 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 14:00:55,164 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 14:00:55,164 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 14:00:55,199 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 14:00:55,209 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 14:00:56,346 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000017EE60CF4D0>
+2026-03-09 14:00:56,346 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 14:00:56,346 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 14:00:56,347 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 14:12:27,747 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 14:12:27,751 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 14:12:27,752 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 14:12:27,752 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 14:12:27,752 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 14:12:27,752 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 14:12:27,752 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 14:12:27,753 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 14:12:27,753 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 14:12:27,805 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 14:12:27,828 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 16:01:01,433 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 16:01:01,438 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 16:01:01,438 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 16:01:01,439 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 16:01:01,439 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 16:01:01,439 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 16:01:01,439 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 16:01:01,440 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 16:01:01,440 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 16:01:01,475 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 16:01:01,489 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 16:01:02,890 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x00000220A8E0F4D0>
+2026-03-09 16:01:02,890 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 16:01:02,891 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 16:01:02,892 [DEBUG] mcp.server.lowlevel.server: Response sent

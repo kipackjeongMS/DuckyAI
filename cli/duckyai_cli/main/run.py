@@ -1,4 +1,4 @@
-"""Dynamic command runner — turns .github/prompts/ into CLI commands and auto-loads skills."""
+"""Dynamic command runner — turns playbook prompts into CLI commands and auto-loads skills."""
 
 import re
 import subprocess
@@ -8,6 +8,9 @@ from ..logger import Logger
 from .vault import find_vault_root
 
 logger = Logger()
+
+# Package playbook path (system prompts)
+_PLAYBOOK_DIR = Path(__file__).parent.parent / '.playbook'
 
 
 
@@ -25,24 +28,23 @@ def load_prompt_file(prompt_path: Path) -> str:
     return content
 
 
-def get_available_prompts(vault_root: Path) -> dict:
-    """Discover all available prompts from .github/prompts/ and .github/prompts-agent/."""
+def get_available_prompts() -> dict:
+    """Discover all available prompts from playbook."""
     prompts = {}
 
-    # .github/prompts/ — Copilot-style prompts (new-task, code-review, etc.)
-    gh_prompts = vault_root / '.github' / 'prompts'
-    if gh_prompts.exists():
-        for f in sorted(gh_prompts.glob('*.prompt.md')):
+    # Playbook prompts (Copilot-style: new-task, code-review, etc.)
+    pb_prompts = _PLAYBOOK_DIR / 'prompts'
+    if pb_prompts.exists():
+        for f in sorted(pb_prompts.glob('*.prompt.md')):
             name = f.stem.replace('.prompt', '')
             prompts[name] = {'path': f, 'source': 'prompts'}
 
-    # .github/prompts-agent/ — Orchestrator prompts (EIC, GDR, etc.)
-    settings_prompts = vault_root / '.github' / 'prompts-agent'
-    if settings_prompts.exists():
-        for f in sorted(settings_prompts.glob('*.md')):
-            if f.name in ('Prompts.md', 'README_PROMPTS.md'):
+    # Playbook agent prompts (EIC, GDR, etc.)
+    pb_agents = _PLAYBOOK_DIR / 'prompts-agent'
+    if pb_agents.exists():
+        for f in sorted(pb_agents.glob('*.md')):
+            if f.name in ('Prompts.md', 'README_PROMPTS.md', 'System Prompt.md'):
                 continue
-            # Extract abbreviation from name like "Enrich Ingested Content (EIC).md"
             abbrev_match = re.search(r'\((\w+)\)', f.stem)
             if abbrev_match:
                 name = abbrev_match.group(1).lower()
@@ -92,15 +94,15 @@ def run_command(ctx, command, args, list_cmds):
         duckyai run --list
     """
     vault_root = find_vault_root()
-    prompts = get_available_prompts(vault_root)
+    prompts = get_available_prompts()
 
     if list_cmds or not command:
         click.echo("Available commands:\n")
-        click.echo("  Vault prompts (.github/prompts/):")
+        click.echo("  Prompts:")
         for name, info in sorted(prompts.items()):
             if info['source'] == 'prompts':
                 click.echo(f"    {name:25s} ← {info['path'].name}")
-        click.echo("\n  Agent prompts (.github/prompts-agent/):")
+        click.echo("\n  Agent prompts:")
         for name, info in sorted(prompts.items()):
             if info['source'] == 'agents':
                 click.echo(f"    {name:25s} ← {info['path'].name}")

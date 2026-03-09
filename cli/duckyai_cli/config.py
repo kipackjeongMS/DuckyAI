@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -9,6 +10,17 @@ import yaml
 from .logger import Logger
 
 logger = Logger()
+
+
+def get_global_runtime_dir(vault_id: Optional[str] = None) -> Path:
+    """Return the global runtime directory for a vault: ~/.duckyai/vaults/{vault_id}/.
+
+    If *vault_id* is ``None``, falls back to ``"default"``.
+    Creates the directory tree on first access.
+    """
+    base = Path.home() / ".duckyai" / "vaults" / (vault_id or "default")
+    base.mkdir(parents=True, exist_ok=True)
+    return base
 
 
 class Config:
@@ -126,6 +138,11 @@ class Config:
         section = self.get("orchestrator", {})
         return section.copy() if isinstance(section, dict) else {}
 
+    def get_playbook_dir(self) -> Path:
+        """Get the CLI package's built-in .playbook directory path."""
+        from pathlib import Path
+        return Path(__file__).parent / '.playbook'
+
     def get_orchestrator_prompts_dir(self) -> str:
         """Directory containing agent prompt definitions."""
         return self.get(
@@ -134,18 +151,26 @@ class Config:
         )
 
     def get_orchestrator_tasks_dir(self) -> str:
-        """Directory containing task tracking files."""
-        return self.get(
-            "orchestrator.tasks_dir",
-            ".duckyai/tasks",
-        )
+        """Directory containing task tracking files.
+
+        Defaults to ``~/.duckyai/vaults/{vault_id}/tasks``.
+        """
+        configured = self.get("orchestrator.tasks_dir")
+        if configured:
+            return configured
+        vault_id = self.get("id", "default")
+        return str(get_global_runtime_dir(vault_id) / "tasks")
 
     def get_orchestrator_logs_dir(self) -> str:
-        """Directory where orchestrator writes execution logs."""
-        return self.get(
-            "orchestrator.logs_dir",
-            ".duckyai/logs",
-        )
+        """Directory where orchestrator writes execution logs.
+
+        Defaults to ``~/.duckyai/vaults/{vault_id}/logs``.
+        """
+        configured = self.get("orchestrator.logs_dir")
+        if configured:
+            return configured
+        vault_id = self.get("id", "default")
+        return str(get_global_runtime_dir(vault_id) / "logs")
 
     def get_orchestrator_skills_dir(self) -> str:
         """Directory for orchestrator skills library."""

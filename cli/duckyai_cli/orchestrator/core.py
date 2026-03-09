@@ -60,7 +60,12 @@ class Orchestrator:
         # Use config values if not explicitly provided
         if agents_dir is None:
             prompts_dir = self.config.get_orchestrator_prompts_dir()
-            self.agents_dir = self.vault_path / prompts_dir
+            # Resolve from playbook (system) first, fallback to vault-relative
+            playbook_path = self.config.get_playbook_dir() / 'prompts-agent'
+            if playbook_path.exists():
+                self.agents_dir = playbook_path
+            else:
+                self.agents_dir = self.vault_path / prompts_dir
         else:
             self.agents_dir = agents_dir
 
@@ -117,15 +122,13 @@ class Orchestrator:
         logger.info(f"Loaded {len(self.poller_manager.pollers)} poller(s)")
 
     def _ensure_directories(self):
-        """Create orchestrator directories if they don't exist."""
-        # Get all configured directories from orchestrator_settings if available
-        # This method is called before agent_registry is initialized, so use config as fallback
+        """Create runtime directories if they don't exist."""
+        # Only create runtime dirs and user-facing skills dir
+        # System dirs (prompts-agent, bases) live in the package .playbook/
         directories = [
-            self.config.get_orchestrator_prompts_dir(),
             self.config.get_orchestrator_tasks_dir(),
             self.config.get_orchestrator_logs_dir(),
             self.config.get('orchestrator.skills_dir', '.github/skills'),
-            self.config.get('orchestrator.bases_dir', '.github/bases'),
         ]
 
         created = []

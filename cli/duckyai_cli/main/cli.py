@@ -13,11 +13,6 @@ from pathlib import Path
 from .list_agents import list_agents as list_agents_handler
 from .show_config import show_config as show_config_handler
 from .orchestrator import run_orchestrator_daemon, show_orchestrator_status
-from .update import update_cli
-from .template import template_group
-from .trigger import trigger_cli
-from .run import run_command
-from .init import init_vault
 from .vault import find_vault_root
 
 
@@ -27,19 +22,92 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
+def _is_junction(path: Path) -> bool:
+    """Check if a path is a directory junction (works on Python 3.8+)."""
+    if os.name != 'nt':
+        return False
+    try:
+        import ctypes
+        FILE_ATTRIBUTE_REPARSE_POINT = 0x400
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(str(path))
+        return attrs != -1 and bool(attrs & FILE_ATTRIBUTE_REPARSE_POINT)
+    except Exception:
+        return False
+
+
 def ensure_init(vault_root: Path):
-    """Auto-init .github symlink and .duckyai runtime dirs if missing."""
-    cli_playbook = Path(__file__).parent.parent / '.playbook'
+    """Auto-init user directories: .github/skills/ and ~/.duckyai/ global runtime dirs.
 
-    # Symlink .github
+    System files (prompts-agent, bases, templates, etc.) live in the
+    CLI package's .playbook/ and are NOT exposed in .github/.
+    """
     github_dir = vault_root / '.github'
-    if not github_dir.is_symlink() and cli_playbook.exists() and not github_dir.exists():
-        rel_path = os.path.relpath(cli_playbook, vault_root)
-        os.symlink(rel_path, github_dir)
 
-    # Create .duckyai runtime dirs
-    for d in ['.duckyai/tasks', '.duckyai/logs', '.duckyai/history']:
-        (vault_root / d).mkdir(parents=True, exist_ok=True)
+    # Clean up legacy junction/symlink if .github points to whole .playbook
+    if github_dir.is_symlink() or _is_junction(github_dir):
+        if os.name == 'nt':
+            os.rmdir(str(github_dir))
+        else:
+            github_dir.unlink()
+    elif github_dir.is_file():
+        # Broken git-style file symlink
+        github_dir.unlink()
+
+    # Ensure .github/ is a real directory
+    github_dir.mkdir(parents=True, exist_ok=True)
+
+    # Clean up legacy junctions inside .github/ (from previous versions)
+    for subdir in ('prompts-agent', 'bases', 'templates', 'guidelines', 'prompts'):
+        link = github_dir / subdir
+        if link.is_symlink() or _is_junction(link):
+            if os.name == 'nt':
+                os.rmdir(str(link))
+            else:
+                link.unlink()
+
+    # Ensure .github/skills/ exists (user-owned)
+    skills_dir = github_dir / 'skills'
+    skills_dir.mkdir(parents=True, exist_ok=True)
+
+    # Symlink built-in playbook skills into .github/skills/
+    # so Copilot CLI auto-discovers them alongside user skills.
+    playbook_skills = Path(__file__).resolve().parent.parent / '.playbook' / 'skills'
+    if playbook_skills.is_dir():
+        for skill in playbook_skills.iterdir():
+            if not skill.is_dir():
+                continue
+            target = skills_dir / skill.name
+            if target.exists() or target.is_symlink() or _is_junction(target):
+                continue  # user-owned or already linked — don't overwrite
+            try:
+                if os.name == 'nt':
+                    # Windows: directory junction (no admin rights needed)
+                    import subprocess as _sp
+                    _sp.run(
+                        ['cmd', '/c', 'mklink', '/J', str(target), str(skill)],
+                        check=True, capture_output=True,
+                    )
+                else:
+                    target.symlink_to(skill)
+            except Exception:
+                pass  # non-critical — skill just won't be auto-discovered
+
+    # Create global ~/.duckyai runtime dirs (logs, tasks, history)
+    from duckyai_cli.config import get_global_runtime_dir
+    try:
+        # Read vault_id from orchestrator.yaml
+        import yaml
+        orch_path = vault_root / "orchestrator.yaml"
+        vault_id = "default"
+        if orch_path.exists():
+            with orch_path.open("r", encoding="utf-8") as fh:
+                data = yaml.safe_load(fh) or {}
+                vault_id = data.get("id", "default")
+        runtime_dir = get_global_runtime_dir(vault_id)
+        for subdir in ["tasks", "logs", "history"]:
+            (runtime_dir / subdir).mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass  # non-critical
 
 
 def get_mcp_config(vault_root: Path) -> str:
@@ -204,8 +272,6 @@ def main(
         duckyai                          # Interactive AI session
         duckyai -p "create a new task"   # One-shot prompt
         duckyai -o                       # Start orchestrator daemon
-        duckyai run new-task             # Run a specific prompt
-        duckyai trigger GDR              # Trigger an agent
     """
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -252,14 +318,6 @@ def main(
             model=model,
         )
         sys.exit(returncode)
-
-
-# Register subcommands
-main.add_command(trigger_cli, name="trigger")
-main.add_command(update_cli, name="update")
-main.add_command(template_group, name="template")
-main.add_command(run_command, name="run")
-main.add_command(init_vault, name="init")
 
 
 if __name__ == "__main__":
