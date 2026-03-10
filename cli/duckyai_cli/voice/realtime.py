@@ -141,6 +141,11 @@ class VoiceLiveSession:
             if not self._is_recording:
                 self._is_recording = True
                 self._skip_playback()  # Stop any current playback
+                # Clear any stale audio buffer from previous interaction
+                if self._loop and self.connection:
+                    asyncio.run_coroutine_threadsafe(
+                        self.connection.input_audio_buffer.clear(), self._loop
+                    )
                 self._start_capture()
                 print("🔴 Recording... (release Space to send)", flush=True)
 
@@ -169,11 +174,23 @@ class VoiceLiveSession:
         try:
             await self.connection.input_audio_buffer.commit()
             await self.connection.response.create()
+            logger.debug("Audio committed and response requested")
         except Exception as e:
             logger.error("Error committing audio: %s", e)
+            print(f"⚠️  Error sending audio: {e}", flush=True)
+            print("🎤 Hold [Space] to try again...", flush=True)
 
     def _start_capture(self):
         """Start streaming microphone audio to Voice Live."""
+        # Close any existing stream first
+        if self._input_stream:
+            try:
+                self._input_stream.stop()
+                self._input_stream.close()
+            except Exception:
+                pass
+            self._input_stream = None
+
         def _mic_callback(indata, frames, time_info, status):
             if self.connection and self._loop:
                 audio_b64 = base64.b64encode(indata.tobytes()).decode("utf-8")
