@@ -9,10 +9,12 @@ Manage the DuckyAI orchestrator daemon (file watcher + cron scheduler).
 
 ## Instructions
 
-Use the appropriate MCP tool based on the user's intent:
+Run the appropriate CLI command based on the user's intent:
 
-- **Start**: Call `startOrchestrator` MCP tool
-- **Stop**: Call `stopOrchestrator` MCP tool
-- **Status** (or no specific action): Call `orchestratorStatus` MCP tool
+- **Start**: Run `duckyai orchestrator start`
+- **Stop**: Run `duckyai orchestrator stop`
+- **Status** (or no specific action): Run `duckyai orchestrator status`
+
+Add `--json-output` flag if you need to parse the result programmatically.
 
 Report the result clearly to the user.
