@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+import json
 import logging
 import os
 import queue
@@ -25,6 +26,8 @@ from azure.ai.voicelive.models import (
     ServerEventType,
     ServerVad,
 )
+
+from .tools import get_vault_tools, handle_tool_call
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +62,9 @@ class VoiceLiveSession:
         self._playback_seq = 0
         self._playback_base = 0
 
+        # Function call state
+        self._pending_tool_calls = {}  # call_id -> {name, arguments}
+
     async def start(self):
         """Start the voice assistant session."""
         try:
@@ -85,7 +91,7 @@ class VoiceLiveSession:
             self._cleanup()
 
     async def _setup_session(self):
-        """Configure session for voice conversation."""
+        """Configure session for voice conversation with tool support."""
         voice_config = AzureStandardVoice(name=self.voice) if "-" in self.voice else self.voice
 
         session_config = RequestSession(
@@ -101,6 +107,7 @@ class VoiceLiveSession:
             ),
             input_audio_echo_cancellation=AudioEchoCancellation(),
             input_audio_noise_reduction=AudioNoiseReduction(type="azure_deep_noise_suppression"),
+            tools=get_vault_tools(),
         )
 
         await self.connection.session.update(session=session_config)
@@ -205,11 +212,36 @@ class VoiceLiveSession:
         elif event.type == ServerEventType.RESPONSE_DONE:
             print("🎤 Ready...\n", flush=True)
 
+        elif event.type == ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE:
+            # Function call complete — execute the tool
+            call_id = event.call_id
+            name = event.name
+            try:
+                args = json.loads(event.arguments) if event.arguments else {}
+            except json.JSONDecodeError:
+                args = {}
+
+            print(f"🔧 Tool: {name}({json.dumps(args, ensure_ascii=False)[:80]})", flush=True)
+            result = await handle_tool_call(name, args)
+            print(f"   → {result[:100]}{'...' if len(result) > 100 else ''}", flush=True)
+
+            # Send result back to the model
+            await self.connection.conversation.item.create(item={
+                "type": "function_call_output",
+                "call_id": call_id,
+                "output": result,
+            })
+            # Trigger model to generate response based on tool result
+            await self.connection.response.create()
+
         elif event.type == ServerEventType.ERROR:
             msg = event.error.message
             if "no active response" not in msg:
                 print(f"⚠️  Error: {msg}", flush=True)
                 logger.error("Voice Live error: %s", msg)
+
+        elif event.type == ServerEventType.CONVERSATION_ITEM_CREATED:
+            logger.debug("Conversation item created")
 
     def _cleanup(self):
         """Clean up audio resources."""
