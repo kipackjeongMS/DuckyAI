@@ -408,7 +408,14 @@ class TaskFileManager:
 
         # Build body
         event_type = ctx.trigger_data.get('event_type', 'unknown')
-        event_desc = f"{event_type.capitalize()} file event triggered {agent.name} processing"
+
+        # Build input section based on whether agent requires an input file
+        if agent.requires_input_file and input_file_path:
+            event_desc = f"{event_type.capitalize()} file event triggered {agent.name} processing"
+            input_section = f"Target file: `[[{input_file_path}]]`\n\n{event_desc}."
+        else:
+            event_desc = f"{event_type.capitalize()} event triggered {agent.name} processing"
+            input_section = f"{event_desc}."
 
         # Remove frontmatter from prompt body if present
         prompt_body = agent.prompt_body
@@ -421,9 +428,7 @@ class TaskFileManager:
         body = f"""
 ## Input
 
-Target file: `[[{input_file_path}]]`
-
-{event_desc}.
+{input_section}
 
 ## Output
 

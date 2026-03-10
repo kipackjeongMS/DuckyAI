@@ -41,6 +41,7 @@ class AgentDefinition:
     output_type: str = "new_file"
     output_optional: bool = False  # If True, no output is acceptable (auto-inferred from input_path)
     output_naming: str = "{title} - {agent}.md"
+    requires_input_file: bool = True  # If False, agent fetches its own data (e.g., TCS, GDR)
 
     # Execution
     prompt_body: str = ""

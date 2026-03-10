@@ -18,6 +18,8 @@ defaults:
   task_create: true
   task_priority: medium
   task_archived: false
+  agent_params:
+    model: claude-sonnet-4.6
 nodes:
   - type: agent
     name: Enrich Ingested Content (EIC)
@@ -39,18 +41,21 @@ nodes:
     name: Generate Daily Roundup (GDR)
     cron: 0 18 * * 1-5
     output_path: 04-Periodic/Daily
+    requires_input_file: false
     enabled: true
   - type: agent
     name: Topic Index Update (TIU)
     cron: 30 18 * * 5
     input_path: 04-Periodic/Daily
     output_path: 03-Knowledge/Topics
+    requires_input_file: false
     enabled: true
   - type: agent
     name: Teams Chat Summary (TCS)
     cron: "0 * * * *"
     output_path: 04-Periodic/Daily
     output_type: update_file
+    requires_input_file: false
     enabled: true
 id: duckyai_vault
 name: duckyai_vault

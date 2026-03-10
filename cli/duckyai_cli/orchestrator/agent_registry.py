@@ -313,8 +313,14 @@ class AgentRegistry:
         # This means scheduled/manual agents can complete without producing output
         output_optional = not bool(input_path)  # True when input_path is empty
 
-        # Get agent_params from node (explicit YAML property)
-        agent_params = node.get('agent_params', {})
+        # Determine if agent requires an input file
+        # Explicit config takes priority; otherwise infer from input_path
+        requires_input_file = node.get('requires_input_file', bool(input_path))
+
+        # Get agent_params: merge defaults with node-level overrides
+        default_agent_params = defaults.get('agent_params', {})
+        node_agent_params = node.get('agent_params', {})
+        agent_params = {**default_agent_params, **node_agent_params}
 
         # Parse workers list for multi-worker execution
         workers_config = node.get('workers', [])
@@ -346,6 +352,7 @@ class AgentRegistry:
             output_path=output_path,
             output_type=output_type,
             output_optional=output_optional,
+            requires_input_file=requires_input_file,
             output_naming=node.get('output_naming', '{title} - {agent}.md'),
             prompt_body=prompt_body,
             skills=skills,

@@ -720,6 +720,25 @@ class ExecutionManager:
         input_path_str = trigger_data.get('path', '')
         input_path = self.vault_path / input_path_str if input_path_str else None
 
+        # Agents that don't require input files (e.g., TCS, GDR) skip input validation
+        if not agent.requires_input_file and not input_path_str:
+            # For update_file mode, check if output_path file was modified
+            if agent.output_type == "update_file" and agent.output_path:
+                output_dir = self.vault_path / agent.output_path
+                start_time = ctx.start_time.timestamp() - 5 if ctx.start_time else 0
+                # Look for any recently modified files in output dir
+                for out_file in output_dir.glob("*.md"):
+                    if out_file.stat().st_mtime >= start_time:
+                        rel_path = out_file.relative_to(self.vault_path)
+                        return True, f"[[{rel_path.parent}/{rel_path.stem}]]", None
+                if agent.output_optional:
+                    return True, None, None
+                # Agent completed but we can't verify output — trust the agent's own output field
+                return True, None, None
+            # For new_file or no output_path, fall through to normal validation
+            if not agent.output_path:
+                return True, None, None
+
         # If no output_path configured, assume inline update
         if not agent.output_path:
             # Verify input file still exists
