@@ -117,30 +117,17 @@ def run_onboarding(vault_root: Path = None):
             webbrowser.open("https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli")
             click.echo("  Install and re-run `duckyai` when ready.")
 
-    # ─── Step 4: MCP Server Build ───────────────────────
+    # ─── Step 4: MCP Server ────────────────────────────
     click.echo("\n🔧 Step 4/9 — MCP Server")
-    mcp_dir = vault_path / "mcp-server"
-    if mcp_dir.exists() and (mcp_dir / "package.json").exists():
-        click.echo("  Building vault MCP tools...")
-        npm_cmd = shutil.which("npm")
-        if not npm_cmd:
-            click.echo("  ⚠️  npm not found — install Node.js and re-run")
+    try:
+        from duckyai_cli.mcp_server import get_mcp_index_js
+        mcp_js = get_mcp_index_js()
+        if mcp_js.exists():
+            click.echo("  ✓ MCP server embedded in CLI package")
         else:
-            try:
-                subprocess.run(
-                    [npm_cmd, "install"], cwd=str(mcp_dir),
-                    capture_output=True, timeout=120, shell=(os.name == "nt")
-                )
-                click.echo("  ✓ npm install complete")
-                subprocess.run(
-                    [npm_cmd, "run", "build"], cwd=str(mcp_dir),
-                    capture_output=True, timeout=120, shell=(os.name == "nt")
-                )
-                click.echo("  ✓ TypeScript compiled")
-            except Exception as e:
-                click.echo(f"  ⚠️  Build failed: {e}")
-    else:
-        click.echo("  ℹ️  No mcp-server/ found — skipping build")
+            click.echo("  ⚠️  MCP server asset missing — reinstall duckyai-cli")
+    except ImportError:
+        click.echo("  ⚠️  MCP server module not found — reinstall duckyai-cli")
 
     # ─── Step 5: WorkIQ EULA ────────────────────────────
     click.echo("\n📋 Step 5/9 — WorkIQ (Teams Data)")

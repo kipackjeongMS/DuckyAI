@@ -44,3 +44,6 @@ Repository = "https://github.com/rbx-labs/duckyai-cli"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["duckyai_cli*"]
+
+[tool.setuptools.package-data]
+"duckyai_cli.mcp_server" = ["dist/*.js"]
