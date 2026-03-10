@@ -1,9 +1,9 @@
-"""Orchestrator daemon and status functions."""
+"""Orchestrator daemon and prompt execution functions."""
 
+import os
 import sys
 import signal
 from pathlib import Path
-from rich.console import Console
 from rich.panel import Panel
 
 from ..orchestrator.core import Orchestrator
@@ -29,13 +29,19 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
 
     # Use CWD as vault (requires config file in CWD)
     vault_path = vault_path or Path.cwd()
+    pid_file = vault_path / ".orchestrator.pid"
+
+    # Write PID file
+    pid_file.write_text(str(os.getpid()), encoding="utf-8")
+
     max_concurrent = config.get_orchestrator_max_concurrent()
 
     debug_mode = "[yellow](DEBUG)[/yellow]" if debug else ""
     logger.info(Panel.fit(
         f"[bold cyan]DuckyAI Orchestrator[/bold cyan] {debug_mode}\n"
         f"Vault: {vault_path}\n"
-        f"Max concurrent: {max_concurrent}",
+        f"Max concurrent: {max_concurrent}\n"
+        f"PID: {os.getpid()}",
         title="Starting"
     ))
 
@@ -49,9 +55,10 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
         claude_settings=claude_settings
     )
 
-    # Setup signal handlers
+    # Setup signal handlers — clean up PID file on exit
     def signal_handler(sig, frame):
         logger.info("\n[yellow]Received interrupt signal, shutting down...[/yellow]")
+        pid_file.unlink(missing_ok=True)
         if orch:
             orch.stop()
         sys.exit(0)
@@ -82,62 +89,10 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
 
     # Start orchestrator
     logger.info("\n[cyan]Starting orchestrator...[/cyan]")
-    orch.run_forever()
-
-
-def show_orchestrator_status(vault_path: Path = None, working_dir: str = None, config_file: Path = None):
-    """
-    Show orchestrator status and loaded agents.
-
-    Args:
-        vault_path: Path to vault root (defaults to CWD)
-        working_dir: Working directory for agent subprocess execution (defaults to vault_path)
-        config_file: Path to orchestrator config file (defaults to orchestrator.yaml in working directory)
-    """
-    from ..config import Config
-
-    config = Config(config_file=str(config_file) if config_file else None)
-
-    # Use CWD as vault (requires config file in CWD)
-    vault_path = vault_path or Path.cwd()
-
-    # Create orchestrator just to load agents (don't start)
-    orch = Orchestrator(
-        vault_path=vault_path,
-        config=config,
-        working_dir=Path(working_dir) if working_dir else None
-    )
-
-    status = orch.get_status()
-
-    logger.info(Panel.fit(
-        f"[bold]Vault:[/bold] {status['vault_path']}\n"
-        f"[bold]Agents loaded:[/bold] {status['agents_loaded']}\n"
-        f"[bold]Pollers loaded:[/bold] {status['pollers_loaded']}\n"
-        f"[bold]Max concurrent:[/bold] {status['max_concurrent']}",
-        title="Orchestrator Status"
-    ))
-
-    if status['agent_list']:
-        logger.info("\n[bold]Available Agents:[/bold]")
-        for agent_info in status['agent_list']:
-            logger.info(
-                f"  • [{agent_info['abbreviation']}] {agent_info['name']}\n"
-                f"    Category: {agent_info['category']}"
-            )
-
-    # Show pollers
-    pollers_list = list(orch.poller_manager.pollers.items())
-    if pollers_list:
-        logger.info("\n[bold]Available Pollers:[/bold]")
-        for poller_name, poller in sorted(pollers_list, key=lambda p: p[0]):
-            # Use relative path from config instead of absolute path
-            target_dir_rel = poller.poller_config.get('target_dir', str(poller.target_dir))
-            logger.info(
-                f"  • {poller_name}\n"
-                f"    Target: {target_dir_rel}\n"
-                f"    Interval: {poller.poll_interval}s"
-            )
+    try:
+        orch.run_forever()
+    finally:
+        pid_file.unlink(missing_ok=True)
 
 
 def execute_prompt_with_session(

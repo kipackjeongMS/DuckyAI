@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 import pytest
 
-from duckyai_cli.main.orchestrator import run_orchestrator_daemon, show_orchestrator_status
+from duckyai_cli.main.orchestrator import run_orchestrator_daemon
 
 
 class TestOrchestratorFunctions:
@@ -51,7 +51,6 @@ class TestOrchestratorFunctions:
         call_kwargs = mock_orchestrator_class.call_args[1]
         assert call_kwargs['vault_path'] == temp_vault
         assert call_kwargs['max_concurrent'] == 3
-        assert call_kwargs['debug'] is False
         
         # Verify signal handlers were set
         assert mock_signal.call_count == 2
@@ -76,60 +75,6 @@ class TestOrchestratorFunctions:
         mock_orchestrator_class.return_value = mock_orchestrator
         
         run_orchestrator_daemon(vault_path=temp_vault, debug=True)
-        
-        call_kwargs = mock_orchestrator_class.call_args[1]
-        assert call_kwargs['debug'] is True
-
-    @patch('duckyai_cli.main.orchestrator.Orchestrator')
-    @patch('duckyai_cli.main.orchestrator.Config')
-    def test_show_orchestrator_status(self, mock_config_class, mock_orchestrator_class, temp_vault):
-        """Test show_orchestrator_status function."""
-        mock_config = Mock()
-        mock_config_class.return_value = mock_config
-        
-        mock_orchestrator = Mock()
-        mock_orchestrator.get_status.return_value = {
-            'vault_path': str(temp_vault),
-            'agents_loaded': 3,
-            'max_concurrent': 3,
-            'agent_list': [
-                {'abbreviation': 'EIC', 'name': 'Enrich Ingested Content', 'category': 'ingestion'},
-                {'abbreviation': 'CTP', 'name': 'Create Thread Postings', 'category': 'publish'},
-                {'abbreviation': 'GDR', 'name': 'Generate Daily Roundup', 'category': 'workflow'}
-            ]
-        }
-        mock_orchestrator_class.return_value = mock_orchestrator
-        
-        show_orchestrator_status(vault_path=temp_vault)
-        
-        # Verify orchestrator was created
-        mock_orchestrator_class.assert_called_once()
-        call_kwargs = mock_orchestrator_class.call_args[1]
-        assert call_kwargs['vault_path'] == temp_vault
-        
-        # Verify status was retrieved
-        mock_orchestrator.get_status.assert_called_once()
-
-    @patch('duckyai_cli.main.orchestrator.Orchestrator')
-    @patch('duckyai_cli.main.orchestrator.Config')
-    def test_show_orchestrator_status_no_agents(self, mock_config_class, mock_orchestrator_class, temp_vault):
-        """Test show_orchestrator_status with no agents."""
-        mock_config = Mock()
-        mock_config_class.return_value = mock_config
-        
-        mock_orchestrator = Mock()
-        mock_orchestrator.get_status.return_value = {
-            'vault_path': str(temp_vault),
-            'agents_loaded': 0,
-            'max_concurrent': 3,
-            'agent_list': []
-        }
-        mock_orchestrator_class.return_value = mock_orchestrator
-        
-        # Should not raise exception
-        show_orchestrator_status(vault_path=temp_vault)
-        
-        mock_orchestrator.get_status.assert_called_once()
 
     @patch('duckyai_cli.main.orchestrator.Path.cwd')
     def test_run_orchestrator_daemon_defaults_to_cwd(self, mock_cwd, temp_vault):

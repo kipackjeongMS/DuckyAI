@@ -14,7 +14,7 @@ from pathlib import Path
 
 from .show_config import show_config as show_config_handler
 from .orchestrator import run_orchestrator_daemon
-from .orch_cmd import orchestrator_group, _read_pid, _is_orchestrator_alive, orch_status, orch_list_agents
+from .orch_cmd import orchestrator_group, _read_pid, orch_status, orch_list_agents
 from .vault import find_vault_root
 
 
