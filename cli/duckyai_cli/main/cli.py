@@ -106,7 +106,7 @@ def _enqueue_tcs_task(vault_root: Path):
     if task_path.exists():
         return  # Already queued
 
-    trigger_data = '{\"path\": \"\", \"event_type\": \"manual\"}'
+    trigger_data = '{\\"path\\": \\"\\", \\"event_type\\": \\"manual\\"}'
     content = f"""---
 title: "TCS - startup-{timestamp}"
 created: "{now.isoformat()}"

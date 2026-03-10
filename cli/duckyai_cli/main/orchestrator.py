@@ -105,7 +105,7 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
                 # Set cooldown so cron doesn't duplicate this run
                 orch.cron_scheduler.set_cooldown("TCS")
                 logger.info("[green]✓[/green] TCS triggered (running in background)")
-        except (EOFError, KeyboardInterrupt):
+        except Exception:
             pass  # Non-interactive or interrupted — skip prompt
 
     try:
