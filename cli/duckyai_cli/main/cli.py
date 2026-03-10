@@ -88,6 +88,55 @@ def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
             return False
 
 
+def _enqueue_tcs_task(vault_root: Path):
+    """Write a QUEUED TCS task file for the running orchestrator daemon to pick up."""
+    from datetime import datetime
+    from ..config import Config
+
+    config = Config()
+    tasks_dir = Path(config.get_orchestrator_tasks_dir())
+    tasks_dir.mkdir(parents=True, exist_ok=True)
+
+    now = datetime.now()
+    timestamp = now.strftime('%H%M')
+    date_str = now.strftime('%Y-%m-%d')
+    filename = f"{date_str} TCS - startup-{timestamp}.md"
+    task_path = tasks_dir / filename
+
+    if task_path.exists():
+        return  # Already queued
+
+    trigger_data = '{\"path\": \"\", \"event_type\": \"manual\"}'
+    content = f"""---
+title: "TCS - startup-{timestamp}"
+created: "{now.isoformat()}"
+archived: "false"
+worker: "copilot_cli"
+status: "QUEUED"
+priority: "medium"
+output: ""
+task_type: "TCS"
+generation_log: ""
+trigger_data_json: "{trigger_data}"
+---
+
+## Input
+
+Manual event triggered Teams Chat Summary (TCS) processing.
+
+## Output
+
+Teams Chat Summary (TCS) will update this section with output information.
+
+## Instructions
+
+## Process Log
+
+## Evaluation Log
+"""
+    task_path.write_text(content, encoding='utf-8')
+
+
 def _is_junction(path: Path) -> bool:
     """Check if a path is a directory junction (works on Python 3.8+)."""
     if os.name != 'nt':
@@ -385,17 +434,8 @@ def main(
                 try:
                     response = input("\n🔄 Sync Teams chats now? (y/n): ").strip().lower()
                     if response in ("y", "yes"):
-                        click.echo("Triggering Teams Chat Summary...")
-                        duckyai_exe = shutil.which("duckyai")
-                        trigger_cmd = [duckyai_exe or "duckyai", "orchestrator", "trigger", "TCS"]
-                        subprocess.Popen(
-                            trigger_cmd,
-                            cwd=str(vault_root),
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL,
-                            stdin=subprocess.DEVNULL,
-                        )
-                        click.echo("✓ TCS triggered (running in background)")
+                        _enqueue_tcs_task(vault_root)
+                        click.echo("✓ TCS queued — orchestrator will pick it up shortly")
                 except (EOFError, KeyboardInterrupt):
                     pass  # Non-interactive — skip prompt
 
