@@ -35,13 +35,17 @@ If `lastSynced` is null, use:
 
 For each meeting:
 
-1. **Summarize** the meeting in 3-5 sentences capturing the key discussion points
-2. **Extract attendees** (names of all participants)
-3. **Identify decisions made** — any conclusions or agreements reached
-4. **Identify action items** — tasks assigned, follow-ups needed, deadlines mentioned
-5. **Note the meeting title and time**
+1. **Check for transcript/recap/notes** — if the meeting has NO transcript, recap, or meeting notes available, **skip it entirely**. Do not create a meeting note or daily note entry for it.
+2. **Summarize** the meeting in 3-5 sentences capturing the key discussion points
+3. **Extract attendees** (names of all participants)
+4. **Identify decisions made** — any conclusions or agreements reached
+5. **Identify action items** — tasks assigned, follow-ups needed, deadlines mentioned
+6. **Note the meeting title and time**
 
-Skip meetings that are trivial (e.g., canceled, declined, no-shows with no content).
+Skip meetings that are:
+- **Missing transcript/recap/notes** — no content to summarize
+- Canceled, declined, or no-shows
+- Trivial (e.g., brief check-ins with no substance)
 
 ### Step 4: Update vault
 
@@ -104,6 +108,7 @@ After all processing is complete, call `updateTeamsMeetingSyncState` with:
 
 ## Important Rules
 
+- **Skip meetings without transcripts**: If a meeting has no transcript, recap, or notes available from WorkIQ, do NOT create a meeting note or daily note entry for it. Only process meetings with actual content.
 - **Never re-process**: Always check the watermark first. Only process new meetings.
 - **Wiki links for people**: Always use `[[Person Name]]` format when referencing people.
 - **Idempotent**: If a meeting note already exists in `02-People/Meetings/`, skip creating it.
