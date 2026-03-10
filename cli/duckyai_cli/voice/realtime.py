@@ -87,8 +87,8 @@ class VoiceLiveSession:
                 if self.push_to_talk:
                     print("\n" + "=" * 50)
                     print("🎙️  DuckyAI Voice — Push-to-Talk")
-                    print("   Hold [Space] to talk, release to send")
-                    print("   Press [Q] to quit")
+                    print("   Hold [Ctrl+Space] to talk, release to send")
+                    print("   Press [Q] to quit (when terminal focused)")
                     print("=" * 50 + "\n")
                     self._setup_push_to_talk()
                 else:
@@ -134,39 +134,57 @@ class VoiceLiveSession:
         logger.info("Session configured (push_to_talk=%s)", self.push_to_talk)
 
     def _setup_push_to_talk(self):
-        """Set up keyboard hooks for push-to-talk with Space key."""
+        """Set up keyboard hooks for push-to-talk with Ctrl+Space."""
         import keyboard
 
-        def _on_space_press(event):
-            if not self._is_recording:
+        def _is_terminal_focused():
+            """Check if our terminal window is in the foreground."""
+            if os.name != "nt":
+                return True  # No reliable check on non-Windows
+            try:
+                import ctypes
+                foreground = ctypes.windll.user32.GetForegroundWindow()
+                console = ctypes.windll.kernel32.GetConsoleWindow()
+                if console and foreground == console:
+                    return True
+                # Fallback: check if foreground window title contains terminal keywords
+                buf = ctypes.create_unicode_buffer(256)
+                ctypes.windll.user32.GetWindowTextW(foreground, buf, 256)
+                title = buf.value.lower()
+                return any(kw in title for kw in ["powershell", "cmd", "terminal", "duckyai", "python"])
+            except Exception:
+                return True
+
+        def _on_ptt_press():
+            if not self._is_recording and _is_terminal_focused():
                 self._is_recording = True
-                self._skip_playback()  # Stop any current playback
-                # Clear any stale audio buffer from previous interaction
+                self._skip_playback()
                 if self._loop and self.connection:
                     asyncio.run_coroutine_threadsafe(
                         self.connection.input_audio_buffer.clear(), self._loop
                     )
                 self._start_capture()
-                print("🔴 Recording... (release Space to send)", flush=True)
+                print("🔴 Recording... (release Ctrl+Space to send)", flush=True)
 
-        def _on_space_release(event):
+        def _on_ptt_release():
             if self._is_recording:
                 self._is_recording = False
                 self._stop_capture()
                 print("⏹️  Sent! Waiting for response...", flush=True)
-                # Commit the audio buffer and request a response
                 if self._loop and self.connection:
                     asyncio.run_coroutine_threadsafe(
                         self._commit_and_respond(), self._loop
                     )
 
         def _on_q_press(event):
-            print("\n👋 Quitting...", flush=True)
-            if self._loop:
-                self._loop.call_soon_threadsafe(self._loop.stop)
+            if _is_terminal_focused():
+                print("\n👋 Quitting...", flush=True)
+                if self._loop:
+                    self._loop.call_soon_threadsafe(self._loop.stop)
 
-        keyboard.on_press_key("space", _on_space_press, suppress=True)
-        keyboard.on_release_key("space", _on_space_release, suppress=True)
+        # Ctrl+Space — no suppress needed, doesn't steal keys from other apps
+        keyboard.add_hotkey("ctrl+space", _on_ptt_press, trigger_on_release=False)
+        keyboard.add_hotkey("ctrl+space", _on_ptt_release, trigger_on_release=True)
         keyboard.on_press_key("q", _on_q_press)
 
     async def _commit_and_respond(self):
@@ -311,7 +329,7 @@ class VoiceLiveSession:
 
         elif etype == ServerEventType.RESPONSE_DONE:
             if self.push_to_talk:
-                print("🎤 Hold [Space] to talk...\n", flush=True)
+                print("🎤 Hold [Ctrl+Space] to talk...\n", flush=True)
             else:
                 print("🎤 Ready...\n", flush=True)
 
