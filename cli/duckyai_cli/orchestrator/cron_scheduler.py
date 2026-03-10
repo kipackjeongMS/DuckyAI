@@ -26,6 +26,8 @@ class CronScheduler:
     Creates synthetic TriggerEvent objects and queues them for processing.
     """
 
+    COOLDOWN_SECONDS = 600  # 10-minute cooldown to prevent duplicate runs
+
     def __init__(self, agent_registry: AgentRegistry, event_queue: Queue):
         """
         Initialize cron scheduler.
@@ -38,6 +40,7 @@ class CronScheduler:
         self.event_queue = event_queue
         self._running = False
         self._thread: Optional[threading.Thread] = None
+        self._cooldowns: dict[str, float] = {}  # agent_abbr -> last_run_timestamp
 
     def start(self):
         """Start the cron scheduler thread."""
@@ -95,6 +98,13 @@ class CronScheduler:
         for agent in agents_with_cron:
             logger.debug(f"Checking cron job: {agent.name} ({agent.cron})")
             try:
+                # Check cooldown — skip if agent was recently triggered manually
+                last_run = self._cooldowns.get(agent.abbreviation, 0)
+                if (now.timestamp() - last_run) < self.COOLDOWN_SECONDS:
+                    remaining = self.COOLDOWN_SECONDS - (now.timestamp() - last_run)
+                    logger.debug(f"Skipping {agent.abbreviation}: cooldown active ({remaining:.0f}s remaining)")
+                    continue
+
                 # Check if this agent's cron expression should trigger now
                 cron = croniter(agent.cron, now)
                 prev_run = cron.get_prev(datetime)
@@ -125,6 +135,18 @@ class CronScheduler:
         # Queue the event for processing
         self.event_queue.put(trigger_event)
         logger.debug(f"Queued scheduled event for agent: {agent.abbreviation}")
+
+    def set_cooldown(self, agent_abbreviation: str):
+        """
+        Set a cooldown for an agent to prevent duplicate cron triggers.
+
+        Called after a manual/startup trigger so the next cron tick skips this agent.
+
+        Args:
+            agent_abbreviation: Agent abbreviation (e.g., "TCS")
+        """
+        self._cooldowns[agent_abbreviation] = time.time()
+        logger.debug(f"Set cooldown for {agent_abbreviation} ({self.COOLDOWN_SECONDS}s)")
 
     def update_agent_registry(self, agent_registry: AgentRegistry):
         """

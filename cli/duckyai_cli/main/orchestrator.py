@@ -89,6 +89,25 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
 
     # Start orchestrator
     logger.info("\n[cyan]Starting orchestrator...[/cyan]")
+
+    # Prompt user to sync Teams chat on startup
+    tcs_agent = orch.agent_registry.agents.get("TCS")
+    if tcs_agent and tcs_agent.cron:
+        try:
+            response = input("\n🔄 Sync Teams chats now? (y/n): ").strip().lower()
+            if response in ("y", "yes"):
+                logger.info("[cyan]Triggering Teams Chat Summary...[/cyan]")
+                import threading
+                def _run_tcs_sync():
+                    orch.trigger_agent_once("TCS")
+                sync_thread = threading.Thread(target=_run_tcs_sync, daemon=True)
+                sync_thread.start()
+                # Set cooldown so cron doesn't duplicate this run
+                orch.cron_scheduler.set_cooldown("TCS")
+                logger.info("[green]✓[/green] TCS triggered (running in background)")
+        except (EOFError, KeyboardInterrupt):
+            pass  # Non-interactive or interrupted — skip prompt
+
     try:
         orch.run_forever()
     finally:
