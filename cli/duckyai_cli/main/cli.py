@@ -469,6 +469,12 @@ def main(
     elif show_config:
         show_config_handler()
     elif prompt_text or interactive_prompt or not any([orchestrator, orchestrator_status, list_agents, show_config]):
+        # Check if onboarding is needed (first-time user)
+        from .setup import needs_onboarding, run_onboarding
+        if needs_onboarding(vault_root):
+            run_onboarding(vault_root=vault_root)
+            return
+
         # Auto-init .github symlink
         ensure_init(vault_root)
 
@@ -524,6 +530,10 @@ main.add_command(orchestrator_group)
 # Keep 'trigger' as top-level subcommand for backward compat (duckyai trigger EIC)
 from .trigger import trigger_cli
 main.add_command(trigger_cli)
+
+# Onboarding wizard
+from .setup import setup_command
+main.add_command(setup_command)
 
 
 if __name__ == "__main__":
