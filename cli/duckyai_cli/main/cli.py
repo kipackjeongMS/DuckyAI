@@ -3,16 +3,18 @@
 
 import json
 import os
+import shutil
 import signal
 import subprocess
 import sys
+import time
 import click
 import logging
 from pathlib import Path
 
-from .list_agents import list_agents as list_agents_handler
 from .show_config import show_config as show_config_handler
-from .orchestrator import run_orchestrator_daemon, show_orchestrator_status
+from .orchestrator import run_orchestrator_daemon
+from .orch_cmd import orchestrator_group, _read_pid, _is_orchestrator_alive, orch_status, orch_list_agents
 from .vault import find_vault_root
 
 
@@ -20,6 +22,63 @@ def signal_handler(sig, frame):
     """Handle SIGINT (Ctrl+C) gracefully."""
     print("\n\nShutting down DuckyAI...")
     sys.exit(0)
+
+
+def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
+    """Start the orchestrator as a detached background process if not already running.
+
+    Delegates PID checks to orch_cmd module (single source of truth).
+    """
+    pid, alive = _read_pid(vault_root)
+    if alive:
+        return  # already running
+
+    pid_file = vault_root / ".orchestrator.pid"
+    if pid_file.exists():
+        pid_file.unlink(missing_ok=True)
+
+    duckyai_exe = shutil.which("duckyai")
+
+    if os.name == "nt":
+        CREATE_NEW_PROCESS_GROUP = 0x00000200
+        CREATE_NO_WINDOW = 0x08000000
+        flags = CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW
+        cmd = [duckyai_exe, "-o"] if duckyai_exe else [sys.executable, "-m", "duckyai_cli.main.cli", "-o"]
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                cwd=str(vault_root),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL,
+                creationflags=flags,
+            )
+            new_pid = proc.pid
+            for _ in range(10):
+                if pid_file.exists():
+                    try:
+                        new_pid = int(pid_file.read_text(encoding="utf-8").strip())
+                        break
+                    except (ValueError, OSError):
+                        pass
+                time.sleep(0.5)
+            click.echo(f"🚀 Orchestrator started (PID {new_pid})")
+        except Exception as e:
+            click.echo(f"⚠️  Failed to auto-start orchestrator: {e}", err=True)
+    else:
+        cmd = [duckyai_exe, "-o"] if duckyai_exe else [sys.executable, "-m", "duckyai_cli.main.cli", "-o"]
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                cwd=str(vault_root),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                stdin=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            click.echo(f"🚀 Orchestrator started (PID {proc.pid})")
+        except Exception as e:
+            click.echo(f"⚠️  Failed to auto-start orchestrator: {e}", err=True)
 
 
 def _is_junction(path: Path) -> bool:
@@ -295,18 +354,24 @@ def main(
     if ctx.invoked_subcommand is not None:
         return
 
-    # Handle flag-based commands
+    # Handle flag-based commands (shortcuts for subcommands)
     if orchestrator_status:
-        show_orchestrator_status(working_dir=working_dir, config_file=config_file)
+        ctx.invoke(orch_status, json_out=False)
     elif orchestrator:
         run_orchestrator_daemon(debug=debug, working_dir=working_dir, config_file=config_file, mcp_config=mcp_config)
     elif list_agents:
-        list_agents_handler()
+        ctx.invoke(orch_list_agents, json_out=False)
     elif show_config:
         show_config_handler()
     elif prompt_text or interactive_prompt or not any([orchestrator, orchestrator_status, list_agents, show_config]):
         # Auto-init .github symlink
         ensure_init(vault_root)
+
+        # Auto-start orchestrator if enabled in duckyai.yaml
+        from duckyai_cli.config import WorkspaceConfig
+        ws_config = WorkspaceConfig(vault_path=vault_root)
+        if ws_config.orchestrator_auto_start:
+            ensure_orchestrator_running(vault_root, debug=debug)
 
         # Launch Copilot (interactive if no -p flag)
         returncode = launch_copilot(
@@ -318,6 +383,14 @@ def main(
             model=model,
         )
         sys.exit(returncode)
+
+
+# Register subcommand groups
+main.add_command(orchestrator_group)
+
+# Keep 'trigger' as top-level subcommand for backward compat (duckyai trigger EIC)
+from .trigger import trigger_cli
+main.add_command(trigger_cli)
 
 
 if __name__ == "__main__":
