@@ -472,6 +472,23 @@ def main(
         # Auto-init .github symlink
         ensure_init(vault_root)
 
+        # Check for WorkIQ auth expired flag
+        from duckyai_cli.orchestrator.execution_manager import ExecutionManager
+        from duckyai_cli.config import Config as _Config
+        _cfg = _Config()
+        _vault_id = _cfg.get("id", "default")
+        if ExecutionManager.check_workiq_auth_flag(_vault_id):
+            try:
+                click.echo("\n⚠️  WorkIQ authentication expired (permission denied on last run).")
+                response = input("Re-accept WorkIQ EULA now? (y/n): ").strip().lower()
+                if response in ("y", "yes"):
+                    from duckyai_cli.config import get_global_runtime_dir
+                    ExecutionManager.clear_workiq_auth_flag(_vault_id)
+                    click.echo("✓ Auth flag cleared. WorkIQ EULA will be re-accepted on next agent run.")
+                    click.echo("  (If prompted by WorkIQ in your Copilot session, accept the EULA.)")
+            except (EOFError, KeyboardInterrupt):
+                pass
+
         # Auto-start orchestrator if enabled in duckyai.yaml
         from duckyai_cli.config import WorkspaceConfig
         ws_config = WorkspaceConfig(vault_path=vault_root)

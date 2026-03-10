@@ -276,6 +276,12 @@ class ExecutionManager:
             if ctx.status == 'completed' and agent.post_process_action:
                 self._apply_post_processing(agent, trigger_data)
 
+            # Detect WorkIQ permission errors and set flag for interactive re-auth
+            if agent_output and any(kw in agent_output.lower() for kw in [
+                'permission denied', 'eula', 're-authentication', 'workiq'
+            ]):
+                self._set_workiq_auth_flag()
+
             # Log result to file (structured format: JSON metadata + raw output)
             if ctx.log_file:
                 import json as _json
@@ -322,6 +328,34 @@ class ExecutionManager:
                 del self._running_executions[ctx.execution_id]
 
         return ctx
+
+    def _set_workiq_auth_flag(self):
+        """Set a flag indicating WorkIQ needs re-authentication."""
+        from .models import AgentDefinition  # avoid circular
+        state_dir = self.vault_path / '.duckyai' if (self.vault_path / '.duckyai').exists() else Path.home() / '.duckyai'
+        # Use the global state dir
+        from ..config import get_global_runtime_dir, Config
+        config = Config()
+        vault_id = config.get("id", "default")
+        flag_dir = get_global_runtime_dir(vault_id) / "state"
+        flag_dir.mkdir(parents=True, exist_ok=True)
+        flag_file = flag_dir / "workiq-auth-expired"
+        flag_file.write_text("WorkIQ permission denied detected. Re-accept EULA in interactive session.", encoding='utf-8')
+        logger.warning("⚠️ WorkIQ auth expired — run `duckyai` interactively to re-authenticate", console=True)
+
+    @staticmethod
+    def check_workiq_auth_flag(vault_id: str = "default") -> bool:
+        """Check if the WorkIQ auth expired flag is set."""
+        from ..config import get_global_runtime_dir
+        flag_file = get_global_runtime_dir(vault_id) / "state" / "workiq-auth-expired"
+        return flag_file.exists()
+
+    @staticmethod
+    def clear_workiq_auth_flag(vault_id: str = "default"):
+        """Clear the WorkIQ auth expired flag after re-authentication."""
+        from ..config import get_global_runtime_dir
+        flag_file = get_global_runtime_dir(vault_id) / "state" / "workiq-auth-expired"
+        flag_file.unlink(missing_ok=True)
 
     def _execute_claude_code(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
         """
