@@ -55,7 +55,7 @@ nodes:
     cron: "0 * * * *"
     output_path: 04-Periodic/Daily
     output_type: update_file
-    executor: claude_code
+    executor: copilot_sdk
     requires_input_file: false
     enabled: true
   - type: agent
@@ -63,7 +63,7 @@ nodes:
     cron: "0 * * * *"
     output_path: 04-Periodic/Daily
     output_type: update_file
-    executor: claude_code
+    executor: copilot_sdk
     requires_input_file: false
     enabled: true
 id: duckyai_vault

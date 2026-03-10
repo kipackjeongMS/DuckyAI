@@ -191,6 +191,8 @@ class ExecutionManager:
                 self._execute_copilot_cli(agent, ctx, trigger_data)
             elif agent.executor == 'claude_code':
                 self._execute_claude_code(agent, ctx, trigger_data)
+            elif agent.executor == 'copilot_sdk':
+                self._execute_copilot_sdk(agent, ctx, trigger_data)
             else:
                 raise ValueError(f"Unknown executor: {agent.executor}")
 
@@ -405,6 +407,68 @@ class ExecutionManager:
             else:
                 # Re-raise if it's a different error
                 raise
+
+    def _execute_copilot_sdk(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
+        """
+        Execute agent using the GitHub Copilot SDK (Python).
+
+        Uses a runner script (scripts/copilot_sdk_runner.py) on Python 3.10+
+        that invokes the Copilot SDK programmatically via JSON-RPC.
+        """
+        if trigger_data.get('event_type') == 'onetime_prompt':
+            ctx.prompt = agent.prompt_body
+        else:
+            ctx.prompt = self._build_prompt(agent, trigger_data, ctx)
+
+        # Find the runner script
+        runner_script = self.vault_path / 'scripts' / 'copilot_sdk_runner.py'
+        if not runner_script.exists():
+            raise FileNotFoundError(f"Copilot SDK runner not found: {runner_script}")
+
+        # Find Python 3.10+ for the SDK (requires union type syntax)
+        sdk_python = self._find_sdk_python()
+
+        cmd = [sdk_python, str(runner_script), '--prompt', ctx.prompt, '--cwd', str(self.working_dir)]
+
+        # Model selection
+        if agent.agent_params and agent.agent_params.get('model'):
+            cmd.extend(['--model', agent.agent_params['model']])
+
+        # MCP config
+        if self.mcp_config:
+            cmd.extend(['--mcp-config', self.mcp_config[0]])
+
+        self._execute_subprocess(ctx, 'Copilot SDK', cmd, agent.timeout_minutes * 60)
+
+    @staticmethod
+    def _find_sdk_python() -> str:
+        """Find a Python 3.10+ interpreter for the Copilot SDK."""
+        import glob
+
+        # Check uv-managed Pythons first
+        uv_python_dir = Path.home() / ".local" / "share" / "uv" / "python"
+        if not uv_python_dir.exists():
+            uv_python_dir = Path(os.environ.get("APPDATA", "")) / "uv" / "python"
+
+        if uv_python_dir.exists():
+            for ver_dir in sorted(uv_python_dir.iterdir(), reverse=True):
+                if "cpython-3.1" in ver_dir.name or "cpython-3.2" in ver_dir.name:
+                    py = ver_dir / "python.exe" if os.name == "nt" else ver_dir / "bin" / "python3"
+                    if py.exists():
+                        return str(py)
+
+        # Check PATH for python3.12, python3.11, python3.10
+        for ver in ["3.14", "3.13", "3.12", "3.11", "3.10"]:
+            py = shutil.which(f"python{ver}")
+            if py:
+                return py
+
+        # Fallback to python3
+        py = shutil.which("python3") or shutil.which("python")
+        if py:
+            return py
+
+        raise FileNotFoundError("Python 3.10+ not found for Copilot SDK. Install with: uv python install 3.12")
 
     @staticmethod
     def _resolve_copilot_node_cmd():
