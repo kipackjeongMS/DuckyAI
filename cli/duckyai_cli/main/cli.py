@@ -549,6 +549,10 @@ from .setup import setup_command, new_command
 main.add_command(setup_command)
 main.add_command(new_command)
 
+# Voice AI
+from .voice_cmd import voice_command
+main.add_command(voice_command)
+
 
 if __name__ == "__main__":
     main()
