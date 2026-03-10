@@ -1447,6 +1447,199 @@ server.tool(
 );
 
 // =============================================================================
+// SKILL: getTeamsMeetingSyncState
+// =============================================================================
+server.tool(
+  "getTeamsMeetingSyncState",
+  "Get the last Teams meeting sync timestamp (watermark). Returns ISO timestamp of last successful sync.",
+  {},
+  async () => {
+    const stateDir = await getGlobalStateDir();
+    const stateFile = path.join(stateDir, "tms-last-sync.json");
+
+    try {
+      const raw = await fs.readFile(stateFile, "utf-8");
+      const state = JSON.parse(raw);
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            lastSynced: state.lastSynced || null,
+            processedMeetings: state.processedMeetings || [],
+            syncCount: state.syncCount || 0,
+          }),
+        }],
+      };
+    } catch {
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            lastSynced: null,
+            processedMeetings: [],
+            syncCount: 0,
+          }),
+        }],
+      };
+    }
+  }
+);
+
+// =============================================================================
+// SKILL: updateTeamsMeetingSyncState
+// =============================================================================
+server.tool(
+  "updateTeamsMeetingSyncState",
+  "Update the Teams meeting sync watermark after a successful sync",
+  {
+    lastSynced: z.string().describe("ISO timestamp of this sync (e.g., 2026-03-09T20:00:00Z)"),
+    processedMeetingIds: z.array(z.string()).optional().describe("Meeting/event IDs processed in this sync"),
+  },
+  async ({ lastSynced, processedMeetingIds }) => {
+    const stateDir = await getGlobalStateDir();
+    const stateFile = path.join(stateDir, "tms-last-sync.json");
+
+    let existing: any = { processedMeetings: [], syncCount: 0 };
+    try {
+      const raw = await fs.readFile(stateFile, "utf-8");
+      existing = JSON.parse(raw);
+    } catch { /* first run */ }
+
+    const allMeetings = [
+      ...(processedMeetingIds || []),
+      ...(existing.processedMeetings || []),
+    ];
+    const uniqueMeetings = [...new Set(allMeetings)].slice(0, 500);
+
+    const newState = {
+      lastSynced,
+      previousSynced: existing.lastSynced || null,
+      processedMeetings: uniqueMeetings,
+      syncCount: (existing.syncCount || 0) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await fs.writeFile(stateFile, JSON.stringify(newState, null, 2), "utf-8");
+
+    return {
+      content: [{
+        type: "text",
+        text: `✅ Meeting sync state updated. Last synced: ${lastSynced} (sync #${newState.syncCount})`,
+      }],
+    };
+  }
+);
+
+// =============================================================================
+// SKILL: appendTeamsMeetingHighlights
+// =============================================================================
+server.tool(
+  "appendTeamsMeetingHighlights",
+  "Append a Teams Meeting Highlights section to today's daily note. Idempotent: updates existing section if present.",
+  {
+    date: z.string().optional().describe("Date in YYYY-MM-DD format (defaults to today)"),
+    highlights: z.string().describe("Markdown content for the Teams Meeting Highlights section"),
+    people: z.array(z.string()).optional().describe("Names of people mentioned in meetings (will ensure contacts exist and update their notes)"),
+    personNotes: z.array(z.object({
+      name: z.string(),
+      note: z.string(),
+    })).optional().describe("Per-person notes to append to their contact files"),
+  },
+  async ({ date, highlights, people, personNotes }) => {
+    const targetDate = date || getTodayDate();
+    const dailyPath = path.join(DAILY_DIR, `${targetDate}.md`);
+
+    try {
+      await fs.access(dailyPath);
+    } catch {
+      return {
+        content: [{
+          type: "text",
+          text: `Daily note for ${targetDate} doesn't exist. Run prepareDailyNote first.`,
+        }],
+      };
+    }
+
+    let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
+
+    const sectionContent = `## Teams Meeting Highlights\n\n${highlights}`;
+
+    if (/^## Teams Meeting Highlights/m.test(content)) {
+      content = content.replace(
+        /## Teams Meeting Highlights\n[\s\S]*?(?=\n## )/,
+        sectionContent + "\n\n"
+      );
+    } else {
+      // Insert before Teams Chat Highlights or End of Day, or append at end
+      const insertBefore = content.match(/\n## Teams Chat Highlights|\n## End of Day/);
+      if (insertBefore && insertBefore.index !== undefined) {
+        content =
+          content.slice(0, insertBefore.index) +
+          "\n\n" + sectionContent + "\n" +
+          content.slice(insertBefore.index);
+      } else {
+        content = content.trimEnd() + "\n\n" + sectionContent + "\n";
+      }
+    }
+
+    await fs.writeFile(dailyPath, content, "utf-8");
+
+    const createdContacts: string[] = [];
+    const updatedContacts: string[] = [];
+
+    const allPeople = [
+      ...(people || []),
+      ...(personNotes || []).map(pn => pn.name),
+    ];
+    const uniquePeople = [...new Set(allPeople)];
+
+    for (const person of uniquePeople) {
+      const created = await ensureContactExists(person, `Attended meeting on ${targetDate}`);
+      if (created) createdContacts.push(person);
+    }
+
+    if (personNotes) {
+      for (const { name, note } of personNotes) {
+        const contactPath = path.join(CONTACTS_DIR, `${name}.md`);
+        try {
+          let contactContent = normalizeLineEndings(await fs.readFile(contactPath, "utf-8"));
+
+          const noteEntry = `- [${targetDate}] ${note}`;
+          if (/^## Notes/m.test(contactContent)) {
+            contactContent = contactContent.replace(
+              /^(## Notes\n)([\s\S]*?)$/m,
+              (match, header, existing) => {
+                const trimmed = existing.trimEnd();
+                if (trimmed.includes(noteEntry)) return match;
+                const items = trimmed === "-" ? noteEntry : `${trimmed}\n${noteEntry}`;
+                return `${header}${items}\n`;
+              }
+            );
+          } else {
+            contactContent += `\n## Notes\n${noteEntry}\n`;
+          }
+
+          await fs.writeFile(contactPath, contactContent, "utf-8");
+          updatedContacts.push(name);
+        } catch {
+          // Contact file might not exist yet
+        }
+      }
+    }
+
+    const stats = [
+      `Updated daily note ${targetDate} with meeting highlights`,
+      createdContacts.length > 0 ? `created contacts: ${createdContacts.join(", ")}` : null,
+      updatedContacts.length > 0 ? `updated notes for: ${updatedContacts.join(", ")}` : null,
+    ].filter(Boolean).join("; ");
+
+    return {
+      content: [{ type: "text", text: `✅ ${stats}` }],
+    };
+  }
+);
+
+// =============================================================================
 // Start the server
 // =============================================================================
 async function main() {

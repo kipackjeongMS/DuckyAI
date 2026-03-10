@@ -90,23 +90,32 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
     # Start orchestrator
     logger.info("\n[cyan]Starting orchestrator...[/cyan]")
 
-    # Prompt user to sync Teams chat on startup (only in interactive terminal)
-    tcs_agent = orch.agent_registry.agents.get("TCS")
-    if tcs_agent and tcs_agent.cron and sys.stdin and sys.stdin.isatty():
-        try:
-            response = input("\n🔄 Sync Teams chats now? (y/n): ").strip().lower()
-            if response in ("y", "yes"):
-                logger.info("[cyan]Triggering Teams Chat Summary...[/cyan]")
-                import threading
-                def _run_tcs_sync():
-                    orch.trigger_agent_once("TCS")
-                sync_thread = threading.Thread(target=_run_tcs_sync, daemon=True)
-                sync_thread.start()
-                # Set cooldown so cron doesn't duplicate this run
-                orch.cron_scheduler.set_cooldown("TCS")
-                logger.info("[green]✓[/green] TCS triggered (running in background)")
-        except Exception:
-            pass  # Non-interactive or interrupted — skip prompt
+    # Prompt user to sync Teams data on startup (only in interactive terminal)
+    if sys.stdin and sys.stdin.isatty():
+        agents_to_sync = []
+        tcs_agent = orch.agent_registry.agents.get("TCS")
+        if tcs_agent and tcs_agent.cron:
+            agents_to_sync.append(("TCS", "chats"))
+        tms_agent = orch.agent_registry.agents.get("TMS")
+        if tms_agent and tms_agent.cron:
+            agents_to_sync.append(("TMS", "meetings"))
+
+        if agents_to_sync:
+            labels = " & ".join(label for _, label in agents_to_sync)
+            try:
+                response = input(f"\n🔄 Sync Teams {labels} now? (y/n): ").strip().lower()
+                if response in ("y", "yes"):
+                    import threading
+                    for abbr, label in agents_to_sync:
+                        logger.info(f"[cyan]Triggering {abbr}...[/cyan]")
+                        def _run_sync(agent_abbr=abbr):
+                            orch.trigger_agent_once(agent_abbr)
+                        sync_thread = threading.Thread(target=_run_sync, daemon=True)
+                        sync_thread.start()
+                        orch.cron_scheduler.set_cooldown(abbr)
+                    logger.info(f"[green]✓[/green] {' & '.join(a for a, _ in agents_to_sync)} triggered (running in background)")
+            except Exception:
+                pass  # Non-interactive or interrupted — skip prompt
 
     try:
         orch.run_forever()

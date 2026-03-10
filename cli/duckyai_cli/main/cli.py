@@ -137,6 +137,55 @@ Teams Chat Summary (TCS) will update this section with output information.
     task_path.write_text(content, encoding='utf-8')
 
 
+def _enqueue_tms_task(vault_root: Path):
+    """Write a QUEUED TMS task file for the running orchestrator daemon to pick up."""
+    from datetime import datetime
+    from ..config import Config
+
+    config = Config()
+    tasks_dir = Path(config.get_orchestrator_tasks_dir())
+    tasks_dir.mkdir(parents=True, exist_ok=True)
+
+    now = datetime.now()
+    timestamp = now.strftime('%H%M')
+    date_str = now.strftime('%Y-%m-%d')
+    filename = f"{date_str} TMS - startup-{timestamp}.md"
+    task_path = tasks_dir / filename
+
+    if task_path.exists():
+        return
+
+    trigger_data = '{\\"path\\": \\"\\", \\"event_type\\": \\"manual\\"}'
+    content = f"""---
+title: "TMS - startup-{timestamp}"
+created: "{now.isoformat()}"
+archived: "false"
+worker: "copilot_cli"
+status: "QUEUED"
+priority: "medium"
+output: ""
+task_type: "TMS"
+generation_log: ""
+trigger_data_json: "{trigger_data}"
+---
+
+## Input
+
+Manual event triggered Teams Meeting Summary (TMS) processing.
+
+## Output
+
+Teams Meeting Summary (TMS) will update this section with output information.
+
+## Instructions
+
+## Process Log
+
+## Evaluation Log
+"""
+    task_path.write_text(content, encoding='utf-8')
+
+
 def _is_junction(path: Path) -> bool:
     """Check if a path is a directory junction (works on Python 3.8+)."""
     if os.name != 'nt':
@@ -429,13 +478,14 @@ def main(
         if ws_config.orchestrator_auto_start:
             freshly_started = ensure_orchestrator_running(vault_root, debug=debug)
 
-            # Prompt Teams chat sync when orchestrator was freshly started
+            # Prompt Teams sync when orchestrator was freshly started
             if freshly_started:
                 try:
-                    response = input("\n🔄 Sync Teams chats now? (y/n): ").strip().lower()
+                    response = input("\n🔄 Sync Teams chats & meetings now? (y/n): ").strip().lower()
                     if response in ("y", "yes"):
                         _enqueue_tcs_task(vault_root)
-                        click.echo("✓ TCS queued — orchestrator will pick it up shortly")
+                        _enqueue_tms_task(vault_root)
+                        click.echo("✓ TCS & TMS queued — orchestrator will pick them up shortly")
                 except (EOFError, KeyboardInterrupt):
                     pass  # Non-interactive — skip prompt
 

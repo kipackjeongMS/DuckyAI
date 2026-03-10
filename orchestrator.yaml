@@ -57,5 +57,12 @@ nodes:
     output_type: update_file
     requires_input_file: false
     enabled: true
+  - type: agent
+    name: Teams Meeting Summary (TMS)
+    cron: "0 * * * *"
+    output_path: 04-Periodic/Daily
+    output_type: update_file
+    requires_input_file: false
+    enabled: true
 id: duckyai_vault
 name: duckyai_vault
