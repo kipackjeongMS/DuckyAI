@@ -87,22 +87,23 @@ Call `updateTeamsMeetingSyncState` with current timestamp and meeting IDs.
 
 ## Output Format
 
+### Per-Meeting Note (`02-People/Meetings/YYYY-MM-DD Title.md`)
+Full detailed record using the Meeting template — discussion, decisions, action items.
+
 ### Daily Note — Teams Meeting Highlights
+Lightweight references with short summaries and links to full notes:
 ```markdown
 ## Teams Meeting Highlights
 
 ### Sprint Planning (09:00 - 10:00)
-**Organizer**: [[Alice Smith]]
 **Attendees**: [[Alice Smith]], [[Bob Jones]], [[Carol White]]
-**Summary**: Reviewed sprint backlog. Prioritized auth module and API refactor.
+**Summary**: Reviewed sprint backlog and prioritized auth module and API refactor. Decided to use JWT over session tokens. Sprint demo moved to Friday.
+→ **Full notes**: [[2026-03-10 Sprint Planning]]
 
-**Decisions**:
-- Use JWT over session tokens
-- Sprint demo moved to Friday
-
-**Action Items**:
-- [ ] @[[Bob Jones]]: Draft API schema by Wednesday
-- [ ] @[[Carol White]]: Set up test environment
+### 1:1 with Bob (14:00 - 14:30)
+**Attendees**: [[Bob Jones]]
+**Summary**: Discussed API schema progress and testing blockers. Bob will draft schema by Wednesday.
+→ **Full notes**: [[2026-03-10 1:1 with Bob]]
 ```
 
 ## Section Ordering in Daily Note
