@@ -456,6 +456,15 @@ def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings):
     combined_mcp_config = parent_mcp_config + mcp_config if mcp_config else parent_mcp_config
     effective_claude_settings = claude_settings or obj.get("claude_settings")
 
+    # Auto-discover MCP config if none provided
+    if not combined_mcp_config:
+        from .cli import get_mcp_config
+        from .vault import find_vault_root
+        vault_root = find_vault_root(Path(working_dir) if working_dir else None)
+        auto_mcp = get_mcp_config(vault_root)
+        if auto_mcp:
+            combined_mcp_config = (auto_mcp,)
+
     if json_out and not agent:
         click.echo(json.dumps({"status": "error", "message": "Agent abbreviation required for JSON mode"}))
         sys.exit(1)
