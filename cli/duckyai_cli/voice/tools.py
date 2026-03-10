@@ -1,76 +1,44 @@
-"""Tool bridge — maps DuckyAI MCP tools to Azure Voice Live function calls."""
+"""Tool bridge — single mega-tool that delegates to Copilot SDK for full DuckyAI capabilities."""
 
+import asyncio
 import json
 import subprocess
 import shutil
+import sys
+import os
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 
 def get_vault_tools() -> List[Dict[str, Any]]:
-    """Return tool definitions for Voice Live function calling."""
+    """Return tool definitions for Voice Live function calling.
+    
+    Single tool that delegates everything to the Copilot SDK,
+    giving voice the same capabilities as the text CLI.
+    """
     return [
         {
             "type": "function",
-            "name": "search_vault",
-            "description": "Search the user's knowledge vault for notes, documents, and topics by keyword.",
+            "name": "duckyai_agent",
+            "description": (
+                "Execute any DuckyAI request through the full agent system. "
+                "This tool has access to the user's entire knowledge vault, "
+                "Microsoft Teams data (chats, meetings, emails via WorkIQ), "
+                "task management, orchestrator control (trigger agents, check status), "
+                "and all vault operations. Use this for ANY request that needs "
+                "vault access, Teams data, task creation, agent triggers, or knowledge queries. "
+                "Pass the user's request as-is."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {"type": "string", "description": "Search query (keywords or phrase)"},
+                    "request": {
+                        "type": "string",
+                        "description": "The user's request in natural language, forwarded to the DuckyAI agent",
+                    },
                 },
-                "required": ["query"],
+                "required": ["request"],
             },
-        },
-        {
-            "type": "function",
-            "name": "get_today_meetings",
-            "description": "Get today's meetings from the daily note.",
-            "parameters": {"type": "object", "properties": {}},
-        },
-        {
-            "type": "function",
-            "name": "get_today_tasks",
-            "description": "Get today's tasks and action items from the daily note.",
-            "parameters": {"type": "object", "properties": {}},
-        },
-        {
-            "type": "function",
-            "name": "create_task",
-            "description": "Create a new task in the vault.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "title": {"type": "string", "description": "Task title"},
-                    "description": {"type": "string", "description": "Task description"},
-                    "priority": {"type": "string", "enum": ["P1", "P2", "P3"], "description": "Priority level"},
-                },
-                "required": ["title"],
-            },
-        },
-        {
-            "type": "function",
-            "name": "trigger_teams_sync",
-            "description": "Trigger Teams chat and meeting sync agents (TCS and TMS).",
-            "parameters": {"type": "object", "properties": {}},
-        },
-        {
-            "type": "function",
-            "name": "read_note",
-            "description": "Read the content of a specific note from the vault.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "filename": {"type": "string", "description": "Note filename (e.g., '2026-03-10 Ki-JM 1-1.md')"},
-                },
-                "required": ["filename"],
-            },
-        },
-        {
-            "type": "function",
-            "name": "get_recent_chats",
-            "description": "Get recent Teams chat highlights from the daily note.",
-            "parameters": {"type": "object", "properties": {}},
         },
     ]
 
@@ -84,158 +52,97 @@ def _find_vault_root() -> Path:
     return cwd
 
 
-def _read_daily_note_section(section: str) -> str:
-    """Read a section from today's daily note."""
-    from datetime import datetime
-    vault = _find_vault_root()
-    today = datetime.now().strftime("%Y-%m-%d")
-    daily = vault / "04-Periodic" / "Daily" / f"{today}.md"
-
-    if not daily.exists():
-        return f"No daily note found for {today}."
-
-    content = daily.read_text(encoding="utf-8")
-    lines = content.split("\n")
-
-    in_section = False
-    result = []
-    for line in lines:
-        if line.startswith(f"## {section}"):
-            in_section = True
-            continue
-        elif line.startswith("## ") and in_section:
-            break
-        elif in_section:
-            result.append(line)
-
-    text = "\n".join(result).strip()
-    return text if text else f"No {section} section found in today's daily note."
-
-
-def _search_vault(query: str) -> str:
-    """Search vault files for a query string."""
-    vault = _find_vault_root()
-    results = []
-
-    for ext in ["*.md"]:
-        for f in vault.rglob(ext):
-            # Skip hidden dirs and archives
-            parts = f.relative_to(vault).parts
-            if any(p.startswith(".") or p == "05-Archive" for p in parts):
-                continue
-            try:
-                content = f.read_text(encoding="utf-8", errors="ignore")
-                if query.lower() in content.lower():
-                    rel = str(f.relative_to(vault))
-                    # Extract a snippet around the match
-                    idx = content.lower().index(query.lower())
-                    start = max(0, idx - 100)
-                    end = min(len(content), idx + 200)
-                    snippet = content[start:end].replace("\n", " ").strip()
-                    results.append(f"**{rel}**: ...{snippet}...")
-            except Exception:
-                continue
-
-            if len(results) >= 5:
-                break
-        if len(results) >= 5:
-            break
-
-    if results:
-        return f"Found {len(results)} results for '{query}':\n\n" + "\n\n".join(results)
-    return f"No results found for '{query}' in the vault."
-
-
-def _read_note(filename: str) -> str:
-    """Read a note from the vault."""
-    vault = _find_vault_root()
-
-    # Search common locations
-    for subdir in ["02-People/Meetings", "04-Periodic/Daily", "03-Knowledge", "01-Work", "00-Inbox", ""]:
-        path = vault / subdir / filename if subdir else vault / filename
-        if path.exists():
-            content = path.read_text(encoding="utf-8", errors="ignore")
-            # Truncate for voice (keep first 2000 chars)
-            if len(content) > 2000:
-                content = content[:2000] + "\n\n...(truncated for voice)"
-            return content
-
-    return f"Note '{filename}' not found in the vault."
-
-
-def _trigger_teams_sync() -> str:
-    """Trigger TCS and TMS agents."""
-    duckyai = shutil.which("duckyai")
-    if not duckyai:
-        return "duckyai CLI not found."
-
-    try:
-        subprocess.Popen(
-            [duckyai, "orchestrator", "trigger", "TCS"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-        subprocess.Popen(
-            [duckyai, "orchestrator", "trigger", "TMS"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        )
-        return "TCS and TMS agents triggered. They'll run in the background."
-    except Exception as e:
-        return f"Failed to trigger sync: {e}"
-
-
-def _create_task(title: str, description: str = "", priority: str = "P2") -> str:
-    """Create a task by writing to the tasks directory."""
-    from datetime import datetime
-    vault = _find_vault_root()
-    tasks_dir = vault / "01-Work" / "Tasks"
-    tasks_dir.mkdir(parents=True, exist_ok=True)
-
-    today = datetime.now().strftime("%Y-%m-%d")
-    filename = f"{today} {title}.md"
-    task_path = tasks_dir / filename
-
-    if task_path.exists():
-        return f"Task '{title}' already exists."
-
-    content = f"""---
-created: {today}
-type: task
-priority: {priority}
-status: open
-tags:
-  - task
----
-
-# {title}
-
-{description}
-"""
-    task_path.write_text(content, encoding="utf-8")
-    return f"Created task: {title} ({priority})"
+def _get_copilot_sdk_python() -> str:
+    """Find Python 3.10+ for the Copilot SDK."""
+    uv_dir = Path(os.environ.get("APPDATA", "")) / "uv" / "python"
+    if uv_dir.exists():
+        for ver_dir in sorted(uv_dir.iterdir(), reverse=True):
+            if "cpython-3.1" in ver_dir.name:
+                py = ver_dir / "python.exe" if os.name == "nt" else ver_dir / "bin" / "python3"
+                if py.exists():
+                    return str(py)
+    for ver in ["3.14", "3.13", "3.12", "3.11", "3.10"]:
+        py = shutil.which(f"python{ver}")
+        if py:
+            return py
+    return shutil.which("python3") or shutil.which("python") or "python"
 
 
 async def handle_tool_call(name: str, arguments: Dict[str, Any]) -> str:
-    """Execute a tool call and return the result as text."""
+    """Execute a tool call via the Copilot SDK."""
+    if name != "duckyai_agent":
+        return f"Unknown tool: {name}"
+
+    request = arguments.get("request", "")
+    if not request:
+        return "No request provided."
+
     try:
-        if name == "search_vault":
-            return _search_vault(arguments.get("query", ""))
-        elif name == "get_today_meetings":
-            return _read_daily_note_section("Teams Meeting Highlights")
-        elif name == "get_today_tasks":
-            return _read_daily_note_section("Focus Today")
-        elif name == "get_recent_chats":
-            return _read_daily_note_section("Teams Chat Highlights")
-        elif name == "create_task":
-            return _create_task(
-                arguments.get("title", "Untitled"),
-                arguments.get("description", ""),
-                arguments.get("priority", "P2"),
-            )
-        elif name == "trigger_teams_sync":
-            return _trigger_teams_sync()
-        elif name == "read_note":
-            return _read_note(arguments.get("filename", ""))
-        else:
-            return f"Unknown tool: {name}"
+        return await _run_copilot_agent(request)
     except Exception as e:
-        return f"Tool error: {e}"
+        return f"Agent error: {e}"
+
+
+async def _run_copilot_agent(request: str) -> str:
+    """Run a request through the Copilot SDK and return the text response."""
+    vault_root = _find_vault_root()
+    sdk_python = _get_copilot_sdk_python()
+    runner = vault_root / "scripts" / "copilot_sdk_runner.py"
+
+    if not runner.exists():
+        return "Copilot SDK runner not found. Run duckyai setup."
+
+    # Build MCP config for the runner
+    from duckyai_cli.main.cli import get_mcp_config
+    mcp_config = get_mcp_config(vault_root)
+
+    # Prefix the request with voice context
+    prompt = (
+        f"You are responding to a voice request. Be concise and conversational — "
+        f"this will be spoken aloud. Avoid markdown formatting, bullet lists, or long text. "
+        f"Summarize key points in natural speech.\n\n"
+        f"User request: {request}"
+    )
+
+    cmd = [
+        sdk_python, str(runner),
+        "--prompt", prompt,
+        "--cwd", str(vault_root),
+    ]
+    if mcp_config:
+        cmd.extend(["--mcp-config", mcp_config])
+
+    # Run async subprocess
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        cwd=str(vault_root),
+    )
+
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+    except asyncio.TimeoutError:
+        proc.kill()
+        return "Agent timed out after 2 minutes."
+
+    output = stdout.decode("utf-8", errors="replace")
+
+    # Extract the SDK result if present
+    marker = "__COPILOT_SDK_RESULT__"
+    if marker in output:
+        result_json = output.split(marker)[-1].strip()
+        try:
+            result = json.loads(result_json)
+            if result.get("status") == "completed" and result.get("output"):
+                return result["output"]
+            elif result.get("errors"):
+                return f"Agent encountered errors: {'; '.join(result['errors'])}"
+        except json.JSONDecodeError:
+            pass
+
+    # Fall back to raw output (strip the marker line)
+    lines = [l for l in output.strip().split("\n") if marker not in l]
+    text = "\n".join(lines).strip()
+    return text if text else "No response from agent."
+

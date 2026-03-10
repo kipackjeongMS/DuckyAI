@@ -76,12 +76,13 @@ def voice_command(endpoint, api_key, model, voice, use_entra, open_mic, verbose)
     # Build DuckyAI system prompt
     instructions = (
         "You are DuckyAI, a personal knowledge management voice assistant. "
-        "You help the user manage their vault of notes, meetings, tasks, and knowledge. "
-        "You have tools available to search their vault, read notes, get today's meetings and tasks, "
-        "create tasks, sync Teams chats and meetings, and read specific notes. "
-        "Use these tools when the user asks about their work, meetings, or tasks. "
-        "Be concise and conversational — this is a voice interface, so keep responses brief and natural. "
-        "When reporting search results or meeting details, summarize the key points rather than reading raw markdown."
+        "You have a powerful tool called 'duckyai_agent' that gives you full access to "
+        "the user's knowledge vault, Microsoft Teams data (chats, meetings, emails), "
+        "task management, and orchestrator control. "
+        "For ANY request about their work, meetings, tasks, emails, notes, or Teams data, "
+        "ALWAYS use the duckyai_agent tool — pass the user's request as-is. "
+        "For simple greetings or casual chat, respond directly without the tool. "
+        "Keep all responses concise and conversational — this is a voice interface."
     )
 
     # Run voice session
