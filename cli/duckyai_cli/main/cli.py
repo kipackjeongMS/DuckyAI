@@ -28,10 +28,13 @@ def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
     """Start the orchestrator as a detached background process if not already running.
 
     Delegates PID checks to orch_cmd module (single source of truth).
+
+    Returns:
+        True if orchestrator was freshly started, False if already running.
     """
     pid, alive = _read_pid(vault_root)
     if alive:
-        return  # already running
+        return False  # already running
 
     pid_file = vault_root / ".orchestrator.pid"
     if pid_file.exists():
@@ -63,8 +66,10 @@ def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
                         pass
                 time.sleep(0.5)
             click.echo(f"🚀 Orchestrator started (PID {new_pid})")
+            return True
         except Exception as e:
             click.echo(f"⚠️  Failed to auto-start orchestrator: {e}", err=True)
+            return False
     else:
         cmd = [duckyai_exe, "-o"] if duckyai_exe else [sys.executable, "-m", "duckyai_cli.main.cli", "-o"]
         try:
@@ -77,8 +82,10 @@ def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
                 start_new_session=True,
             )
             click.echo(f"🚀 Orchestrator started (PID {proc.pid})")
+            return True
         except Exception as e:
             click.echo(f"⚠️  Failed to auto-start orchestrator: {e}", err=True)
+            return False
 
 
 def _is_junction(path: Path) -> bool:
@@ -371,7 +378,26 @@ def main(
         from duckyai_cli.config import WorkspaceConfig
         ws_config = WorkspaceConfig(vault_path=vault_root)
         if ws_config.orchestrator_auto_start:
-            ensure_orchestrator_running(vault_root, debug=debug)
+            freshly_started = ensure_orchestrator_running(vault_root, debug=debug)
+
+            # Prompt Teams chat sync when orchestrator was freshly started
+            if freshly_started:
+                try:
+                    response = input("\n🔄 Sync Teams chats now? (y/n): ").strip().lower()
+                    if response in ("y", "yes"):
+                        click.echo("Triggering Teams Chat Summary...")
+                        duckyai_exe = shutil.which("duckyai")
+                        trigger_cmd = [duckyai_exe or "duckyai", "orchestrator", "trigger", "TCS"]
+                        subprocess.Popen(
+                            trigger_cmd,
+                            cwd=str(vault_root),
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            stdin=subprocess.DEVNULL,
+                        )
+                        click.echo("✓ TCS triggered (running in background)")
+                except (EOFError, KeyboardInterrupt):
+                    pass  # Non-interactive — skip prompt
 
         # Launch Copilot (interactive if no -p flag)
         returncode = launch_copilot(
