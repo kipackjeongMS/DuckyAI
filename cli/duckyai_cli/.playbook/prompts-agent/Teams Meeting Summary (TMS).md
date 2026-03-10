@@ -45,34 +45,42 @@ Skip meetings that are trivial (e.g., canceled, declined, no-shows with no conte
 
 ### Step 4: Update vault
 
-#### 4a. Daily Note — Teams Meeting Highlights
+#### 4a. Create Per-Meeting Note
+
+For each meeting with meaningful content, call `createMeeting` with:
+- `title`: Meeting title
+- `date`: Meeting date (YYYY-MM-DD)
+- `time`: Meeting start time (HH:MM)
+- `attendees`: List of attendee names
+- `project`: Related project if identifiable
+
+Then **edit the created meeting note** to fill in the detailed sections:
+- `## Discussion`: Full discussion points, context, and quotes
+- `## Decisions`: All decisions made
+- `## Action Items`: All action items with `@[[Person]]` assignments
+
+This is the **primary detailed record** — put everything here.
+
+#### 4b. Daily Note — Teams Meeting Highlights
 
 Call `appendTeamsMeetingHighlights` with:
 
 - `date`: today's date (YYYY-MM-DD)
-- `highlights`: Formatted markdown like:
+- `highlights`: Formatted markdown — a **lightweight reference** per meeting:
 
 ```markdown
 ### {Meeting Title} ({HH:MM - HH:MM})
-**Organizer**: [[Organizer Name]]
 **Attendees**: [[Person A]], [[Person B]], [[Person C]]
-**Summary**: Brief summary of the meeting discussion.
-
-**Decisions**:
-- Decision 1
-- Decision 2
-
-**Action Items**:
-- [ ] @[[Person A]]: Action description
-- [ ] @[[Person B]]: Action description
-
-> Notable quote or key statement if relevant
+**Summary**: 3-4 sentence summary of key discussion points and outcomes.
+→ **Full notes**: [[YYYY-MM-DD Meeting Title]]
 ```
+
+Each meeting entry should be concise (summary only) with an Obsidian link to the full meeting note in `02-People/Meetings/`.
 
 - `people`: Array of all person names mentioned
 - `personNotes`: Array of `{ name, note }` for each person with a meaningful interaction
 
-#### 4b. Create Tasks (if action items found)
+#### 4c. Create Tasks (if action items found)
 
 For each action item identified, call `createTask` with:
 - `title`: Descriptive task title
@@ -98,8 +106,8 @@ After all processing is complete, call `updateTeamsMeetingSyncState` with:
 
 - **Never re-process**: Always check the watermark first. Only process new meetings.
 - **Wiki links for people**: Always use `[[Person Name]]` format when referencing people.
-- **Idempotent**: If a meeting was already summarized (check daily note), skip it.
-- **Focus on substance**: Capture decisions, action items, and key information. Skip agenda items that weren't discussed.
+- **Idempotent**: If a meeting note already exists in `02-People/Meetings/`, skip creating it.
+- **Details in meeting note, summary in daily note**: Full discussion/decisions/action items go in the per-meeting note. The daily note gets only a 3-4 sentence summary with a link.
 - **Respect existing content**: When updating the daily note, preserve all existing sections.
 - **Separate from chats**: Do NOT include chat messages. Only process calendar meetings with Teams links.
 - **If no new meetings**: Simply update the watermark and report "No new Teams meetings since last sync."
