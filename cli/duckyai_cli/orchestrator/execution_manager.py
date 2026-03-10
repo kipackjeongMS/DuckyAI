@@ -274,17 +274,40 @@ class ExecutionManager:
             if ctx.status == 'completed' and agent.post_process_action:
                 self._apply_post_processing(agent, trigger_data)
 
-            # Log result to file
+            # Log result to file (structured format: JSON metadata + raw output)
             if ctx.log_file:
+                import json as _json
+                trigger_path = trigger_data.get('path', '')
+                input_file = Path(trigger_path).name if trigger_path else None
+                trigger_type = trigger_data.get('event_type', 'unknown')
+
+                metadata = {
+                    "agent": agent.abbreviation,
+                    "agent_name": agent.name,
+                    "execution_id": ctx.execution_id,
+                    "session_id": ctx.session_id,
+                    "status": ctx.status,
+                    "trigger_type": trigger_type,
+                    "input_file": input_file,
+                    "input_path": trigger_path,
+                    "output_path": agent.output_path or None,
+                    "executor": agent.executor,
+                    "start_time": ctx.start_time.isoformat() if ctx.start_time else None,
+                    "end_time": ctx.end_time.isoformat() if ctx.end_time else None,
+                    "duration_seconds": round(ctx.duration, 1) if ctx.duration else None,
+                    "error": ctx.error_message if ctx.error_message else None,
+                    "task_file": str(ctx.task_file.name) if ctx.task_file else None,
+                }
+
                 with open(ctx.log_file, 'w', encoding='utf-8') as f:
-                    f.write(f"# Execution Log: {agent.abbreviation}\n")
-                    f.write(f"# Start: {ctx.start_time}\n")
-                    f.write(f"# Execution ID: {ctx.execution_id}\n")
-                    f.write(f"# Status: {ctx.status}\n")
-                    f.write(f"# Prompt:\n{ctx.prompt}\n\n")
-                    f.write(f"# Response:\n{ctx.response}\n\n")
+                    f.write("---\n")
+                    f.write(_json.dumps(metadata, indent=2, default=str))
+                    f.write("\n---\n\n")
+                    f.write(f"# Execution Log: {agent.abbreviation}\n\n")
+                    f.write(f"## Prompt\n\n```\n{ctx.prompt}\n```\n\n")
+                    f.write(f"## Response\n\n{ctx.response or '(no output)'}\n\n")
                     if ctx.error_message:
-                        f.write(f"# Error Message:\n{ctx.error_message}\n\n")
+                        f.write(f"## Error\n\n```\n{ctx.error_message}\n```\n")
 
             # Decrement counters
             with self._count_lock:
@@ -777,6 +800,9 @@ class ExecutionManager:
         """
         Prepare log file path for execution.
 
+        Logs are organized per-agent in subdirectories:
+          ~/.duckyai/vaults/{vault_id}/logs/{AGENT_ABBR}/{timestamp}-{agent}.log
+
         Args:
             agent: Agent definition
             ctx: Execution context
@@ -791,9 +817,9 @@ class ExecutionManager:
             execution_id=ctx.execution_id
         )
 
-        # Get logs directory from config
+        # Get logs directory from config, with per-agent subdirectory
         logs_dir = self.config.get_orchestrator_logs_dir()
-        log_path = self.vault_path / logs_dir / log_name
+        log_path = self.vault_path / logs_dir / agent.abbreviation / log_name
 
         # Try to reuse existing log path from frontmatter
         log_link = ctx.trigger_data.get('_generation_log', '')
