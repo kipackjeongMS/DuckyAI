@@ -19,6 +19,7 @@ from azure.ai.voicelive.models import (
     AudioEchoCancellation,
     AudioNoiseReduction,
     AzureStandardVoice,
+    FunctionCallOutputItem,
     InputAudioFormat,
     Modality,
     OutputAudioFormat,
@@ -310,12 +311,9 @@ class VoiceLiveSession:
             result = await handle_tool_call(name, args)
             print(f"   → {result[:100]}{'...' if len(result) > 100 else ''}", flush=True)
 
-            # Send result back to the model
-            await self.connection.conversation.item.create(item={
-                "type": "function_call_output",
-                "call_id": call_id,
-                "output": result,
-            })
+            # Send result back to the model using proper SDK type
+            output_item = FunctionCallOutputItem(call_id=call_id, output=result)
+            await self.connection.conversation.item.create(item=output_item)
             # Trigger model to generate response based on tool result
             await self.connection.response.create()
 
