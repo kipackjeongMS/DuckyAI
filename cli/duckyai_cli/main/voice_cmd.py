@@ -13,7 +13,8 @@ import click
 @click.option("--voice", default="en-US-Ava:DragonHDLatestNeural", help="Voice name")
 @click.option("--use-entra", is_flag=True, default=False, help="Use Azure Entra ID auth instead of API key")
 @click.option("--open-mic", is_flag=True, default=False, help="Use open-mic mode with VAD (default: push-to-talk)")
-def voice_command(endpoint, api_key, model, voice, use_entra, open_mic):
+@click.option("--verbose", is_flag=True, default=False, help="Enable verbose logging")
+def voice_command(endpoint, api_key, model, voice, use_entra, open_mic, verbose):
     """Start a real-time voice conversation with DuckyAI.
 
     \b
@@ -43,6 +44,14 @@ def voice_command(endpoint, api_key, model, voice, use_entra, open_mic):
         click.echo(f"❌ Audio system check failed: {e}")
         click.echo("Install sounddevice: pip install sounddevice")
         sys.exit(1)
+
+    # Set up logging
+    if verbose:
+        import logging
+        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(name)s %(levelname)s: %(message)s")
+    else:
+        import logging
+        logging.basicConfig(level=logging.WARNING)
 
     # Resolve credentials
     if not endpoint:

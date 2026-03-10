@@ -236,9 +236,18 @@ class VoiceLiveSession:
         self._output_stream.start()
         logger.info("Speaker playback started")
 
-    def _queue_audio(self, audio_bytes: bytes):
-        """Queue audio data for playback."""
-        self._playback_queue.put(audio_bytes)
+    def _queue_audio(self, audio_data):
+        """Queue audio data for playback. Handles both raw bytes and base64."""
+        if isinstance(audio_data, str):
+            # Base64-encoded audio from Voice Live
+            raw = base64.b64decode(audio_data)
+        elif isinstance(audio_data, bytes):
+            raw = audio_data
+        else:
+            logger.warning("Unknown audio data type: %s", type(audio_data))
+            return
+        if raw:
+            self._playback_queue.put(raw)
 
     def _skip_playback(self):
         """Clear pending playback (user interrupted)."""
@@ -258,29 +267,37 @@ class VoiceLiveSession:
 
     async def _handle_event(self, event):
         """Handle individual Voice Live events."""
-        if event.type == ServerEventType.SESSION_UPDATED:
+        etype = event.type
+        logger.debug("Event: %s", etype)
+
+        if etype == ServerEventType.SESSION_UPDATED:
             logger.info("Session ready: %s", event.session.id)
-            # Only auto-start capture in open-mic mode
             if not self.push_to_talk:
                 self._start_capture()
 
-        elif event.type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
+        elif etype == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
             print("🎤 Listening...", flush=True)
             self._skip_playback()
 
-        elif event.type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED:
+        elif etype == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED:
             print("🤔 Processing...", flush=True)
 
-        elif event.type == ServerEventType.RESPONSE_AUDIO_DELTA:
+        elif etype == ServerEventType.RESPONSE_CREATED:
+            logger.info("Response created")
+
+        elif etype == ServerEventType.RESPONSE_AUDIO_DELTA:
             self._queue_audio(event.delta)
 
-        elif event.type == ServerEventType.RESPONSE_AUDIO_DONE:
-            print("🔊 Speaking done", flush=True)
+        elif etype == ServerEventType.RESPONSE_AUDIO_DONE:
+            print("🔊 Response complete", flush=True)
 
-        elif event.type == ServerEventType.RESPONSE_DONE:
-            print("🎤 Ready...\n", flush=True)
+        elif etype == ServerEventType.RESPONSE_DONE:
+            if self.push_to_talk:
+                print("🎤 Hold [Space] to talk...\n", flush=True)
+            else:
+                print("🎤 Ready...\n", flush=True)
 
-        elif event.type == ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE:
+        elif etype == ServerEventType.RESPONSE_FUNCTION_CALL_ARGUMENTS_DONE:
             # Function call complete — execute the tool
             call_id = event.call_id
             name = event.name
@@ -310,6 +327,10 @@ class VoiceLiveSession:
 
         elif event.type == ServerEventType.CONVERSATION_ITEM_CREATED:
             logger.debug("Conversation item created")
+
+        else:
+            # Log unhandled events for debugging
+            logger.debug("Unhandled event: %s", event.type)
 
     def _cleanup(self):
         """Clean up audio resources."""
