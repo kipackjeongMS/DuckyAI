@@ -12,17 +12,18 @@ import click
 @click.option("--model", default="gpt-4o-realtime-preview", help="Voice Live model")
 @click.option("--voice", default="en-US-Ava:DragonHDLatestNeural", help="Voice name")
 @click.option("--use-entra", is_flag=True, default=False, help="Use Azure Entra ID auth instead of API key")
-def voice_command(endpoint, api_key, model, voice, use_entra):
+@click.option("--open-mic", is_flag=True, default=False, help="Use open-mic mode with VAD (default: push-to-talk)")
+def voice_command(endpoint, api_key, model, voice, use_entra, open_mic):
     """Start a real-time voice conversation with DuckyAI.
 
     \b
-    Uses Azure Voice Live SDK for speech-to-speech conversation.
-    Speak naturally — voice activity detection handles turn-taking.
+    Default: Push-to-talk — hold Space to talk, release to send.
+    Use --open-mic for hands-free with voice activity detection.
 
     \b
     Examples:
-        duckyai voice                              # Uses env vars for auth
-        duckyai voice --use-entra                  # Azure Entra ID auth
+        duckyai voice --use-entra                  # Push-to-talk (default)
+        duckyai voice --use-entra --open-mic       # Open mic with VAD
         duckyai voice --api-key YOUR_KEY           # API key auth
         duckyai voice --voice alloy                # OpenAI voice
     """
@@ -84,6 +85,7 @@ def voice_command(endpoint, api_key, model, voice, use_entra):
             model=model,
             voice=voice,
             instructions=instructions,
+            push_to_talk=not open_mic,
         ))
     except KeyboardInterrupt:
         click.echo("\n👋 Voice session ended. Goodbye!")

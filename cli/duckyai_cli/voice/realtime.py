@@ -46,12 +46,14 @@ class VoiceLiveSession:
         model: str = "gpt-4o-realtime-preview",
         voice: str = "en-US-Ava:DragonHDLatestNeural",
         instructions: str = "You are DuckyAI, a helpful personal knowledge assistant.",
+        push_to_talk: bool = True,
     ):
         self.endpoint = endpoint
         self.credential = credential
         self.model = model
         self.voice = voice
         self.instructions = instructions
+        self.push_to_talk = push_to_talk
         self.connection = None
         self._loop = None
 
@@ -61,6 +63,7 @@ class VoiceLiveSession:
         self._playback_queue = queue.Queue()
         self._playback_seq = 0
         self._playback_base = 0
+        self._is_recording = False
 
         # Function call state
         self._pending_tool_calls = {}  # call_id -> {name, arguments}
@@ -80,11 +83,20 @@ class VoiceLiveSession:
                 await self._setup_session()
                 self._start_playback()
 
-                print("\n" + "=" * 50)
-                print("🎙️  DuckyAI Voice — Ready!")
-                print("   Speak naturally — VAD auto-detects your voice")
-                print("   Press Ctrl+C to exit")
-                print("=" * 50 + "\n")
+                if self.push_to_talk:
+                    print("\n" + "=" * 50)
+                    print("🎙️  DuckyAI Voice — Push-to-Talk")
+                    print("   Hold [Space] to talk, release to send")
+                    print("   Press [Q] to quit")
+                    print("=" * 50 + "\n")
+                    self._setup_push_to_talk()
+                else:
+                    print("\n" + "=" * 50)
+                    print("🎙️  DuckyAI Voice — Open Mic")
+                    print("   Speak naturally — VAD auto-detects your voice")
+                    print("   Press Ctrl+C to exit")
+                    print("=" * 50 + "\n")
+                    self._start_capture()
 
                 await self._process_events()
         finally:
@@ -94,24 +106,70 @@ class VoiceLiveSession:
         """Configure session for voice conversation with tool support."""
         voice_config = AzureStandardVoice(name=self.voice) if "-" in self.voice else self.voice
 
+        # Push-to-talk: disable server VAD, we control turn manually
+        # Open mic: use server VAD for automatic turn detection
+        if self.push_to_talk:
+            turn_detection = None  # Manual turn control
+        else:
+            turn_detection = ServerVad(
+                threshold=0.5,
+                prefix_padding_ms=300,
+                silence_duration_ms=500,
+            )
+
         session_config = RequestSession(
             modalities=[Modality.TEXT, Modality.AUDIO],
             instructions=self.instructions,
             voice=voice_config,
             input_audio_format=InputAudioFormat.PCM16,
             output_audio_format=OutputAudioFormat.PCM16,
-            turn_detection=ServerVad(
-                threshold=0.5,
-                prefix_padding_ms=300,
-                silence_duration_ms=500,
-            ),
+            turn_detection=turn_detection,
             input_audio_echo_cancellation=AudioEchoCancellation(),
             input_audio_noise_reduction=AudioNoiseReduction(type="azure_deep_noise_suppression"),
             tools=get_vault_tools(),
         )
 
         await self.connection.session.update(session=session_config)
-        logger.info("Session configured")
+        logger.info("Session configured (push_to_talk=%s)", self.push_to_talk)
+
+    def _setup_push_to_talk(self):
+        """Set up keyboard hooks for push-to-talk with Space key."""
+        import keyboard
+
+        def _on_space_press(event):
+            if not self._is_recording:
+                self._is_recording = True
+                self._skip_playback()  # Stop any current playback
+                self._start_capture()
+                print("🔴 Recording... (release Space to send)", flush=True)
+
+        def _on_space_release(event):
+            if self._is_recording:
+                self._is_recording = False
+                self._stop_capture()
+                print("⏹️  Sent! Waiting for response...", flush=True)
+                # Commit the audio buffer and request a response
+                if self._loop and self.connection:
+                    asyncio.run_coroutine_threadsafe(
+                        self._commit_and_respond(), self._loop
+                    )
+
+        def _on_q_press(event):
+            print("\n👋 Quitting...", flush=True)
+            if self._loop:
+                self._loop.call_soon_threadsafe(self._loop.stop)
+
+        keyboard.on_press_key("space", _on_space_press, suppress=True)
+        keyboard.on_release_key("space", _on_space_release, suppress=True)
+        keyboard.on_press_key("q", _on_q_press)
+
+    async def _commit_and_respond(self):
+        """Commit audio buffer and request response (push-to-talk mode)."""
+        try:
+            await self.connection.input_audio_buffer.commit()
+            await self.connection.response.create()
+        except Exception as e:
+            logger.error("Error committing audio: %s", e)
 
     def _start_capture(self):
         """Start streaming microphone audio to Voice Live."""
@@ -132,6 +190,14 @@ class VoiceLiveSession:
         )
         self._input_stream.start()
         logger.info("Microphone capture started")
+
+    def _stop_capture(self):
+        """Stop microphone capture (push-to-talk release)."""
+        if self._input_stream:
+            self._input_stream.stop()
+            self._input_stream.close()
+            self._input_stream = None
+            logger.info("Microphone capture stopped")
 
     def _start_playback(self):
         """Start audio playback system."""
@@ -194,7 +260,9 @@ class VoiceLiveSession:
         """Handle individual Voice Live events."""
         if event.type == ServerEventType.SESSION_UPDATED:
             logger.info("Session ready: %s", event.session.id)
-            self._start_capture()
+            # Only auto-start capture in open-mic mode
+            if not self.push_to_talk:
+                self._start_capture()
 
         elif event.type == ServerEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED:
             print("🎤 Listening...", flush=True)
@@ -253,6 +321,13 @@ class VoiceLiveSession:
             self._playback_queue.put(None)
             self._output_stream.stop()
             self._output_stream.close()
+        # Unhook keyboard if push-to-talk was used
+        if self.push_to_talk:
+            try:
+                import keyboard
+                keyboard.unhook_all()
+            except Exception:
+                pass
         logger.info("Audio cleaned up")
 
 
@@ -262,6 +337,7 @@ async def run_voice_session(
     model: str = "gpt-4o-realtime-preview",
     voice: str = "en-US-Ava:DragonHDLatestNeural",
     instructions: str = "You are DuckyAI, a helpful personal knowledge assistant.",
+    push_to_talk: bool = True,
 ):
     """Run a voice session."""
     session = VoiceLiveSession(
@@ -270,5 +346,6 @@ async def run_voice_session(
         model=model,
         voice=voice,
         instructions=instructions,
+        push_to_talk=push_to_talk,
     )
     await session.start()
