@@ -434,23 +434,37 @@ class ExecutionManager:
         if ctx.session_id:
             cmd.extend(['--session-id', ctx.session_id])
 
-        try:
-            self._execute_subprocess(ctx, 'GitHub Copilot CLI', cmd, agent.timeout_minutes * 60)
-        except RuntimeError as e:
-            error_msg = str(e)
-            full_error = f"{error_msg} {ctx.error_message or ''}"
-            if ctx.session_id and "already" in full_error.lower():
-                logger.info(f"Session {ctx.session_id} exists, resuming...")
-                ctx.error_message = None
-                cmd_resume = ['copilot', '--resume', ctx.session_id, '--prompt', ctx.prompt,
-                              '--allow-all-tools', '--output-format', 'text']
-                if agent.agent_params and agent.agent_params.get('model'):
-                    cmd_resume.extend(['--model', agent.agent_params['model']])
-                if self.mcp_config:
-                    for config in self.mcp_config:
-                        cmd_resume.extend(['--additional-mcp-config', config])
-                self._execute_subprocess(ctx, 'GitHub Copilot CLI', cmd_resume, agent.timeout_minutes * 60)
-            else:
+        # Set NODE_OPTIONS to prevent copilot.exe from misrouting --no-warnings
+        copilot_env = os.environ.copy()
+        copilot_env.setdefault('NODE_OPTIONS', '--no-warnings')
+
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                self._execute_subprocess(ctx, 'GitHub Copilot CLI', cmd, agent.timeout_minutes * 60, env=copilot_env)
+                return  # Success
+            except RuntimeError as e:
+                error_msg = str(e)
+                full_error = f"{error_msg} {ctx.error_message or ''}"
+
+                # Retry on transient --no-warnings error
+                if "--no-warnings" in full_error and attempt < max_retries - 1:
+                    logger.warning(f"Copilot CLI --no-warnings error (attempt {attempt + 1}/{max_retries}), retrying...")
+                    ctx.error_message = None
+                    continue
+
+                if ctx.session_id and "already" in full_error.lower():
+                    logger.info(f"Session {ctx.session_id} exists, resuming...")
+                    ctx.error_message = None
+                    cmd_resume = ['copilot', '--resume', ctx.session_id, '--prompt', ctx.prompt,
+                                  '--allow-all-tools', '--output-format', 'text']
+                    if agent.agent_params and agent.agent_params.get('model'):
+                        cmd_resume.extend(['--model', agent.agent_params['model']])
+                    if self.mcp_config:
+                        for config in self.mcp_config:
+                            cmd_resume.extend(['--additional-mcp-config', config])
+                    self._execute_subprocess(ctx, 'GitHub Copilot CLI', cmd_resume, agent.timeout_minutes * 60, env=copilot_env)
+                    return
                 raise
 
     def _execute_subprocess(self, ctx: ExecutionContext, agent_name: str, cmd: List[str], timeout_seconds: int, stdin_input: Optional[str] = None, env: Optional[Dict] = None):
