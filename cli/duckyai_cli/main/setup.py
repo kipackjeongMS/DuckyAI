@@ -366,8 +366,26 @@ orchestrator:
 @click.command("setup")
 @click.option("--vault-path", type=click.Path(), default=None, help="Vault directory path")
 def setup_command(vault_path):
-    """Run the DuckyAI onboarding wizard."""
+    """Run the DuckyAI onboarding wizard for the current vault."""
     vault = Path(vault_path) if vault_path else None
+    run_onboarding(vault_root=vault)
+
+
+@click.command("new")
+@click.argument("vault_path", required=False, type=click.Path())
+def new_command(vault_path):
+    """Create a new DuckyAI vault.
+
+    \b
+    Sets up a fresh vault with folders, config, MCP server,
+    and Teams sync schedule via an interactive wizard.
+
+    \b
+    Examples:
+        duckyai new                    # Wizard prompts for location
+        duckyai new ~/MyVault          # Create vault at specified path
+    """
+    vault = Path(vault_path).resolve() if vault_path else None
     run_onboarding(vault_root=vault)
 
 

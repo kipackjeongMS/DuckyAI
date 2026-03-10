@@ -532,8 +532,9 @@ from .trigger import trigger_cli
 main.add_command(trigger_cli)
 
 # Onboarding wizard
-from .setup import setup_command
+from .setup import setup_command, new_command
 main.add_command(setup_command)
+main.add_command(new_command)
 
 
 if __name__ == "__main__":
