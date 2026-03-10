@@ -90,9 +90,9 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
     # Start orchestrator
     logger.info("\n[cyan]Starting orchestrator...[/cyan]")
 
-    # Prompt user to sync Teams chat on startup
+    # Prompt user to sync Teams chat on startup (only in interactive terminal)
     tcs_agent = orch.agent_registry.agents.get("TCS")
-    if tcs_agent and tcs_agent.cron:
+    if tcs_agent and tcs_agent.cron and sys.stdin and sys.stdin.isatty():
         try:
             response = input("\n🔄 Sync Teams chats now? (y/n): ").strip().lower()
             if response in ("y", "yes"):
