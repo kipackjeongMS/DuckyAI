@@ -244,8 +244,34 @@ tags:
 
     # ─── Step 7: Obsidian ───────────────────────────────
     click.echo("\n🗃️  Step 7/9 — Obsidian")
-    obsidian_path = shutil.which("obsidian")
-    if obsidian_path:
+    obsidian_found = False
+
+    # Check PATH
+    if shutil.which("obsidian"):
+        obsidian_found = True
+    # Check common install locations (Windows)
+    elif os.name == "nt":
+        for candidate in [
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Obsidian" / "Obsidian.exe",
+            Path(os.environ.get("LOCALAPPDATA", "")) / "Obsidian" / "Obsidian.exe",
+            Path("C:/Program Files/Obsidian/Obsidian.exe"),
+        ]:
+            if candidate.exists():
+                obsidian_found = True
+                break
+    # Check if running
+    if not obsidian_found:
+        try:
+            result = subprocess.run(
+                ["tasklist" if os.name == "nt" else "pgrep", "/FI", "IMAGENAME eq Obsidian.exe"] if os.name == "nt" else ["-x", "obsidian"],
+                capture_output=True, text=True, timeout=5
+            )
+            if "Obsidian" in result.stdout:
+                obsidian_found = True
+        except Exception:
+            pass
+
+    if obsidian_found:
         click.echo("  ✓ Obsidian is installed")
     else:
         if click.confirm("  Obsidian not found. Install Obsidian?", default=False):
