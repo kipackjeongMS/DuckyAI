@@ -9,4 +9,6 @@ List all available DuckyAI orchestrator agents.
 
 ## Instructions
 
-Call `listAgents` MCP tool and display the results showing agent names, triggers, input/output paths, and schedules.
+Run `duckyai orchestrator list-agents` and display the results showing agent names, triggers, input/output paths, and schedules.
+
+Add `--json-output` flag if you need to parse the result programmatically.

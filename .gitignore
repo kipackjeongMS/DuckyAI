@@ -16,7 +16,11 @@
 
 # User configuration
 .env
+duckyai.yaml
 scripts/repos.json
+
+# Orchestrator runtime
+.orchestrator.pid
 
 # Synced repos (local only)
 .repos/*/

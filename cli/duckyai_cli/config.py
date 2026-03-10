@@ -214,3 +214,52 @@ class Config:
         """Get pollers configuration section."""
         section = self.get("pollers", {})
         return section.copy() if isinstance(section, dict) else {}
+
+
+class WorkspaceConfig:
+    """Read user-facing workspace configuration from duckyai.yaml."""
+
+    DEFAULTS: Dict[str, Any] = {
+        "orchestrator": {
+            "auto_start": True,
+        },
+    }
+
+    def __init__(self, vault_path: Optional[Path] = None):
+        base_path = Path(vault_path) if vault_path else Path.cwd()
+        self.config_path = base_path / "duckyai.yaml"
+        self.config: Dict[str, Any] = self._load()
+
+    def _deep_merge(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+        result = base.copy()
+        for key, value in override.items():
+            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+                result[key] = self._deep_merge(result[key], value)
+            else:
+                result[key] = value
+        return result
+
+    def _load(self) -> Dict[str, Any]:
+        config_data: Dict[str, Any] = {}
+        if self.config_path.exists():
+            try:
+                with self.config_path.open("r", encoding="utf-8") as fh:
+                    loaded = yaml.safe_load(fh) or {}
+                    if isinstance(loaded, dict):
+                        config_data = loaded
+            except (yaml.YAMLError, OSError):
+                pass
+        return self._deep_merge(self.DEFAULTS, config_data)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        value: Any = self.config
+        for part in key.split("."):
+            if isinstance(value, dict) and part in value:
+                value = value[part]
+            else:
+                return default
+        return value
+
+    @property
+    def orchestrator_auto_start(self) -> bool:
+        return bool(self.get("orchestrator.auto_start", True))

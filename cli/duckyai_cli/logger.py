@@ -124,7 +124,11 @@ class Logger:
 
             # Print to console if requested
             if console or self.console_output or logging.getLogger().getEffectiveLevel() <= logging.DEBUG:
-                self.console.print(message)
+                try:
+                    self.console.print(message)
+                except (UnicodeEncodeError, OSError):
+                    # Detached/no-console processes may fail on Rich output — skip silently
+                    pass
                 
     def info(self, message, exc_info=False, console=False):
         """Log info message.

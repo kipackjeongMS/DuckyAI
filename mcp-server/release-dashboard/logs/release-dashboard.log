@@ -2743,3 +2743,90 @@ azure.identity._exceptions.CredentialUnavailableError: VisualStudioCodeCredentia
 2026-03-09 16:01:02,890 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
 2026-03-09 16:01:02,891 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
 2026-03-09 16:01:02,892 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 18:06:20,630 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 18:06:20,633 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 18:06:20,633 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 18:06:20,634 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 18:06:20,634 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 18:06:20,634 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 18:06:20,634 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 18:06:20,635 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 18:06:20,635 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 18:06:20,669 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 18:06:20,682 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 18:06:20,839 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000001B2DA1CF4D0>
+2026-03-09 18:06:20,839 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 18:06:20,839 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 18:06:20,840 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 18:06:20,936 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000001B2DA1CF610>
+2026-03-09 18:06:20,936 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 18:06:20,936 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 18:06:20,937 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 18:18:15,677 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 18:18:15,680 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 18:18:15,681 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 18:18:15,681 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 18:18:15,681 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 18:18:15,682 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 18:18:15,682 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 18:18:15,682 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 18:18:15,682 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 18:18:15,713 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 18:18:15,726 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 18:18:16,431 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000001A881A4F4D0>
+2026-03-09 18:18:16,431 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 18:18:16,432 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 18:18:16,432 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 18:18:16,649 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000001A881A4F610>
+2026-03-09 18:18:16,650 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 18:18:16,650 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 18:18:16,650 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 20:43:15,957 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-09 20:43:15,960 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-09 20:43:15,960 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-09 20:43:15,961 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-09 20:43:15,961 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-09 20:43:15,961 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-09 20:43:15,962 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-09 20:43:15,962 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-09 20:43:15,962 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-09 20:43:15,997 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-09 20:43:16,020 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-09 20:43:16,174 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002123EFAB4D0>
+2026-03-09 20:43:16,175 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 20:43:16,175 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 20:43:16,176 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-09 20:43:16,176 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002123EFAAE90>
+2026-03-09 20:43:16,177 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-09 20:43:16,177 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-09 20:43:16,178 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 01:27:53,606 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-10 01:27:53,609 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-10 01:27:53,609 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-10 01:27:53,609 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-10 01:27:53,610 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-10 01:27:53,610 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-10 01:27:53,610 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-10 01:27:53,611 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-10 01:27:53,611 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-10 01:27:53,649 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-10 01:27:53,658 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-10 01:27:54,503 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000002223B6AF4D0>
+2026-03-10 01:27:54,504 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 01:27:54,504 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 01:27:54,504 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 02:00:26,354 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-10 02:00:26,358 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-10 02:00:26,358 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-10 02:00:26,359 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-10 02:00:26,359 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-10 02:00:26,360 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-10 02:00:26,360 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-10 02:00:26,360 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-10 02:00:26,360 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-10 02:00:26,396 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-10 02:00:26,407 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-10 02:00:27,757 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000001512842B4D0>
+2026-03-10 02:00:27,758 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 02:00:27,758 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 02:00:27,758 [DEBUG] mcp.server.lowlevel.server: Response sent
