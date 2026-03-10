@@ -87,8 +87,8 @@ class VoiceLiveSession:
                 if self.push_to_talk:
                     print("\n" + "=" * 50)
                     print("🎙️  DuckyAI Voice — Push-to-Talk")
-                    print("   Hold [Ctrl+Space] to talk, release to send")
-                    print("   Press [Q] to quit (when terminal focused)")
+                    print("   Hold [Space] to talk, release to send")
+                    print("   Press [Q] to quit")
                     print("=" * 50 + "\n")
                     self._setup_push_to_talk()
                 else:
@@ -134,20 +134,19 @@ class VoiceLiveSession:
         logger.info("Session configured (push_to_talk=%s)", self.push_to_talk)
 
     def _setup_push_to_talk(self):
-        """Set up keyboard hooks for push-to-talk with Ctrl+Space."""
+        """Set up keyboard hooks for push-to-talk with Space key."""
         import keyboard
 
         def _is_terminal_focused():
             """Check if our terminal window is in the foreground."""
             if os.name != "nt":
-                return True  # No reliable check on non-Windows
+                return True
             try:
                 import ctypes
                 foreground = ctypes.windll.user32.GetForegroundWindow()
                 console = ctypes.windll.kernel32.GetConsoleWindow()
                 if console and foreground == console:
                     return True
-                # Fallback: check if foreground window title contains terminal keywords
                 buf = ctypes.create_unicode_buffer(256)
                 ctypes.windll.user32.GetWindowTextW(foreground, buf, 256)
                 title = buf.value.lower()
@@ -155,7 +154,7 @@ class VoiceLiveSession:
             except Exception:
                 return True
 
-        def _on_ptt_press():
+        def _on_space_press(event):
             if not self._is_recording and _is_terminal_focused():
                 self._is_recording = True
                 self._skip_playback()
@@ -164,9 +163,9 @@ class VoiceLiveSession:
                         self.connection.input_audio_buffer.clear(), self._loop
                     )
                 self._start_capture()
-                print("🔴 Recording... (release Ctrl+Space to send)", flush=True)
+                print("🔴 Recording... (release Space to send)", flush=True)
 
-        def _on_ptt_release():
+        def _on_space_release(event):
             if self._is_recording:
                 self._is_recording = False
                 self._stop_capture()
@@ -182,9 +181,8 @@ class VoiceLiveSession:
                 if self._loop:
                     self._loop.call_soon_threadsafe(self._loop.stop)
 
-        # Ctrl+Space — no suppress needed, doesn't steal keys from other apps
-        keyboard.add_hotkey("ctrl+space", _on_ptt_press, trigger_on_release=False)
-        keyboard.add_hotkey("ctrl+space", _on_ptt_release, trigger_on_release=True)
+        keyboard.on_press_key("space", _on_space_press, suppress=False)
+        keyboard.on_release_key("space", _on_space_release, suppress=False)
         keyboard.on_press_key("q", _on_q_press)
 
     async def _commit_and_respond(self):
@@ -329,7 +327,7 @@ class VoiceLiveSession:
 
         elif etype == ServerEventType.RESPONSE_DONE:
             if self.push_to_talk:
-                print("🎤 Hold [Ctrl+Space] to talk...\n", flush=True)
+                print("🎤 Hold [Space] to talk...\n", flush=True)
             else:
                 print("🎤 Ready...\n", flush=True)
 
