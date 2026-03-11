@@ -41,8 +41,14 @@ async fn azure_tts(app: AppHandle, text: String) -> Result<String, String> {
     );
 
     // Use reqwest via Command (or inline HTTP) — use curl for simplicity
-    let mut cmd = Command::new("curl");
+    // Use curl for the HTTP call
+    let curl_path = which::which("curl")
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|_| "curl".to_string());
+
+    let mut cmd = Command::new(&curl_path);
     cmd.arg("-s")
+        .arg("--show-error")
         .arg("-X").arg("POST")
         .arg(&tts_url)
         .arg("-H").arg("Content-Type: application/ssml+xml")
@@ -52,8 +58,11 @@ async fn azure_tts(app: AppHandle, text: String) -> Result<String, String> {
     if let Some(ref k) = key {
         cmd.arg("-H").arg(format!("Ocp-Apim-Subscription-Key: {}", k));
     } else {
-        // Use Azure CLI token
-        let token_output = Command::new("az")
+        // Try az CLI token
+        let az_path = which::which("az")
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|_| "az".to_string());
+        let token_output = Command::new(&az_path)
             .args(["account", "get-access-token", "--resource", "https://cognitiveservices.azure.com", "--query", "accessToken", "-o", "tsv"])
             .output()
             .map_err(|e| format!("Failed to get Azure token: {}", e))?;
@@ -69,13 +78,18 @@ async fn azure_tts(app: AppHandle, text: String) -> Result<String, String> {
     let output = cmd.output().map_err(|e| format!("curl failed: {}", e))?;
 
     if output.status.success() && !output.stdout.is_empty() {
-        // Return base64-encoded audio
         use base64::Engine;
         let b64 = base64::engine::general_purpose::STANDARD.encode(&output.stdout);
         Ok(b64)
     } else {
-        let err = String::from_utf8_lossy(&output.stderr);
-        Err(format!("TTS failed: {}", err))
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout_preview = if output.stdout.len() > 200 {
+            String::from_utf8_lossy(&output.stdout[..200]).to_string()
+        } else {
+            String::from_utf8_lossy(&output.stdout).to_string()
+        };
+        Err(format!("TTS failed (status {:?}): stderr='{}' stdout_preview='{}'",
+            output.status.code(), stderr, stdout_preview))
     }
 }
 
