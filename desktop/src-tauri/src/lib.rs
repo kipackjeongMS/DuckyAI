@@ -119,6 +119,18 @@ fn extract_sdk_response(output: &str) -> String {
         .to_string()
 }
 
+fn find_vault_root() -> Option<std::path::PathBuf> {
+    let mut dir = std::env::current_dir().ok()?;
+    loop {
+        if dir.join("orchestrator.yaml").exists() {
+            return Some(dir);
+        }
+        if !dir.pop() {
+            return None;
+        }
+    }
+}
+
 fn build_mcp_config(vault_root: &str) -> Option<String> {
     let vault = std::path::Path::new(vault_root);
 
@@ -152,9 +164,9 @@ fn build_mcp_config(vault_root: &str) -> Option<String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Detect vault root (current dir or parent with orchestrator.yaml)
-    let vault_root = std::env::current_dir()
-        .unwrap_or_default()
+    // Detect vault root by walking up from CWD to find orchestrator.yaml
+    let vault_root = find_vault_root()
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
         .to_string_lossy()
         .to_string();
 
