@@ -4,13 +4,79 @@ use tauri::{AppHandle, Emitter, Manager};
 
 struct AppState {
     vault_root: Mutex<String>,
+    azure_endpoint: Mutex<Option<String>>,
+    azure_key: Mutex<Option<String>>,
 }
 
 #[tauri::command]
 fn start_recording() -> Result<(), String> {
-    // Recording is handled by the frontend's MediaRecorder API
-    // This command is a placeholder for any backend state tracking
     Ok(())
+}
+
+#[tauri::command]
+async fn azure_tts(app: AppHandle, text: String) -> Result<String, String> {
+    let state = app.state::<AppState>();
+
+    // Get Azure endpoint and key
+    let endpoint = state.azure_endpoint.lock().unwrap().clone();
+    let key = state.azure_key.lock().unwrap().clone();
+
+    let endpoint = match endpoint {
+        Some(e) => e,
+        None => return Err("No Azure endpoint configured".into()),
+    };
+
+    // Build the TTS REST API URL
+    // Azure Speech TTS endpoint: {endpoint}/tts/cognitiveservices/v1
+    let tts_url = format!("{}tts/cognitiveservices/v1", endpoint.trim_end_matches('/'));
+
+    // SSML payload with neural voice
+    let ssml = format!(
+        r#"<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
+            <voice name="en-US-AvaMultilingualNeural">
+                <prosody rate="5%" pitch="0%">{}</prosody>
+            </voice>
+        </speak>"#,
+        text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    );
+
+    // Use reqwest via Command (or inline HTTP) — use curl for simplicity
+    let mut cmd = Command::new("curl");
+    cmd.arg("-s")
+        .arg("-X").arg("POST")
+        .arg(&tts_url)
+        .arg("-H").arg("Content-Type: application/ssml+xml")
+        .arg("-H").arg("X-Microsoft-OutputFormat: audio-24khz-48kbitrate-mono-mp3")
+        .arg("-H").arg("User-Agent: DuckyAI-Voice/1.0");
+
+    if let Some(ref k) = key {
+        cmd.arg("-H").arg(format!("Ocp-Apim-Subscription-Key: {}", k));
+    } else {
+        // Use Azure CLI token
+        let token_output = Command::new("az")
+            .args(["account", "get-access-token", "--resource", "https://cognitiveservices.azure.com", "--query", "accessToken", "-o", "tsv"])
+            .output()
+            .map_err(|e| format!("Failed to get Azure token: {}", e))?;
+        let token = String::from_utf8_lossy(&token_output.stdout).trim().to_string();
+        if token.is_empty() {
+            return Err("Failed to get Azure access token. Run 'az login' first.".into());
+        }
+        cmd.arg("-H").arg(format!("Authorization: Bearer {}", token));
+    }
+
+    cmd.arg("-d").arg(&ssml);
+
+    let output = cmd.output().map_err(|e| format!("curl failed: {}", e))?;
+
+    if output.status.success() && !output.stdout.is_empty() {
+        // Return base64-encoded audio
+        use base64::Engine;
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&output.stdout);
+        Ok(b64)
+    } else {
+        let err = String::from_utf8_lossy(&output.stderr);
+        Err(format!("TTS failed: {}", err))
+    }
 }
 
 #[tauri::command]
@@ -164,20 +230,28 @@ fn build_mcp_config(vault_root: &str) -> Option<String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Detect vault root by walking up from CWD to find orchestrator.yaml
     let vault_root = find_vault_root()
         .unwrap_or_else(|| std::env::current_dir().unwrap_or_default())
         .to_string_lossy()
         .to_string();
 
+    // Read Azure endpoint from env
+    let azure_endpoint = std::env::var("AZURE_VOICELIVE_ENDPOINT").ok()
+        .or_else(|| std::env::var("AZURE_SPEECH_ENDPOINT").ok());
+    let azure_key = std::env::var("AZURE_VOICELIVE_API_KEY").ok()
+        .or_else(|| std::env::var("AZURE_SPEECH_KEY").ok());
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(AppState {
             vault_root: Mutex::new(vault_root),
+            azure_endpoint: Mutex::new(azure_endpoint),
+            azure_key: Mutex::new(azure_key),
         })
         .invoke_handler(tauri::generate_handler![
             start_recording,
             stop_recording_and_process,
+            azure_tts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

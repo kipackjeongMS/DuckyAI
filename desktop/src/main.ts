@@ -9,6 +9,7 @@ const statusEl = document.getElementById("status")!;
 let isRecording = false;
 let recognition: any = null;
 let currentTranscript = "";
+let audioContext: AudioContext | null = null;
 
 // ── Speech Recognition (Web Speech API) ────────────
 
@@ -47,33 +48,55 @@ function initSpeechRecognition() {
   };
 }
 
-// ── Text-to-Speech ─────────────────────────────────
+// ── Azure Neural TTS ───────────────────────────────
 
-function speak(text: string): Promise<void> {
+async function speak(text: string): Promise<void> {
+  setStatus("🔊 Speaking", "connected");
+
+  try {
+    // Call Rust backend to synthesize with Azure TTS
+    const audioBase64: string = await invoke("azure_tts", { text });
+
+    if (!audioBase64) {
+      // Fallback to browser TTS
+      return speakBrowser(text);
+    }
+
+    // Decode and play the audio
+    if (!audioContext) {
+      audioContext = new AudioContext({ sampleRate: 24000 });
+    }
+
+    const audioBytes = Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0));
+    const audioBuffer = await audioContext.decodeAudioData(audioBytes.buffer);
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioContext.destination);
+
+    return new Promise((resolve) => {
+      source.onended = () => resolve();
+      source.start();
+    });
+  } catch (e) {
+    console.error("Azure TTS failed, falling back to browser:", e);
+    return speakBrowser(text);
+  }
+}
+
+function speakBrowser(text: string): Promise<void> {
   return new Promise((resolve) => {
     const synth = window.speechSynthesis;
-    // Cancel any ongoing speech
     synth.cancel();
-
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.1;
-    utterance.pitch = 1.0;
-
-    // Try to find a good voice
     const voices = synth.getVoices();
     const preferred = voices.find(v =>
-      v.name.includes("Microsoft Ava") ||
-      v.name.includes("Microsoft Aria") ||
-      v.name.includes("Microsoft Jenny") ||
-      (v.lang.startsWith("en") && v.localService)
+      v.name.includes("Microsoft") && v.lang.startsWith("en") && v.localService
     );
     if (preferred) utterance.voice = preferred;
-
     utterance.onend = () => resolve();
     utterance.onerror = () => resolve();
     synth.speak(utterance);
-
-    setStatus("🔊 Speaking", "connected");
   });
 }
 
