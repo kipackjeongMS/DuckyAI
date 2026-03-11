@@ -240,7 +240,10 @@ def orch_status(ctx, json_out):
     config_file = obj.get("config_file")
     working_dir = obj.get("working_dir")
 
-    config = Config(config_file=str(config_file) if config_file else None)
+    config = Config(
+        config_file=str(config_file) if config_file else None,
+        vault_path=vault_root,
+    )
 
     # Check running state
     pid, alive = _read_pid(vault_root)
@@ -348,7 +351,10 @@ def orch_list_agents(ctx, json_out):
     config_file = obj.get("config_file")
     working_dir = obj.get("working_dir")
 
-    config = Config(config_file=str(config_file) if config_file else None)
+    config = Config(
+        config_file=str(config_file) if config_file else None,
+        vault_path=vault_root,
+    )
 
     try:
         orch = Orchestrator(
@@ -485,6 +491,7 @@ def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings):
             mcp_config=combined_mcp_config,
             claude_settings=effective_claude_settings,
             input_file=input_file,
+            vault_path=_get_vault_root(ctx),
         )
 
 
@@ -495,7 +502,10 @@ def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config,
     from ..orchestrator.core import Orchestrator
 
     vault_root = _get_vault_root(ctx)
-    config = Config(config_file=str(config_file) if config_file else None)
+    config = Config(
+        config_file=str(config_file) if config_file else None,
+        vault_path=vault_root,
+    )
 
     try:
         orch = Orchestrator(

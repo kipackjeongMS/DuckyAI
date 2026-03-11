@@ -19,7 +19,7 @@ defaults:
   task_priority: medium
   task_archived: false
   agent_params:
-    model: claude-sonnet-4.6
+    model: claude-opus-4.6
 nodes:
   - type: agent
     name: Enrich Ingested Content (EIC)
@@ -52,7 +52,7 @@ nodes:
     enabled: true
   - type: agent
     name: Teams Chat Summary (TCS)
-    cron: "0 * * * *"
+    cron: "10 * * * *"
     output_path: 04-Periodic/Daily
     output_type: update_file
     executor: copilot_sdk
@@ -60,7 +60,7 @@ nodes:
     enabled: true
   - type: agent
     name: Teams Meeting Summary (TMS)
-    cron: "0 * * * *"
+    cron: "10 * * * *"
     output_path: 04-Periodic/Daily
     output_type: update_file
     executor: copilot_sdk

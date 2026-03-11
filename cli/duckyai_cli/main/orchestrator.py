@@ -25,10 +25,11 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
     """
     from ..config import Config
 
-    config = Config(config_file=str(config_file) if config_file else None)
-
-    # Use CWD as vault (requires config file in CWD)
     vault_path = vault_path or Path.cwd()
+    config = Config(
+        config_file=str(config_file) if config_file else None,
+        vault_path=vault_path,
+    )
     pid_file = vault_path / ".orchestrator.pid"
 
     # Write PID file
@@ -155,8 +156,11 @@ def execute_prompt_with_session(
     from ..config import Config
     import time
 
-    config = Config(config_file=str(config_file) if config_file else None)
     vault_path = vault_path or Path.cwd()
+    config = Config(
+        config_file=str(config_file) if config_file else None,
+        vault_path=vault_path,
+    )
 
     logger.info(Panel.fit(
         f"[bold cyan]Executing One-Time Prompt[/bold cyan]\n"

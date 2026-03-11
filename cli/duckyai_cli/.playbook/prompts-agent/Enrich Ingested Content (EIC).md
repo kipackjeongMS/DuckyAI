@@ -16,8 +16,8 @@ Improve captured content through transcript correction, summarization, and knowl
 - Do NOT modify the input file inline
 - Use naming pattern: `{title} - {agent}.md` (e.g., "Article Title - EIC.md")
 - Frontmatter must include:
-  - `clippings: "[[00-Inbox/{입력파일명}]]"` - 원본 Clippings 파일 링크
-  - `status: processed` - 처리 완료 표시
+  - `clippings: "[[00-Inbox/{input_filename}]]"` - Link to original Clippings file
+  - `status: processed` - Marks processing as complete
 - Summary section added at beginning
 - Improved formatting and structure
 - Links to existing KB topics
@@ -76,7 +76,7 @@ Improve captured content through transcript correction, summarization, and knowl
 ### Rename Filenames
 * Convert " " (curly/typographic quotes) to " (straight quote)
    * Same for single quotes
-* Remove incomplete words -- 40살 전에 알았다면 `얼마ᄂ`
+* Remove incomplete words -- e.g. "Things I wish I knew before 40" `truncat...`
 * Remove `Readwise` at the end
 
 ### Formatting Standards

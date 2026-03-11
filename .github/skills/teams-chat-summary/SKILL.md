@@ -11,7 +11,7 @@ allowed-tools:
 
 # Teams Chat Summary
 
-Summarize Microsoft Teams chats via WorkIQ and produce vault-ready notes with **embedded deep links** to every referenced message. Supports both manual invocation and automated hourly cron sync with watermark tracking.
+Summarize Microsoft Teams **1:1 and group chats** via WorkIQ and produce vault-ready notes with **embedded deep links** to every referenced message. **Excludes Teams channel messages** — only person-to-person and group chats are processed. Supports both manual invocation and automated hourly cron sync with watermark tracking.
 
 ## When to Use This Skill
 
@@ -79,7 +79,8 @@ Call `getTeamsChatSyncState` to get the last sync timestamp.
 Query WorkIQ with an explicit request for **message-level deep links**:
 
 ```
-"Summarize all Teams chats I had since {lastSynced}.
+"Summarize all Teams 1:1 and group chats I had since {lastSynced}.
+Only include person-to-person and group chats — do NOT include Teams channel messages.
 For EACH topic or key message, include the Teams deep link URL.
 Group by person. Include decisions and action items."
 ```

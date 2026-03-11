@@ -3,6 +3,7 @@ duckyai_cli/__init__.py
 duckyai_cli/config.py
 duckyai_cli/logger.py
 duckyai_cli/markdown_utils.py
+duckyai_cli/vault_registry.py
 duckyai_cli.egg-info/PKG-INFO
 duckyai_cli.egg-info/SOURCES.txt
 duckyai_cli.egg-info/dependency_links.txt
@@ -12,14 +13,19 @@ duckyai_cli.egg-info/top_level.txt
 duckyai_cli/main/cli.py
 duckyai_cli/main/init.py
 duckyai_cli/main/list_agents.py
+duckyai_cli/main/orch_cmd.py
 duckyai_cli/main/orchestrator.py
 duckyai_cli/main/run.py
+duckyai_cli/main/setup.py
 duckyai_cli/main/show_config.py
 duckyai_cli/main/template.py
 duckyai_cli/main/trigger.py
 duckyai_cli/main/trigger_agent.py
 duckyai_cli/main/update.py
 duckyai_cli/main/vault.py
+duckyai_cli/main/voice_cmd.py
+duckyai_cli/mcp_server/__init__.py
+duckyai_cli/mcp_server/dist/index.js
 duckyai_cli/orchestrator/__init__.py
 duckyai_cli/orchestrator/agent_registry.py
 duckyai_cli/orchestrator/core.py
@@ -46,3 +52,7 @@ duckyai_cli/tests/unit/orchestrator/test_execution_manager.py
 duckyai_cli/tests/unit/orchestrator/test_file_monitor.py
 duckyai_cli/tests/unit/orchestrator/test_models.py
 duckyai_cli/tests/unit/orchestrator/test_task_manager.py
+duckyai_cli/voice/__init__.py
+duckyai_cli/voice/audio.py
+duckyai_cli/voice/realtime.py
+duckyai_cli/voice/tools.py

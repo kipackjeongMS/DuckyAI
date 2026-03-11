@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "./dist",
+    "outDir": "../duckyai_cli/mcp_server/dist",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,

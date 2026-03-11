@@ -10,7 +10,7 @@ from ..orchestrator.core import Orchestrator
 
 logger = Logger(console_output=True)
 
-def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=None, mcp_config=None, claude_settings=None, input_file=None):
+def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=None, mcp_config=None, claude_settings=None, input_file=None, vault_path=None):
     """Trigger an orchestrator agent or poller interactively.
 
     Args:
@@ -20,13 +20,15 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
         mcp_config: Optional tuple of MCP config JSON files or strings
         claude_settings: Optional path or JSON string for Claude --settings flag
         input_file: Optional input file path to pass to the agent
+        vault_path: Optional vault root path (defaults to CWD)
     """
     try:
-        config = Config(config_file=config_file)
+        vault_root = Path(vault_path) if vault_path else Path.cwd()
+        config = Config(config_file=config_file, vault_path=vault_root)
 
         # Create orchestrator (but don't start daemon)
         orch = Orchestrator(
-            vault_path=Path.cwd(),
+            vault_path=vault_root,
             config=config,
             working_dir=Path(working_dir) if working_dir else None,
             mcp_config=mcp_config,

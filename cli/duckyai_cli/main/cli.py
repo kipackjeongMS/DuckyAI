@@ -15,7 +15,7 @@ from pathlib import Path
 from .show_config import show_config as show_config_handler
 from .orchestrator import run_orchestrator_daemon
 from .orch_cmd import orchestrator_group, _read_pid, orch_status, orch_list_agents
-from .vault import find_vault_root
+from .vault import find_vault_root, resolve_vault
 
 
 def signal_handler(sig, frame):
@@ -88,12 +88,53 @@ def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
             return False
 
 
+def _detect_ides() -> list:
+    """Detect installed IDEs (VS Code, VS Code Insiders). Returns list of (name, exe_path)."""
+    ides = []
+    for name, cmd in [("VS Code Insiders", "code-insiders"), ("VS Code", "code")]:
+        exe = shutil.which(cmd)
+        if exe:
+            ides.append((name, exe))
+    return ides
+
+
+def _open_vault_in_ide(vault_root: Path):
+    """Prompt user to pick an IDE and open the vault."""
+    ides = _detect_ides()
+    if not ides:
+        return
+
+    if len(ides) == 1:
+        name, exe = ides[0]
+        try:
+            subprocess.Popen([exe, str(vault_root)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            click.echo(f"🖥️  Opened vault in {name}")
+        except Exception:
+            pass
+        return
+
+    # Multiple IDEs — use arrow-key selector
+    from .vault import _interactive_select
+    click.echo("\n🖥️  Open vault in: (↑↓ to move, Enter to select)\n")
+    items = [{"name": name, "path": exe} for name, exe in ides]
+    choice = _interactive_select(items, default_index=0)
+    if choice is not None:
+        name, exe = ides[choice]
+        try:
+            subprocess.Popen([exe, str(vault_root)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            click.echo(f"\n  ✓ Opened vault in {name}")
+        except Exception:
+            pass
+
+
 def _enqueue_tcs_task(vault_root: Path):
     """Write a QUEUED TCS task file for the running orchestrator daemon to pick up."""
     from datetime import datetime
     from ..config import Config
 
-    config = Config()
+    config = Config(vault_path=vault_root)
     tasks_dir = Path(config.get_orchestrator_tasks_dir())
     tasks_dir.mkdir(parents=True, exist_ok=True)
 
@@ -142,7 +183,7 @@ def _enqueue_tms_task(vault_root: Path):
     from datetime import datetime
     from ..config import Config
 
-    config = Config()
+    config = Config(vault_path=vault_root)
     tasks_dir = Path(config.get_orchestrator_tasks_dir())
     tasks_dir.mkdir(parents=True, exist_ok=True)
 
@@ -422,6 +463,12 @@ def launch_copilot(vault_root: Path, prompt: str = None, interactive_prompt: str
     type=str,
     help="AI model to use",
 )
+@click.option(
+    "--vault",
+    "vault_id",
+    type=str,
+    help="Use a specific registered vault by ID (skips selection prompt)",
+)
 @click.pass_context
 def main(
     ctx,
@@ -437,6 +484,7 @@ def main(
     session_id,
     mcp_config,
     model,
+    vault_id,
 ):
     """DuckyAI — AI-powered developer assistant.
 
@@ -458,7 +506,22 @@ def main(
         logging.basicConfig(level=logging.WARNING)
 
     # Resolve vault root
-    vault_root = find_vault_root(Path(working_dir) if working_dir else None)
+    if vault_id:
+        # Explicit --vault flag: look up from registry
+        from ..vault_registry import list_vaults as _list_vaults, touch_vault as _touch
+        _match = next((v for v in _list_vaults() if v["id"] == vault_id), None)
+        if _match and Path(_match["path"]).exists():
+            vault_root = Path(_match["path"])
+            _touch(vault_id)
+        else:
+            click.echo(f"⚠️  Vault '{vault_id}' not found in registry.", err=True)
+            raise SystemExit(1)
+    elif orchestrator or orchestrator_status or list_agents or show_config:
+        # Flag-based commands: use CWD-based resolution (no interactive prompt)
+        vault_root = find_vault_root(Path(working_dir) if working_dir else None)
+    else:
+        # Interactive use: full vault resolution with selection prompt
+        vault_root = resolve_vault(working_dir)
 
     # Store context for subcommands
     ctx.ensure_object(dict)
@@ -476,7 +539,7 @@ def main(
     if orchestrator_status:
         ctx.invoke(orch_status, json_out=False)
     elif orchestrator:
-        run_orchestrator_daemon(debug=debug, working_dir=working_dir, config_file=config_file, mcp_config=mcp_config)
+        run_orchestrator_daemon(vault_path=vault_root, debug=debug, working_dir=working_dir, config_file=config_file, mcp_config=mcp_config)
     elif list_agents:
         ctx.invoke(orch_list_agents, json_out=False)
     elif show_config:
@@ -494,7 +557,7 @@ def main(
         # Check for WorkIQ auth expired flag
         from duckyai_cli.orchestrator.execution_manager import ExecutionManager
         from duckyai_cli.config import Config as _Config
-        _cfg = _Config()
+        _cfg = _Config(vault_path=vault_root)
         _vault_id = _cfg.get("id", "default")
         if ExecutionManager.check_workiq_auth_flag(_vault_id):
             try:
@@ -524,6 +587,9 @@ def main(
                         click.echo("✓ TCS & TMS queued — orchestrator will pick them up shortly")
                 except (EOFError, KeyboardInterrupt):
                     pass  # Non-interactive — skip prompt
+
+        # Open vault in IDE
+        _open_vault_in_ide(vault_root)
 
         # Launch Copilot (interactive if no -p flag)
         returncode = launch_copilot(

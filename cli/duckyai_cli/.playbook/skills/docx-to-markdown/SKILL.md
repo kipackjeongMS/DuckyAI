@@ -1,3 +1,8 @@
+---
+name: docx-to-markdown
+description: 'Convert DOCX files to well-formatted markdown files with images extracted.'
+---
+
 # DOCX to Markdown Skill
 
 Convert DOCX files to well-formatted markdown files with images extracted.

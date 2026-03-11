@@ -2973,3 +2973,57 @@ azure.identity._exceptions.CredentialUnavailableError: VisualStudioCodeCredentia
 2026-03-10 12:11:18,123 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
 2026-03-10 12:11:18,123 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
 2026-03-10 12:11:18,124 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 14:38:59,289 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000026ECA417610>
+2026-03-10 14:38:59,294 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 14:38:59,294 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 14:38:59,298 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 14:41:26,021 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000026ECA2F7E10>
+2026-03-10 14:41:26,022 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 14:41:26,022 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 14:41:26,023 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 14:42:35,862 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000026ECA2F7CE0>
+2026-03-10 14:42:35,863 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 14:42:35,863 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 14:42:35,864 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 14:42:54,418 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000026ECA39F9B0>
+2026-03-10 14:42:54,418 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 14:42:54,418 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 14:42:54,419 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 14:44:47,390 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000026ECA4D96A0>
+2026-03-10 14:44:47,391 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 14:44:47,391 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 14:44:47,392 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 15:54:38,945 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000026ECA4D8AF0>
+2026-03-10 15:54:38,948 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 15:54:38,949 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 15:54:38,951 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 18:00:54,663 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-10 18:00:54,666 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-10 18:00:54,666 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-10 18:00:54,667 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-10 18:00:54,667 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-10 18:00:54,667 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-10 18:00:54,667 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-10 18:00:54,668 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-10 18:00:54,668 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-10 18:00:54,707 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-10 18:00:54,717 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-10 18:00:55,812 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x0000021BCC9274D0>
+2026-03-10 18:00:55,813 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 18:00:55,813 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 18:00:55,814 [DEBUG] mcp.server.lowlevel.server: Response sent
+2026-03-10 18:07:58,820 [INFO] release-dashboard: Server initialized — 11 service groups configured
+2026-03-10 18:07:58,823 [DEBUG] mcp.server.lowlevel.server: Initializing server 'release-dashboard'
+2026-03-10 18:07:58,824 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListToolsRequest
+2026-03-10 18:07:58,824 [DEBUG] mcp.server.lowlevel.server: Registering handler for CallToolRequest
+2026-03-10 18:07:58,824 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourcesRequest
+2026-03-10 18:07:58,825 [DEBUG] mcp.server.lowlevel.server: Registering handler for ReadResourceRequest
+2026-03-10 18:07:58,825 [DEBUG] mcp.server.lowlevel.server: Registering handler for PromptListRequest
+2026-03-10 18:07:58,825 [DEBUG] mcp.server.lowlevel.server: Registering handler for GetPromptRequest
+2026-03-10 18:07:58,825 [DEBUG] mcp.server.lowlevel.server: Registering handler for ListResourceTemplatesRequest
+2026-03-10 18:07:58,858 [DEBUG] asyncio: Using proactor: IocpProactor
+2026-03-10 18:07:58,872 [DEBUG] mcp.server.lowlevel.server: Received message: root=InitializedNotification(method='notifications/initialized', params=None, jsonrpc='2.0')
+2026-03-10 18:08:00,294 [DEBUG] mcp.server.lowlevel.server: Received message: <mcp.shared.session.RequestResponder object at 0x000001B2ACFCF4D0>
+2026-03-10 18:08:00,294 [INFO] mcp.server.lowlevel.server: Processing request of type ListToolsRequest
+2026-03-10 18:08:00,294 [DEBUG] mcp.server.lowlevel.server: Dispatching request of type ListToolsRequest
+2026-03-10 18:08:00,295 [DEBUG] mcp.server.lowlevel.server: Response sent

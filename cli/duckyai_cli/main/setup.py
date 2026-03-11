@@ -79,9 +79,10 @@ def run_onboarding(vault_root: Path = None):
 
     # ─── Step 1: Vault Location ─────────────────────────
     click.echo("\n📁 Step 1/9 — Vault Location")
-    default_vault = str(vault_root) if vault_root else str(Path.cwd())
-    vault_path = Path(click.prompt("  Where should your vault live?", default=default_vault))
-    vault_path = vault_path.resolve()
+    vault_name = click.prompt("  What would you like to name your vault?", default="MyVault")
+    default_location = str(vault_root) if vault_root else str(Path.cwd())
+    vault_location = Path(click.prompt("  Where should your vault be created?", default=default_location))
+    vault_path = (vault_location / vault_name).resolve()
     vault_path.mkdir(parents=True, exist_ok=True)
     click.echo(f"  ✓ Vault: {vault_path}")
 
@@ -242,41 +243,19 @@ tags:
     else:
         click.echo(f"  · {today_str}.md (exists)")
 
-    # ─── Step 7: Obsidian ───────────────────────────────
-    click.echo("\n🗃️  Step 7/9 — Obsidian")
-    obsidian_found = False
+    # ─── Step 7: IDE Selection ─────────────────────────────
+    click.echo("\n🖥️  Step 7/9 — IDE")
+    from .cli import _detect_ides
+    available_ides = _detect_ides()
+    selected_ide = None
 
-    # Check PATH
-    if shutil.which("obsidian"):
-        obsidian_found = True
-    # Check common install locations (Windows)
-    elif os.name == "nt":
-        for candidate in [
-            Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Obsidian" / "Obsidian.exe",
-            Path(os.environ.get("LOCALAPPDATA", "")) / "Obsidian" / "Obsidian.exe",
-            Path("C:/Program Files/Obsidian/Obsidian.exe"),
-        ]:
-            if candidate.exists():
-                obsidian_found = True
-                break
-    # Check if running
-    if not obsidian_found:
-        try:
-            result = subprocess.run(
-                ["tasklist" if os.name == "nt" else "pgrep", "/FI", "IMAGENAME eq Obsidian.exe"] if os.name == "nt" else ["-x", "obsidian"],
-                capture_output=True, text=True, timeout=5
-            )
-            if "Obsidian" in result.stdout:
-                obsidian_found = True
-        except Exception:
-            pass
-
-    if obsidian_found:
-        click.echo("  ✓ Obsidian is installed")
+    if available_ides:
+        for name, exe in available_ides:
+            click.echo(f"  ✓ {name} found")
+        selected_ide = available_ides[0]  # Will open after setup
     else:
-        if click.confirm("  Obsidian not found. Install Obsidian?", default=False):
-            webbrowser.open("https://obsidian.md/download")
-            click.echo("  → Opening download page...")
+        click.echo("  ⚠️  No VS Code or VS Code Insiders found on PATH.")
+        click.echo("  Install from: https://code.visualstudio.com/")
 
     # ─── Step 8: Model Preference ───────────────────────
     click.echo("\n🤖 Step 8/9 — Default Model")
@@ -316,7 +295,7 @@ orchestrator:
     duckyai_yaml_path.write_text(duckyai_yaml, encoding="utf-8")
     click.echo(f"  ✓ duckyai.yaml")
 
-    # Update orchestrator.yaml — set cron for TCS/TMS and model
+    # Create or update orchestrator.yaml
     orch_yaml_path = vault_path / "orchestrator.yaml"
     if orch_yaml_path.exists():
         content = orch_yaml_path.read_text(encoding="utf-8")
@@ -357,13 +336,92 @@ orchestrator:
         orch_yaml_path.write_text(content, encoding="utf-8")
         click.echo(f"  ✓ orchestrator.yaml (updated)")
     else:
-        click.echo("  ℹ️  orchestrator.yaml not found — skipping")
+        # Generate a fresh orchestrator.yaml for the new vault
+        import re as _re2
+        _vault_slug = _re2.sub(r'[^a-z0-9]+', '_', vault_name.lower()).strip('_') or "vault"
+        tcs_enabled = "true" if teams_cron else "false"
+        tms_enabled = "true" if teams_cron else "false"
+        tcs_cron = teams_cron or "10 * * * *"
+        tms_cron = teams_cron or "10 * * * *"
+        orch_content = f"""version: "0.0.18"
+orchestrator:
+  prompts_dir: .github/prompts-agent
+  skills_dir: .github/skills
+  bases_dir: .github/bases
+  max_concurrent: 3
+  poll_interval: 1
+  file_extensions:
+    - .md
+    - .pdf
+    - .docx
+    - .doc
+    - .txt
+defaults:
+  executor: copilot_cli
+  timeout_minutes: 30
+  max_parallel: 3
+  task_create: true
+  task_priority: medium
+  task_archived: false
+  agent_params:
+    model: {model}
+nodes:
+  - type: agent
+    name: Enrich Ingested Content (EIC)
+    input_path: 00-Inbox
+    output_path: 03-Knowledge/Documentation
+    output_type: new_file
+    enabled: true
+  - type: agent
+    name: Extract Document to Markdown (EDM)
+    input_path: 00-Inbox
+    output_path: 03-Knowledge/Documentation
+    executor: copilot_cli
+    input_type: new_file
+    input_pattern: "*.pdf|*.docx|*.doc|*.txt"
+    trigger_exclude_pattern: "*.md"
+    output_naming: "{{title}}.md"
+    enabled: true
+  - type: agent
+    name: Generate Daily Roundup (GDR)
+    cron: 0 18 * * 1-5
+    output_path: 04-Periodic/Daily
+    requires_input_file: false
+    enabled: true
+  - type: agent
+    name: Topic Index Update (TIU)
+    cron: 30 18 * * 5
+    input_path: 04-Periodic/Daily
+    output_path: 03-Knowledge/Topics
+    requires_input_file: false
+    enabled: true
+  - type: agent
+    name: Teams Chat Summary (TCS)
+    cron: "{tcs_cron}"
+    output_path: 04-Periodic/Daily
+    output_type: update_file
+    executor: copilot_sdk
+    requires_input_file: false
+    enabled: {tcs_enabled}
+  - type: agent
+    name: Teams Meeting Summary (TMS)
+    cron: "{tms_cron}"
+    output_path: 04-Periodic/Daily
+    output_type: update_file
+    executor: copilot_sdk
+    requires_input_file: false
+    enabled: {tms_enabled}
+id: {_vault_slug}
+name: {vault_name}
+"""
+        orch_yaml_path.write_text(orch_content, encoding="utf-8")
+        click.echo(f"  ✓ orchestrator.yaml (created)")
 
     # ─── Summary ────────────────────────────────────────
     click.echo("\n" + "=" * 50)
     click.echo("🎉 DuckyAI is ready!")
     click.echo("")
-    click.echo(f"  Vault:      {vault_path}")
+    click.echo(f"  Vault:      {vault_path} ({vault_name})")
     click.echo(f"  User:       {user_name}")
     click.echo(f"  Language:   {primary_lang}")
     click.echo(f"  Model:      {model}")
@@ -371,6 +429,60 @@ orchestrator:
         click.echo(f"  Teams sync: {teams_cron}")
     else:
         click.echo(f"  Teams sync: disabled")
+    click.echo("")
+
+    # Register vault in global registry (~/.duckyai/vaults.json)
+    from ..vault_registry import register_vault, list_vaults as _list_existing
+    import yaml as _yaml
+    import re as _re
+
+    # Derive vault_id from orchestrator.yaml if present, otherwise from vault name
+    _vault_id = None
+    _orch_path = vault_path / "orchestrator.yaml"
+    if _orch_path.exists():
+        try:
+            with _orch_path.open("r", encoding="utf-8") as _fh:
+                _orch_data = _yaml.safe_load(_fh) or {}
+                _id = _orch_data.get("id")
+                if _id and _id != "default":
+                    _vault_id = _id
+        except Exception:
+            pass
+
+    if not _vault_id:
+        # Generate a unique slug from vault name (e.g. "My Vault" -> "my-vault")
+        _vault_id = _re.sub(r'[^a-z0-9]+', '-', vault_name.lower()).strip('-') or "vault"
+        # Ensure uniqueness against existing registry entries
+        _existing_ids = {v["id"] for v in _list_existing()}
+        _candidate = _vault_id
+        _suffix = 2
+        while _candidate in _existing_ids:
+            _candidate = f"{_vault_id}-{_suffix}"
+            _suffix += 1
+        _vault_id = _candidate
+
+    register_vault(
+        vault_id=_vault_id,
+        name=vault_name,
+        path=vault_path,
+    )
+    click.echo(f"  ✓ Registered in ~/.duckyai/vaults.json")
+
+    # Initialize .github/skills symlinks so built-in skills are available immediately
+    from .cli import ensure_init
+    ensure_init(vault_path)
+    click.echo(f"  ✓ Skills symlinked into .github/skills/")
+
+    # Open vault in IDE if detected
+    if selected_ide:
+        ide_name, ide_exe = selected_ide
+        click.echo(f"  🖥️  Opening vault in {ide_name}...")
+        try:
+            subprocess.Popen([ide_exe, str(vault_path)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            click.echo(f"  ⚠️  Could not launch {ide_name} automatically. Open it manually.")
+
     click.echo("")
     click.echo("  Run `duckyai` to start your first session.")
     click.echo("")
