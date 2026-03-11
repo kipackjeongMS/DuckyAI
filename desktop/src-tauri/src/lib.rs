@@ -44,13 +44,20 @@ async fn stop_recording_and_process(
     // Find Python 3.10+
     let python = find_sdk_python().ok_or("Python 3.10+ not found")?;
 
-    // Spawn copilot SDK runner
-    let output = Command::new(&python)
-        .arg(runner_path.to_str().unwrap())
+    // Spawn copilot SDK runner with MCP config
+    let mcp_config = build_mcp_config(&vault_root);
+    let mut cmd = Command::new(&python);
+    cmd.arg(runner_path.to_str().unwrap())
         .arg("--prompt")
         .arg(&prompt)
         .arg("--cwd")
-        .arg(&vault_root)
+        .arg(&vault_root);
+
+    if let Some(ref mcp) = mcp_config {
+        cmd.arg("--mcp-config").arg(mcp);
+    }
+
+    let output = cmd
         .current_dir(&vault_root)
         .output()
         .map_err(|e| format!("Failed to run agent: {}", e))?;
@@ -104,13 +111,43 @@ fn extract_sdk_response(output: &str) -> String {
             }
         }
     }
-    // Fall back to raw output minus marker
     output.lines()
-        .filter(|l| !l.contains(marker))
+        .filter(|l| !l.contains("__COPILOT_SDK_RESULT__"))
         .collect::<Vec<_>>()
         .join("\n")
         .trim()
         .to_string()
+}
+
+fn build_mcp_config(vault_root: &str) -> Option<String> {
+    let vault = std::path::Path::new(vault_root);
+
+    let mut servers = serde_json::Map::new();
+
+    // Embedded MCP server (from CLI package) or local
+    let mcp_index = vault.join("mcp-server").join("dist").join("index.js");
+    if mcp_index.exists() {
+        let mut entry = serde_json::Map::new();
+        entry.insert("command".into(), "node".into());
+        entry.insert("args".into(), serde_json::json!([mcp_index.to_string_lossy()]).into());
+        let mut env = serde_json::Map::new();
+        env.insert("DUCKYAI_VAULT_ROOT".into(), vault_root.into());
+        entry.insert("env".into(), serde_json::Value::Object(env));
+        servers.insert("duckyai-vault".into(), serde_json::Value::Object(entry));
+    }
+
+    // WorkIQ MCP
+    let mut workiq = serde_json::Map::new();
+    workiq.insert("command".into(), "npx".into());
+    workiq.insert("args".into(), serde_json::json!(["-y", "@microsoft/workiq", "mcp"]).into());
+    servers.insert("workiq".into(), serde_json::Value::Object(workiq));
+
+    if servers.is_empty() {
+        return None;
+    }
+
+    let config = serde_json::json!({"mcpServers": servers});
+    Some(config.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
