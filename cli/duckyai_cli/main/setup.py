@@ -174,38 +174,31 @@ def run_onboarding(vault_root: Path = None):
     else:
         click.echo(f"  · .gitignore (exists)")
 
-    # Create VS Code workspace file
-    workspace_file = vault_path / f"{vault_name}.code-workspace"
-    if not workspace_file.exists():
-        import json
-        workspace_config = {
-            "folders": [
-                {"name": vault_name, "path": "."}
-            ],
-            "settings": {
-                "files.exclude": {
-                    "**/.git": True,
-                    "**/.obsidian/plugins": True,
-                    "**/.obsidian/workspace*.json": True,
-                    "**/.services": True,
-                },
-                "search.exclude": {
-                    "**/.obsidian": True,
-                    "**/.services": True,
-                },
-                "git.scanRepositories": ["."],
-            },
-        }
-        workspace_file.write_text(
-            json.dumps(workspace_config, indent=2), encoding="utf-8"
-        )
-        click.echo(f"  ✓ {vault_name}.code-workspace")
-    else:
-        click.echo(f"  · {vault_name}.code-workspace (exists)")
-
-    # Create .vscode/mcp.json placeholder
+    # Create .vscode/settings.json
     vscode_dir = vault_path / ".vscode"
     vscode_dir.mkdir(exist_ok=True)
+    vscode_settings_path = vscode_dir / "settings.json"
+    if not vscode_settings_path.exists():
+        import json
+        vscode_settings = {
+            "files.exclude": {
+                "**/.git": True,
+                "**/.obsidian/plugins": True,
+                "**/.obsidian/workspace*.json": True,
+                "**/.services": True,
+            },
+            "search.exclude": {
+                "**/.obsidian": True,
+                "**/.services": True,
+            },
+            "git.scanRepositories": ["."],
+        }
+        vscode_settings_path.write_text(
+            json.dumps(vscode_settings, indent=2), encoding="utf-8"
+        )
+        click.echo(f"  ✓ .vscode/settings.json")
+    else:
+        click.echo(f"  · .vscode/settings.json (exists)")
 
     # Create profile note
     profile_path = vault_path / f"{user_name}.md"

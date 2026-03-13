@@ -1,0 +1,13 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.obsidian/plugins": true,
+    "**/.obsidian/workspace*.json": true,
+    "**/.services": true
+  },
+  "search.exclude": {
+    "**/.obsidian": true,
+    "**/.services": true
+  },
+  "git.scanRepositories": ["."]
+}
