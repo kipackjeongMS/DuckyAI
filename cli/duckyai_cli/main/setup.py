@@ -311,8 +311,7 @@ tags:
         {"name": "gpt-5.1", "path": "GPT general purpose"},
         {"name": "gpt-5.1-codex-mini", "path": "GPT Codex Mini — fast"},
         {"name": "gpt-5-mini", "path": "GPT Mini — fastest"},
-        {"name": "gpt-4.1", "path": "GPT 4.1 — legacy"},
-        {"name": "gemini-3-pro-preview", "path": "Google Gemini Pro"},
+        {"name": "gpt-4.1", "path": "GPT 4.1 — legacy"}
     ]
     model_idx = _interactive_select(model_choices, default_index=0)
     model = model_choices[model_idx]["name"] if model_idx is not None else "claude-sonnet-4.6"

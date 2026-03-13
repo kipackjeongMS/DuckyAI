@@ -26,6 +26,7 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
     """
 
     vault_path = vault_path or Path.cwd()
+    logger.reconfigure(vault_path)
     config = Config(
         config_file=str(config_file) if config_file else None,
         vault_path=vault_path,

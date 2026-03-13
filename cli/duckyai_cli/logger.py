@@ -80,12 +80,46 @@ class Logger:
         self.console_output = console_output
         self.console = Console()
 
-        # Print log file path for user reference
-        # print(f"📝 Log file: {os.path.abspath(self.log_file)}")
-
         self._ensure_log_file()
 
         self._initialized = True
+
+    def reconfigure(self, vault_path):
+        """Re-resolve log directory for a specific vault path.
+
+        Call this after vault resolution to ensure logs go to the correct
+        vault's log directory instead of the 'default' fallback.
+        """
+        try:
+            import yaml
+            config_path = Path(vault_path) / "duckyai.yml"
+            if not config_path.exists():
+                return
+
+            with config_path.open("r", encoding="utf-8") as fh:
+                data = yaml.safe_load(fh) or {}
+            if not isinstance(data, dict):
+                return
+
+            vault_id = data.get("id", "default")
+            logs_dir = os.path.join(str(Path.home()), ".duckyai", "vaults", vault_id, "logs")
+
+            orch = data.get("orchestrator", {})
+            if isinstance(orch, dict) and "logs_dir" in orch:
+                logs_dir = orch["logs_dir"]
+
+            if not os.path.isabs(logs_dir):
+                logs_dir = os.path.join(str(vault_path), logs_dir)
+
+            os.makedirs(logs_dir, exist_ok=True)
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            new_log_file = os.path.join(logs_dir, f"duckyai_{date_str}.log")
+
+            with self.lock:
+                self.log_file = new_log_file
+            self._ensure_log_file()
+        except Exception:
+            pass  # Keep existing log path on any error
         
     def _ensure_log_file(self):
         """Ensure log file exists and add header if it's a new file."""

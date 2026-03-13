@@ -844,10 +844,12 @@ def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config,
     """Trigger an agent and return JSON result."""
     import time as _time
     from ..config import Config
+    from ..logger import Logger
     from ..orchestrator.core import Orchestrator
 
     if vault_root is None:
         vault_root = _get_vault_root(ctx)
+    Logger(console_output=True).reconfigure(vault_root)
     config = Config(
         config_file=str(config_file) if config_file else None,
         vault_path=vault_root,

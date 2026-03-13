@@ -202,6 +202,9 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
         vault_root = Path(vault_path) if vault_path else Path.cwd()
         config = Config(config_file=config_file, vault_path=vault_root)
 
+        # Reconfigure logger to use the correct vault's log directory
+        logger.reconfigure(vault_root)
+
         # Create orchestrator (but don't start daemon)
         orch = Orchestrator(
             vault_path=vault_root,

@@ -630,6 +630,12 @@ def main(
     ctx.obj["vault_root"] = vault_root
     ctx.obj["vault_explicit"] = bool(vault_id)
 
+    # Reconfigure logger for the resolved vault
+    if vault_root:
+        from .trigger_agent import logger as _trig_logger
+        from ..logger import Logger
+        Logger(console_output=True).reconfigure(vault_root)
+
     # If a subcommand was invoked, let it handle execution
     if ctx.invoked_subcommand is not None:
         return
