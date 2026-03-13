@@ -292,16 +292,31 @@ tags:
 
     # ─── Step 8: Model Preference ───────────────────────
     click.echo("\n🤖 Step 8/10 — Default Model")
-    model = click.prompt(
-        "  Default model for agents",
-        type=click.Choice([
-            "claude-sonnet-4.6",
-            "gpt-5",
-            "claude-opus-4.6",
-            "claude-haiku-4.5",
-        ], case_sensitive=False),
-        default="claude-sonnet-4.6"
-    )
+    click.echo("  Select the default AI model for orchestrator agents (↑/↓ navigate, Enter select)\n")
+    from .vault import _interactive_select
+    model_choices = [
+        {"name": "claude-sonnet-4.6", "path": "Recommended — fast, high quality"},
+        {"name": "claude-haiku-4.5", "path": "Fast, cost-effective"},
+        {"name": "claude-sonnet-4.5", "path": "Previous-gen Sonnet"},
+        {"name": "claude-sonnet-4", "path": "Stable Sonnet"},
+        {"name": "claude-opus-4.6", "path": "Premium — highest quality"},
+        {"name": "claude-opus-4.6-fast", "path": "Premium — faster variant"},
+        {"name": "claude-opus-4.5", "path": "Previous-gen Opus"},
+        {"name": "gpt-5.4", "path": "Latest GPT"},
+        {"name": "gpt-5.3-codex", "path": "GPT Codex — code-focused"},
+        {"name": "gpt-5.2-codex", "path": "GPT Codex — code-focused"},
+        {"name": "gpt-5.2", "path": "GPT general purpose"},
+        {"name": "gpt-5.1-codex-max", "path": "GPT Codex Max"},
+        {"name": "gpt-5.1-codex", "path": "GPT Codex"},
+        {"name": "gpt-5.1", "path": "GPT general purpose"},
+        {"name": "gpt-5.1-codex-mini", "path": "GPT Codex Mini — fast"},
+        {"name": "gpt-5-mini", "path": "GPT Mini — fastest"},
+        {"name": "gpt-4.1", "path": "GPT 4.1 — legacy"},
+        {"name": "gemini-3-pro-preview", "path": "Google Gemini Pro"},
+    ]
+    model_idx = _interactive_select(model_choices, default_index=0)
+    model = model_choices[model_idx]["name"] if model_idx is not None else "claude-sonnet-4.6"
+    click.echo(f"  Selected: {model}")
 
     # ─── Step 9: Teams Sync Schedule ────────────────────
     click.echo("\n🔄 Step 9/10 — Teams Sync Schedule")
