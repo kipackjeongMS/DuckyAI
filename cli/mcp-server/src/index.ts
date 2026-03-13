@@ -1440,13 +1440,26 @@ server.tool(
     // Build the section
     const sectionContent = `## Teams Chat Highlights\n\n${highlights}`;
 
-    // Idempotent: replace existing section or insert before End of Day
+    // Idempotent: merge into existing section or insert new
     if (/^## Teams Chat Highlights/m.test(content)) {
-      // Replace existing section (everything between ## Teams Chat Highlights and next ## heading)
-      content = content.replace(
-        /## Teams Chat Highlights\n[\s\S]*?(?=\n## )/,
-        sectionContent + "\n\n"
-      );
+      // Append to existing section (insert new highlights before the next ## heading)
+      const sectionMatch = content.match(/## Teams Chat Highlights\n([\s\S]*?)(?=\n## )/);
+      if (sectionMatch && sectionMatch.index !== undefined) {
+        const existingContent = sectionMatch[1].trimEnd();
+        const mergedSection = `## Teams Chat Highlights\n\n${existingContent}\n\n${highlights}`;
+        content = content.replace(
+          /## Teams Chat Highlights\n[\s\S]*?(?=\n## )/,
+          mergedSection + "\n\n"
+        );
+      } else {
+        // Section exists but is at the end of file (no next ## heading)
+        const sectionEndMatch = content.match(/## Teams Chat Highlights\n([\s\S]*)$/);
+        if (sectionEndMatch && sectionEndMatch.index !== undefined) {
+          const existingContent = sectionEndMatch[1].trimEnd();
+          content = content.slice(0, sectionEndMatch.index) +
+            `## Teams Chat Highlights\n\n${existingContent}\n\n${highlights}\n`;
+        }
+      }
     } else {
       // Insert before "## End of Day" or append at the end
       const endOfDayMatch = content.match(/\n## End of Day/);
@@ -1640,10 +1653,24 @@ server.tool(
     const sectionContent = `## Teams Meeting Highlights\n\n${highlights}`;
 
     if (/^## Teams Meeting Highlights/m.test(content)) {
-      content = content.replace(
-        /## Teams Meeting Highlights\n[\s\S]*?(?=\n## )/,
-        sectionContent + "\n\n"
-      );
+      // Append to existing section
+      const sectionMatch = content.match(/## Teams Meeting Highlights\n([\s\S]*?)(?=\n## )/);
+      if (sectionMatch && sectionMatch.index !== undefined) {
+        const existingContent = sectionMatch[1].trimEnd();
+        const mergedSection = `## Teams Meeting Highlights\n\n${existingContent}\n\n${highlights}`;
+        content = content.replace(
+          /## Teams Meeting Highlights\n[\s\S]*?(?=\n## )/,
+          mergedSection + "\n\n"
+        );
+      } else {
+        // Section at end of file
+        const sectionEndMatch = content.match(/## Teams Meeting Highlights\n([\s\S]*)$/);
+        if (sectionEndMatch && sectionEndMatch.index !== undefined) {
+          const existingContent = sectionEndMatch[1].trimEnd();
+          content = content.slice(0, sectionEndMatch.index) +
+            `## Teams Meeting Highlights\n\n${existingContent}\n\n${highlights}\n`;
+        }
+      }
     } else {
       // Insert before Teams Chat Highlights or End of Day, or append at end
       const insertBefore = content.match(/\n## Teams Chat Highlights|\n## End of Day/);
