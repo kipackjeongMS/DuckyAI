@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arr2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#475569"/>
+    </marker>
+    <marker id="arr-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#16a34a"/>
+    </marker>
+    <filter id="sh2">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+    </filter>
+    <linearGradient id="hdrGrad2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#115e59"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="700" rx="16" fill="#f8fafc"/>
+
+  <!-- Title Bar -->
+  <rect x="0" y="0" width="1000" height="64" rx="16" fill="url(#hdrGrad2)"/>
+  <rect x="0" y="32" width="1000" height="32" fill="url(#hdrGrad2)"/>
+  <text x="500" y="40" text-anchor="middle" fill="white" font-size="22" font-weight="700">Surface 2 — Interactive User Session</text>
+
+  <!-- ═══ USER ENTRY ═══ -->
+  <text x="40" y="104" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">USER ENTRY POINT</text>
+
+  <!-- Terminal commands -->
+  <rect x="40" y="118" width="210" height="72" rx="10" fill="#1e293b" filter="url(#sh2)"/>
+  <text x="145" y="142" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="600" font-family="Consolas, monospace">$ duckyai</text>
+  <text x="145" y="160" text-anchor="middle" fill="#94a3b8" font-size="10">fully interactive</text>
+  <text x="145" y="175" text-anchor="middle" fill="#64748b" font-size="9">streams in/out to terminal</text>
+
+  <rect x="280" y="118" width="210" height="72" rx="10" fill="#1e293b" filter="url(#sh2)"/>
+  <text x="385" y="142" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="600" font-family="Consolas, monospace">$ duckyai -p "..."</text>
+  <text x="385" y="160" text-anchor="middle" fill="#94a3b8" font-size="10">one-shot prompt</text>
+  <text x="385" y="175" text-anchor="middle" fill="#64748b" font-size="9">runs, prints, exits</text>
+
+  <rect x="520" y="118" width="210" height="72" rx="10" fill="#1e293b" filter="url(#sh2)"/>
+  <text x="625" y="142" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="600" font-family="Consolas, monospace">$ duckyai -i "..."</text>
+  <text x="625" y="160" text-anchor="middle" fill="#94a3b8" font-size="10">interactive + first prompt</text>
+  <text x="625" y="175" text-anchor="middle" fill="#64748b" font-size="9">runs prompt, stays open</text>
+
+  <rect x="760" y="118" width="210" height="72" rx="10" fill="#1e293b" filter="url(#sh2)"/>
+  <text x="865" y="138" text-anchor="middle" fill="#38bdf8" font-size="12" font-weight="600" font-family="Consolas, monospace">$ duckyai -s ID</text>
+  <text x="865" y="156" text-anchor="middle" fill="#94a3b8" font-size="10">resume session</text>
+  <text x="865" y="172" text-anchor="middle" fill="#64748b" font-size="9">continues from ~/.copilot/</text>
+  <text x="865" y="184" text-anchor="middle" fill="#fbbf24" font-size="9">--vault X for multi-vault</text>
+
+  <!-- Arrows down -->
+  <line x1="145" y1="190" x2="350" y2="228" stroke="#475569" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="385" y1="190" x2="400" y2="228" stroke="#475569" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="625" y1="190" x2="450" y2="228" stroke="#475569" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="865" y1="190" x2="500" y2="228" stroke="#475569" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- ═══ VAULT RESOLUTION ═══ -->
+  <text x="40" y="244" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">VAULT RESOLUTION</text>
+
+  <rect x="40" y="254" width="660" height="56" rx="10" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5" filter="url(#sh2)"/>
+  <text x="370" y="278" text-anchor="middle" fill="#065f46" font-size="13" font-weight="700">resolve_vault()</text>
+  <text x="370" y="296" text-anchor="middle" fill="#64748b" font-size="11">--vault flag  →  CWD detection (duckyai.yml)  →  registry picker (↑↓)  →  error</text>
+
+  <!-- Side: auto-start orchestrator -->
+  <rect x="730" y="254" width="240" height="56" rx="10" fill="#fefce8" stroke="#fde047" stroke-width="1.5" filter="url(#sh2)"/>
+  <text x="850" y="274" text-anchor="middle" fill="#854d0e" font-size="12" font-weight="600">⚡ Auto-start Orchestrator</text>
+  <text x="850" y="290" text-anchor="middle" fill="#64748b" font-size="10">+ Sync Teams? → Lookback hours?</text>
+
+  <line x1="700" y1="282" x2="730" y2="282" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr-green)"/>
+
+  <!-- Arrow down -->
+  <line x1="370" y1="310" x2="370" y2="348" stroke="#475569" stroke-width="2" marker-end="url(#arr2)"/>
+
+  <!-- ═══ MCP CONFIG BUILD ═══ -->
+  <text x="40" y="364" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">MCP CONFIG ASSEMBLY</text>
+
+  <rect x="40" y="374" width="920" height="80" rx="10" fill="white" stroke="#cbd5e1" stroke-width="1.5" filter="url(#sh2)"/>
+
+  <rect x="60" y="390" width="180" height="42" rx="8" fill="#dbeafe"/>
+  <text x="150" y="410" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="600">🔌 duckyai-vault</text>
+  <text x="150" y="424" text-anchor="middle" fill="#64748b" font-size="9">node mcp-server/dist/index.js</text>
+
+  <text x="250" y="414" fill="#94a3b8" font-size="16">+</text>
+
+  <rect x="268" y="390" width="160" height="42" rx="8" fill="#e0e7ff"/>
+  <text x="348" y="410" text-anchor="middle" fill="#3730a3" font-size="12" font-weight="600">🔌 WorkIQ</text>
+  <text x="348" y="424" text-anchor="middle" fill="#64748b" font-size="9">npx @microsoft/workiq mcp</text>
+
+  <text x="438" y="414" fill="#94a3b8" font-size="16">+</text>
+
+  <rect x="456" y="390" width="180" height="42" rx="8" fill="#fce7f3"/>
+  <text x="546" y="410" text-anchor="middle" fill="#9d174d" font-size="12" font-weight="600">🔌 release-dashboard</text>
+  <text x="546" y="424" text-anchor="middle" fill="#64748b" font-size="9">release-dashboard-mcp</text>
+
+  <text x="646" y="414" fill="#94a3b8" font-size="16">+</text>
+
+  <rect x="664" y="390" width="275" height="42" rx="8" fill="#f5f3ff"/>
+  <text x="801" y="410" text-anchor="middle" fill="#6b21a8" font-size="12" font-weight="600">🔌 User --mcp-config flags</text>
+  <text x="801" y="424" text-anchor="middle" fill="#64748b" font-size="9">JSON file or inline string (repeatable)</text>
+
+  <!-- Arrow down -->
+  <line x1="370" y1="454" x2="370" y2="492" stroke="#475569" stroke-width="2" marker-end="url(#arr2)"/>
+
+  <!-- ═══ COPILOT CLI LAUNCH ═══ -->
+  <text x="40" y="508" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">FOREGROUND SUBPROCESS</text>
+
+  <rect x="40" y="518" width="920" height="90" rx="12" fill="#0f172a" filter="url(#sh2)"/>
+
+  <text x="60" y="546" fill="#38bdf8" font-size="14" font-weight="700" font-family="Consolas, monospace">$ copilot \</text>
+  <text x="100" y="564" fill="#a5b4fc" font-size="12" font-family="Consolas, monospace">--prompt "create a task" \</text>
+  <text x="100" y="580" fill="#a5b4fc" font-size="12" font-family="Consolas, monospace">--additional-mcp-config '{"mcpServers":{...}}' \</text>
+  <text x="100" y="596" fill="#a5b4fc" font-size="12" font-family="Consolas, monospace">--session-id my-session  --model claude-sonnet-4.6</text>
+
+  <text x="700" y="546" fill="#fbbf24" font-size="11" font-weight="600">subprocess.run()</text>
+  <text x="700" y="564" fill="#94a3b8" font-size="10">cwd = vault_root</text>
+  <text x="700" y="580" fill="#94a3b8" font-size="10">blocks until user exits</text>
+  <text x="700" y="596" fill="#94a3b8" font-size="10">stdin/stdout: terminal</text>
+
+  <!-- Arrow down -->
+  <line x1="370" y1="608" x2="370" y2="640" stroke="#475569" stroke-width="2" marker-end="url(#arr2)"/>
+
+  <!-- ═══ USER INTERACTION ═══ -->
+  <text x="40" y="656" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">USER EXPERIENCE</text>
+
+  <rect x="40" y="628" width="280" height="60" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" filter="url(#sh2)"/>
+  <text x="180" y="654" text-anchor="middle" fill="#166534" font-size="13" font-weight="700">💬 Interactive Chat</text>
+  <text x="180" y="672" text-anchor="middle" fill="#64748b" font-size="10">user ↔ AI streamed conversation</text>
+
+  <rect x="350" y="628" width="280" height="60" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" filter="url(#sh2)"/>
+  <text x="490" y="654" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="700">🛠️ MCP Tool Calls</text>
+  <text x="490" y="672" text-anchor="middle" fill="#64748b" font-size="10">vault read/write, Teams, tasks</text>
+
+  <rect x="660" y="628" width="300" height="60" rx="10" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.5" filter="url(#sh2)"/>
+  <text x="810" y="654" text-anchor="middle" fill="#92400e" font-size="13" font-weight="700">🚫 No Task Files / No Matching</text>
+  <text x="810" y="672" text-anchor="middle" fill="#64748b" font-size="10">user is in full control — not orchestrated</text>
+
+  <!-- Version -->
+  <text x="960" y="695" text-anchor="end" fill="#cbd5e1" font-size="10">DuckyAI Architecture v2.1 — timezone-aware, configurable lookback</text>
+</svg>

@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 920" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow1" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#475569"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
+    </marker>
+    <filter id="shadow1">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+    </filter>
+    <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#334155"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="920" rx="16" fill="#f8fafc"/>
+
+  <!-- Title Bar -->
+  <rect x="0" y="0" width="1100" height="64" rx="16" fill="url(#headerGrad)"/>
+  <rect x="0" y="32" width="1100" height="32" fill="url(#headerGrad)"/>
+  <text x="550" y="40" text-anchor="middle" fill="white" font-size="22" font-weight="700">Surface 1 — Orchestrator Daemon (Background)</text>
+
+  <!-- ═══ TRIGGER SOURCES ═══ -->
+  <text x="40" y="104" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">TRIGGER SOURCES</text>
+
+  <!-- File Monitor -->
+  <rect x="40" y="118" width="200" height="80" rx="10" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="140" y="146" text-anchor="middle" fill="#1e40af" font-size="14" font-weight="700">📂 File Monitor</text>
+  <text x="140" y="165" text-anchor="middle" fill="#3b82f6" font-size="11">watchdog observer</text>
+  <text x="140" y="180" text-anchor="middle" fill="#64748b" font-size="10">.md create/modify → debounce 0.5s</text>
+
+  <!-- Cron Scheduler -->
+  <rect x="270" y="118" width="200" height="80" rx="10" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="370" y="146" text-anchor="middle" fill="#92400e" font-size="14" font-weight="700">⏰ Cron Scheduler</text>
+  <text x="370" y="165" text-anchor="middle" fill="#b45309" font-size="11">60s interval check</text>
+  <text x="370" y="180" text-anchor="middle" fill="#64748b" font-size="10">cron match → 10min cooldown</text>
+
+  <!-- Poller Manager -->
+  <rect x="500" y="118" width="200" height="80" rx="10" fill="#e0e7ff" stroke="#a5b4fc" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="600" y="146" text-anchor="middle" fill="#3730a3" font-size="14" font-weight="700">🔄 Poller Manager</text>
+  <text x="600" y="165" text-anchor="middle" fill="#4f46e5" font-size="11">custom event sources</text>
+  <text x="600" y="180" text-anchor="middle" fill="#64748b" font-size="10">Teams, Apple Notes, etc.</text>
+
+  <!-- Queued Tasks -->
+  <rect x="730" y="118" width="200" height="80" rx="10" fill="#fce7f3" stroke="#f9a8d4" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="830" y="146" text-anchor="middle" fill="#9d174d" font-size="14" font-weight="700">📋 Queued Tasks</text>
+  <text x="830" y="165" text-anchor="middle" fill="#be185d" font-size="11">~/.duckyai/tasks/*.md</text>
+  <text x="830" y="180" text-anchor="middle" fill="#64748b" font-size="10">status: QUEUED → picked up</text>
+
+  <!-- Arrows to Event Queue -->
+  <line x1="140" y1="198" x2="140" y2="240" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow1)"/>
+  <line x1="370" y1="198" x2="370" y2="240" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow1)"/>
+  <line x1="600" y1="198" x2="550" y2="240" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow1)"/>
+  <line x1="830" y1="198" x2="650" y2="240" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow1)"/>
+
+  <!-- ═══ EVENT QUEUE ═══ -->
+  <rect x="80" y="240" width="640" height="52" rx="26" fill="#1e293b" filter="url(#shadow1)"/>
+  <text x="400" y="272" text-anchor="middle" fill="white" font-size="15" font-weight="700">Shared Event Queue    →    TriggerEvent(path, event_type, frontmatter)</text>
+
+  <!-- Arrow to Event Loop -->
+  <line x1="400" y1="292" x2="400" y2="334" stroke="#475569" stroke-width="2" marker-end="url(#arrow1)"/>
+
+  <!-- ═══ EVENT LOOP ═══ -->
+  <text x="40" y="348" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">EVENT LOOP (single thread)</text>
+
+  <!-- Agent Matching -->
+  <rect x="40" y="358" width="320" height="70" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="200" y="386" text-anchor="middle" fill="#166534" font-size="14" font-weight="700">🎯 Agent Registry — Match</text>
+  <text x="200" y="405" text-anchor="middle" fill="#64748b" font-size="11">trigger.paths (glob) + trigger.frontmatter (YAML)</text>
+  <text x="200" y="418" text-anchor="middle" fill="#64748b" font-size="10">→ find_matching_agents(event_data)</text>
+
+  <!-- Concurrency Gate -->
+  <rect x="400" y="358" width="280" height="70" rx="10" fill="#fefce8" stroke="#fde047" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="540" y="386" text-anchor="middle" fill="#854d0e" font-size="14" font-weight="700">🚦 Concurrency Gate</text>
+  <text x="540" y="405" text-anchor="middle" fill="#64748b" font-size="11">reserve_slot(agent) → max_concurrent: 3</text>
+  <text x="540" y="418" text-anchor="middle" fill="#64748b" font-size="10">full? → create QUEUED task file</text>
+
+  <!-- Config Reload -->
+  <rect x="720" y="358" width="200" height="70" rx="10" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="820" y="386" text-anchor="middle" fill="#5b21b6" font-size="14" font-weight="700">🔄 Hot-Reload</text>
+  <text x="820" y="405" text-anchor="middle" fill="#64748b" font-size="11">duckyai.yml changed →</text>
+  <text x="820" y="418" text-anchor="middle" fill="#64748b" font-size="10">2-phase atomic swap</text>
+
+  <!-- Arrow to Prompt Build -->
+  <line x1="200" y1="428" x2="200" y2="458" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow1)"/>
+  <line x1="540" y1="428" x2="400" y2="458" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow1)"/>
+
+  <!-- ═══ PROMPT CONSTRUCTION ═══ -->
+  <text x="40" y="474" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">PROMPT CONSTRUCTION</text>
+
+  <rect x="40" y="484" width="680" height="100" rx="10" fill="white" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow1)"/>
+
+  <rect x="55" y="498" width="145" height="36" rx="6" fill="#e0f2fe"/>
+  <text x="127" y="520" text-anchor="middle" fill="#0369a1" font-size="11" font-weight="600">System Prompt.md</text>
+
+  <text x="210" y="520" fill="#94a3b8" font-size="16">+</text>
+
+  <rect x="225" y="498" width="155" height="36" rx="6" fill="#dcfce7"/>
+  <text x="302" y="520" text-anchor="middle" fill="#166534" font-size="11" font-weight="600">Agent Prompt Body</text>
+
+  <text x="390" y="520" fill="#94a3b8" font-size="16">+</text>
+
+  <rect x="405" y="498" width="140" height="36" rx="6" fill="#fef9c3"/>
+  <text x="475" y="520" text-anchor="middle" fill="#854d0e" font-size="11" font-weight="600">Trigger Context</text>
+
+  <text x="555" y="520" fill="#94a3b8" font-size="16">+</text>
+
+  <rect x="570" y="498" width="135" height="36" rx="6" fill="#fce7f3"/>
+  <text x="637" y="520" text-anchor="middle" fill="#9d174d" font-size="11" font-weight="600">Input File Content</text>
+
+  <text x="55" y="560" fill="#64748b" font-size="10">Template vars: {{YYYY-MM-DD}}, {{Agent-Name}}, {{today}}, {{yesterday}}</text>
+  <text x="380" y="560" fill="#64748b" font-size="10">MCP config: vault MCP + WorkIQ | Agent Params: model, lookback_hours</text>
+
+  <!-- Arrow to Execution -->
+  <line x1="380" y1="584" x2="380" y2="616" stroke="#475569" stroke-width="2" marker-end="url(#arrow1)"/>
+
+  <!-- ═══ EXECUTION ═══ -->
+  <text x="40" y="630" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">SUBPROCESS EXECUTION (background thread)</text>
+
+  <!-- Copilot CLI -->
+  <rect x="40" y="642" width="220" height="76" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="150" y="666" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="700">Copilot CLI</text>
+  <text x="150" y="682" text-anchor="middle" fill="#64748b" font-size="10">copilot --prompt ...</text>
+  <text x="150" y="695" text-anchor="middle" fill="#64748b" font-size="10">--additional-mcp-config</text>
+  <text x="150" y="708" text-anchor="middle" fill="#3b82f6" font-size="10" font-weight="600">executor: copilot_cli</text>
+
+  <!-- Claude CLI -->
+  <rect x="290" y="642" width="220" height="76" rx="10" fill="#faf5ff" stroke="#c4b5fd" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="400" y="666" text-anchor="middle" fill="#6b21a8" font-size="13" font-weight="700">Claude CLI</text>
+  <text x="400" y="682" text-anchor="middle" fill="#64748b" font-size="10">claude --print --mcp-config</text>
+  <text x="400" y="695" text-anchor="middle" fill="#64748b" font-size="10">stdin: prompt text</text>
+  <text x="400" y="708" text-anchor="middle" fill="#7c3aed" font-size="10" font-weight="600">executor: claude_code</text>
+
+  <!-- Copilot SDK -->
+  <rect x="540" y="642" width="220" height="76" rx="10" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="650" y="666" text-anchor="middle" fill="#065f46" font-size="13" font-weight="700">Copilot SDK Runner</text>
+  <text x="650" y="682" text-anchor="middle" fill="#64748b" font-size="10">python3.10+ runner.py</text>
+  <text x="650" y="695" text-anchor="middle" fill="#64748b" font-size="10">--prompt --mcp-config</text>
+  <text x="650" y="708" text-anchor="middle" fill="#059669" font-size="10" font-weight="600">executor: copilot_sdk</text>
+
+  <!-- Arrow to Output -->
+  <line x1="150" y1="718" x2="150" y2="752" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow1)"/>
+  <line x1="400" y1="718" x2="400" y2="752" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow1)"/>
+  <line x1="650" y1="718" x2="650" y2="752" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow1)"/>
+
+  <!-- ═══ OUTPUT & LOGGING ═══ -->
+  <text x="40" y="768" fill="#64748b" font-size="13" font-weight="600" letter-spacing="1">OUTPUT &amp; LOGGING</text>
+
+  <!-- Task File -->
+  <rect x="40" y="778" width="240" height="68" rx="10" fill="#fff1f2" stroke="#fda4af" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="160" y="802" text-anchor="middle" fill="#9f1239" font-size="13" font-weight="700">📄 Task File Update</text>
+  <text x="160" y="818" text-anchor="middle" fill="#64748b" font-size="10">QUEUED → IN_PROGRESS → PROCESSED</text>
+  <text x="160" y="832" text-anchor="middle" fill="#64748b" font-size="10">~/.duckyai/vaults/{id}/tasks/*.md</text>
+
+  <!-- Execution Log -->
+  <rect x="310" y="778" width="240" height="68" rx="10" fill="#f0f9ff" stroke="#7dd3fc" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="430" y="802" text-anchor="middle" fill="#0c4a6e" font-size="13" font-weight="700">📝 Execution Log</text>
+  <text x="430" y="818" text-anchor="middle" fill="#64748b" font-size="10">metadata + prompt + response</text>
+  <text x="430" y="832" text-anchor="middle" fill="#64748b" font-size="10">~/.duckyai/vaults/{id}/logs/*.md</text>
+
+  <!-- Output File -->
+  <rect x="580" y="778" width="240" height="68" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" filter="url(#shadow1)"/>
+  <text x="700" y="802" text-anchor="middle" fill="#166534" font-size="13" font-weight="700">📁 Vault Output</text>
+  <text x="700" y="818" text-anchor="middle" fill="#64748b" font-size="10">agent writes to output_path</text>
+  <text x="700" y="832" text-anchor="middle" fill="#64748b" font-size="10">e.g., 04-Periodic/Daily/2026-03-11.md</text>
+
+  <!-- MCP badge -->
+  <rect x="850" y="484" width="200" height="100" rx="10" fill="#1e293b" filter="url(#shadow1)"/>
+  <text x="950" y="510" text-anchor="middle" fill="#38bdf8" font-size="13" font-weight="700">🔌 MCP Servers</text>
+  <text x="950" y="530" text-anchor="middle" fill="#94a3b8" font-size="10">duckyai-vault (Node.js)</text>
+  <text x="950" y="545" text-anchor="middle" fill="#94a3b8" font-size="10">WorkIQ (Teams data)</text>
+  <text x="950" y="560" text-anchor="middle" fill="#94a3b8" font-size="10">release-dashboard</text>
+  <text x="950" y="575" text-anchor="middle" fill="#64748b" font-size="9">passed via --mcp-config</text>
+
+  <!-- Version -->
+  <text x="1060" y="905" text-anchor="end" fill="#cbd5e1" font-size="10">DuckyAI Architecture v2.1 — timezone-aware, configurable lookback</text>
+</svg>
