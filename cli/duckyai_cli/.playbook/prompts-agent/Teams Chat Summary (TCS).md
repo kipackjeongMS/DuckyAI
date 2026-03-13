@@ -16,8 +16,9 @@ You are the Teams Chat Summary agent. Your job is to fetch recent Microsoft Team
 
 Call the `getTeamsChatSyncState` MCP tool to get the last sync timestamp.
 
-- If `lastSynced` is `null`, this is the first run. Fetch chats from the last **N hours**, where N is the `lookback_hours` value from the Agent Parameters section below (default: 1 hour if not specified).
-- If `lastSynced` has a value, fetch chats **since** that timestamp.
+- If `ignore_watermark` is `true` in Agent Parameters, **ignore** `lastSynced` even if it has a value — treat this as a fresh run using `lookback_hours`.
+- If `lastSynced` is `null` (or ignored), this is a first/fresh run. Fetch chats from the last **N hours**, where N is the `lookback_hours` value from the Agent Parameters section below (default: 1 hour if not specified).
+- If `lastSynced` has a value (and not ignored), fetch chats **since** that timestamp.
 
 ### Step 2: Fetch Teams chats
 

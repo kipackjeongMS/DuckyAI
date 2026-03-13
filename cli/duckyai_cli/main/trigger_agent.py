@@ -1,14 +1,85 @@
 """Handler for --trigger-agent command."""
 
+import json
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from rich.console import Console
 
 from ..logger import Logger
-from ..config import Config
+from ..config import Config, get_global_runtime_dir
 from ..orchestrator.core import Orchestrator
 
 logger = Logger(console_output=True)
+
+
+def _read_watermark(vault_root: Path, agent_abbr: str) -> str | None:
+    """Read the lastSynced timestamp from the agent's watermark file. Returns ISO string or None."""
+    config = Config(vault_path=vault_root)
+    vault_id = config.get("id", "default")
+    filename = "tcs-last-sync.json" if agent_abbr == "TCS" else "tms-last-sync.json"
+    state_file = get_global_runtime_dir(vault_id) / "state" / filename
+    try:
+        data = json.loads(state_file.read_text(encoding="utf-8"))
+        return data.get("lastSynced")
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        return None
+
+
+def _format_watermark_age(last_synced_iso: str) -> str:
+    """Format a watermark timestamp as a human-readable age string."""
+    try:
+        ts = datetime.fromisoformat(last_synced_iso.replace("Z", "+00:00"))
+        delta = datetime.now(timezone.utc) - ts
+        hours = delta.total_seconds() / 3600
+        if hours < 1:
+            return f"{int(delta.total_seconds() / 60)}m ago"
+        elif hours < 24:
+            return f"{hours:.1f}h ago"
+        else:
+            days = hours / 24
+            return f"{days:.1f}d ago"
+    except (ValueError, TypeError):
+        return "unknown"
+
+
+def _prompt_lookback_or_watermark(agent_abbr: str, default_hours: int, last_synced: str | None, console: Console) -> dict | None:
+    """Prompt user to choose between syncing from watermark or custom lookback hours.
+    
+    Returns agent_params_override dict or None to use watermark as-is.
+    """
+    if last_synced:
+        age = _format_watermark_age(last_synced)
+        console.print(f"\n[bold blue]{agent_abbr} Sync[/bold blue]")
+        console.print(f"  Last synced: [cyan]{last_synced}[/cyan] ({age})")
+        console.print(f"  [dim]1) Since last sync (default)[/dim]")
+        console.print(f"  [dim]2) Custom lookback hours[/dim]")
+        try:
+            choice = console.input(f"[bold]Choice [1]: [/bold]").strip()
+            if choice == "2":
+                try:
+                    user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
+                    hours = int(user_input) if user_input else default_hours
+                except (ValueError, EOFError):
+                    hours = default_hours
+                console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
+                return {'lookback_hours': hours, 'ignore_watermark': True}
+            else:
+                console.print(f"[dim]Syncing since last watermark[/dim]\n")
+                return None
+        except (EOFError, KeyboardInterrupt):
+            return None
+    else:
+        # No watermark — first run, prompt for lookback hours
+        console.print(f"\n[bold blue]{agent_abbr} first sync[/bold blue] — no previous watermark found")
+        console.print(f"[dim]How far back should the agent fetch data? (default: {default_hours}h)[/dim]")
+        try:
+            user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
+            hours = int(user_input) if user_input else default_hours
+        except (ValueError, EOFError):
+            hours = default_hours
+        console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
+        return {'lookback_hours': hours}
 
 def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=None, mcp_config=None, claude_settings=None, input_file=None, vault_path=None, lookback_hours=None):
     """Trigger an orchestrator agent or poller interactively.
@@ -129,21 +200,19 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
         # Execute selected item
         start_time = time.time()
 
-        # For Teams agents (TCS/TMS), prompt for lookback hours if not provided
+        # For Teams agents (TCS/TMS), prompt for lookback vs watermark
         agent_params_override = None
         if selected_agent and selected_agent.abbreviation in ('TCS', 'TMS'):
-            if lookback_hours is None:
+            if lookback_hours is not None:
+                # Explicit --lookback flag: skip interactive prompt
+                agent_params_override = {'lookback_hours': lookback_hours, 'ignore_watermark': True}
+            else:
                 default_hours = selected_agent.agent_params.get('lookback_hours', 1 if selected_agent.abbreviation == 'TCS' else 24)
+                last_synced = _read_watermark(vault_root, selected_agent.abbreviation)
                 console = Console()
-                console.print(f"\n[bold blue]Lookback hours[/bold blue] for {selected_agent.abbreviation} first-run/manual trigger")
-                console.print(f"[dim]How far back should the agent fetch data? (default: {default_hours}h)[/dim]")
-                try:
-                    user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
-                    lookback_hours = int(user_input) if user_input else default_hours
-                except (ValueError, EOFError):
-                    lookback_hours = default_hours
-                console.print(f"[dim]Using lookback: {lookback_hours} hours[/dim]\n")
-            agent_params_override = {'lookback_hours': lookback_hours}
+                agent_params_override = _prompt_lookback_or_watermark(
+                    selected_agent.abbreviation, default_hours, last_synced, console
+                )
 
         try:
             if selected_agent:

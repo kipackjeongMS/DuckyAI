@@ -106,21 +106,20 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
             try:
                 response = input(f"\n🔄 Sync Teams {labels} now? (y/n): ").strip().lower()
                 if response in ("y", "yes"):
-                    # Ask for lookback hours
-                    lookback_hours = None
-                    try:
-                        lookback_input = input("⏰ Lookback hours (default: use agent config): ").strip()
-                        if lookback_input:
-                            lookback_hours = int(lookback_input)
-                    except (ValueError, EOFError):
-                        pass
-                    agent_params_override = {'lookback_hours': lookback_hours} if lookback_hours is not None else None
+                    from .trigger_agent import _read_watermark, _prompt_lookback_or_watermark
+                    from rich.console import Console
+                    console = Console()
 
                     import threading
                     for abbr, label in agents_to_sync:
+                        agent_def = orch.agent_registry.agents.get(abbr)
+                        default_hours = agent_def.agent_params.get('lookback_hours', 1 if abbr == 'TCS' else 24) if agent_def else (1 if abbr == 'TCS' else 24)
+                        last_synced = _read_watermark(vault_path, abbr)
+                        override = _prompt_lookback_or_watermark(abbr, default_hours, last_synced, console)
+
                         logger.info(f"[cyan]Triggering {abbr}...[/cyan]")
-                        def _run_sync(agent_abbr=abbr, override=agent_params_override):
-                            orch.trigger_agent_once(agent_abbr, agent_params_override=override)
+                        def _run_sync(agent_abbr=abbr, agent_override=override):
+                            orch.trigger_agent_once(agent_abbr, agent_params_override=agent_override)
                         sync_thread = threading.Thread(target=_run_sync, daemon=True)
                         sync_thread.start()
                         orch.cron_scheduler.set_cooldown(abbr)

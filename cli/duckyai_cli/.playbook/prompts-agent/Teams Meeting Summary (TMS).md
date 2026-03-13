@@ -18,8 +18,9 @@ You are the Teams Meeting Summary agent. Your job is to fetch recent Microsoft T
 
 Call the `getTeamsMeetingSyncState` MCP tool to get the last sync timestamp.
 
-- If `lastSynced` is `null`, this is the first run. Fetch meetings from the last **N hours**, where N is the `lookback_hours` value from the Agent Parameters section below (default: 24 hours if not specified).
-- If `lastSynced` has a value, fetch meetings **since** that timestamp.
+- If `ignore_watermark` is `true` in Agent Parameters, **ignore** `lastSynced` even if it has a value — treat this as a fresh run using `lookback_hours`.
+- If `lastSynced` is `null` (or ignored), this is a first/fresh run. Fetch meetings from the last **N hours**, where N is the `lookback_hours` value from the Agent Parameters section below (default: 24 hours if not specified).
+- If `lastSynced` has a value (and not ignored), fetch meetings **since** that timestamp.
 
 ### Step 2: Fetch Teams meetings
 
