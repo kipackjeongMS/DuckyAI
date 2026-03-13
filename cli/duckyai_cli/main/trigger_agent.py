@@ -56,18 +56,26 @@ def _prompt_lookback_or_watermark(agent_abbr: str, default_hours: int, last_sync
         console.print(f"  [dim]1) Since last sync (default)[/dim]")
         console.print(f"  [dim]2) Custom lookback hours[/dim]")
         try:
-            choice = console.input(f"[bold]Choice [1]: [/bold]").strip()
-            if choice == "2":
-                try:
-                    user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
-                    hours = int(user_input) if user_input else default_hours
-                except (ValueError, EOFError):
-                    hours = default_hours
-                console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
-                return {'lookback_hours': hours, 'ignore_watermark': True}
-            else:
-                console.print(f"[dim]Syncing since last watermark[/dim]\n")
-                return None
+            while True:
+                choice = console.input(f"[bold]Choice [1]: [/bold]").strip()
+                if choice in ("1", ""):
+                    console.print(f"[dim]Syncing since last watermark[/dim]\n")
+                    return None
+                elif choice == "2":
+                    while True:
+                        try:
+                            user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
+                            hours = int(user_input) if user_input else default_hours
+                            if hours < 1:
+                                console.print(f"  [red]Must be at least 1 hour[/red]")
+                                continue
+                            break
+                        except ValueError:
+                            console.print(f"  [red]Enter a number[/red]")
+                    console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
+                    return {'lookback_hours': hours, 'ignore_watermark': True}
+                else:
+                    console.print(f"  [red]Enter 1 or 2[/red]")
         except (EOFError, KeyboardInterrupt):
             return None
     else:
@@ -75,9 +83,17 @@ def _prompt_lookback_or_watermark(agent_abbr: str, default_hours: int, last_sync
         console.print(f"\n[bold blue]{agent_abbr} first sync[/bold blue] — no previous watermark found")
         console.print(f"[dim]How far back should the agent fetch data? (default: {default_hours}h)[/dim]")
         try:
-            user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
-            hours = int(user_input) if user_input else default_hours
-        except (ValueError, EOFError):
+            while True:
+                try:
+                    user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
+                    hours = int(user_input) if user_input else default_hours
+                    if hours < 1:
+                        console.print(f"  [red]Must be at least 1 hour[/red]")
+                        continue
+                    break
+                except ValueError:
+                    console.print(f"  [red]Enter a number[/red]")
+        except (EOFError, KeyboardInterrupt):
             hours = default_hours
         console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
         return {'lookback_hours': hours}
@@ -106,27 +122,44 @@ def _prompt_teams_sync_lookback(vault_root: Path, console: Console, default_hour
         console.print(f"  [dim]1) Since last sync (default)[/dim]")
         console.print(f"  [dim]2) Custom lookback hours[/dim]")
         try:
-            choice = console.input(f"[bold]Choice [1]: [/bold]").strip()
-            if choice == "2":
-                try:
-                    user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
-                    hours = int(user_input) if user_input else default_hours
-                except (ValueError, EOFError):
-                    hours = default_hours
-                console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
-                return {'lookback_hours': hours, 'ignore_watermark': True}
-            else:
-                console.print(f"[dim]Syncing since last watermark[/dim]\n")
-                return None
+            while True:
+                choice = console.input(f"[bold]Choice [1]: [/bold]").strip()
+                if choice in ("1", ""):
+                    console.print(f"[dim]Syncing since last watermark[/dim]\n")
+                    return None
+                elif choice == "2":
+                    while True:
+                        try:
+                            user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
+                            hours = int(user_input) if user_input else default_hours
+                            if hours < 1:
+                                console.print(f"  [red]Must be at least 1 hour[/red]")
+                                continue
+                            break
+                        except ValueError:
+                            console.print(f"  [red]Enter a number[/red]")
+                    console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
+                    return {'lookback_hours': hours, 'ignore_watermark': True}
+                else:
+                    console.print(f"  [red]Enter 1 or 2[/red]")
         except (EOFError, KeyboardInterrupt):
             return None
     else:
         console.print(f"\n[bold blue]Teams first sync[/bold blue] — no previous data")
         console.print(f"[dim]How far back should we fetch? (default: {default_hours}h)[/dim]")
         try:
-            user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
-            hours = int(user_input) if user_input else default_hours
-        except (ValueError, EOFError):
+            while True:
+                try:
+                    user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
+                    hours = int(user_input) if user_input else default_hours
+                    if hours < 1:
+                        console.print(f"  [red]Must be at least 1 hour[/red]")
+                        continue
+                    break
+                except ValueError:
+                    console.print(f"  [red]Enter a number[/red]")
+        except (EOFError, KeyboardInterrupt):
+            hours = default_hours
             hours = default_hours
         console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
         return {'lookback_hours': hours}
