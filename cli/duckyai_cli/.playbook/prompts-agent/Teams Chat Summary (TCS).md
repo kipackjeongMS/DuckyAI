@@ -30,6 +30,30 @@ If `lastSynced` is null, use:
 
 > "What Teams 1:1 and group chat messages was I involved in during the last {lookback_hours} hours? Only include person-to-person and group chats — do NOT include messages from Teams channels. Include the sender name, timestamp, chat/thread topic, message content, and the deep link URL to each message for each message."
 
+**Chunked fetching for large windows:** If `lookback_hours` is greater than 6, split the window into 6-hour chunks and make multiple WorkIQ queries. For example, for 24 hours:
+1. Query: "...in the last 6 hours"
+2. Query: "...between 6 and 12 hours ago"
+3. Query: "...between 12 and 18 hours ago"
+4. Query: "...between 18 and 24 hours ago"
+
+Merge all results before proceeding to Step 3.
+
+### Step 2.5: Log raw results (diagnostic)
+
+**IMPORTANT**: Before processing, print a diagnostic summary of what WorkIQ returned:
+- Total number of messages/threads received
+- For each message: sender name, timestamp, thread topic (one line each)
+- Whether it appears to be a 1:1 chat, group chat, or channel message
+
+This helps diagnose if WorkIQ is returning incomplete data. Format:
+
+```
+[TCS Diagnostic] WorkIQ returned N messages:
+  1. [1:1] John Smith - 2026-03-13 10:30 - "Project sync" 
+  2. [channel] #General - 2026-03-13 11:00 - "Sprint update" (SKIP)
+  3. [group] Team Chat - 2026-03-13 11:45 - "Deployment plan"
+```
+
 ### Step 3: Process and summarize
 
 **Group by participant, not by thread.** For each person (excluding "Me"/the user):
