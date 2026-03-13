@@ -733,6 +733,10 @@ main.add_command(setup_command)
 from .voice_cmd import voice_command
 main.add_command(voice_command)
 
+# Service management
+from .service_cmd import service_group
+main.add_command(service_group)
+
 
 if __name__ == "__main__":
     main()

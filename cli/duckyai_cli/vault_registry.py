@@ -56,7 +56,8 @@ def find_vault_by_path(vault_path: Path) -> Optional[Dict[str, str]]:
 
 
 def register_vault(
-    vault_id: str, name: str, path: Path, set_default: bool = False
+    vault_id: str, name: str, path: Path, set_default: bool = False,
+    services_path: str = None,
 ) -> None:
     """Register a vault (or update if id already exists)."""
     data = _load_registry()
@@ -69,17 +70,20 @@ def register_vault(
             v["name"] = name
             v["path"] = resolved
             v["last_used"] = datetime.now().isoformat()
+            if services_path is not None:
+                v["services_path"] = services_path
             found = True
             break
     if not found:
-        data["vaults"].append(
-            {
-                "id": vault_id,
-                "name": name,
-                "path": resolved,
-                "last_used": datetime.now().isoformat(),
-            }
-        )
+        entry = {
+            "id": vault_id,
+            "name": name,
+            "path": resolved,
+            "last_used": datetime.now().isoformat(),
+        }
+        if services_path is not None:
+            entry["services_path"] = services_path
+        data["vaults"].append(entry)
 
     _save_registry(data)
 

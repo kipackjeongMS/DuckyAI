@@ -52,6 +52,17 @@ NEVER proactively create documentation or README files.
 - **If Obsidian is running**: Use `obsidian search query="term" path="Topics"` for full-text search, or `obsidian files folder="Topics"` to list files (see `obsidian-cli` skill)
 * **Consider `.gitignore` when searching files**: When finding file lists or searching content, use `respect_git_ignore=False` option to include all relevant files that might otherwise be excluded by `.gitignore`.
 
+## 🛠️ Services (Code Repos)
+- The vault has an associated **Services directory** containing code projects (outside the vault)
+- Path configured in `duckyai.yml` under `services.path` (default: `../<VaultName>-Services/`)
+- Also accessible via `.services` symlink/junction in the vault root
+- Structure: `<services-path>/<service-name>/<repo>/` — each service can contain multiple git repos
+- **For code tasks**: Always check the services directory for relevant source code
+  - Use `duckyai service list` to see registered services and repos
+  - Read/modify code in the services directory when working on code-related requests
+- **Do NOT move code repos into the vault** — they belong in the services directory
+- Service management: `duckyai service add/remove/list/path`
+
 ## 📝 Content Creation Requirements
 ### General Guidelines
 - **Include original quotes** in blockquote format

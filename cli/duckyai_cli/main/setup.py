@@ -78,7 +78,7 @@ def run_onboarding(vault_root: Path = None):
     click.echo("=" * 50)
 
     # ─── Step 1: Vault Location ─────────────────────────
-    click.echo("\n📁 Step 1/9 — Vault Location")
+    click.echo("\n📁 Step 1/10 — Vault Location")
     vault_name = click.prompt("  What would you like to name your vault?", default="MyVault")
     default_location = str(vault_root) if vault_root else str(Path.cwd())
     vault_location = Path(click.prompt("  Where should your vault be created?", default=default_location))
@@ -87,7 +87,7 @@ def run_onboarding(vault_root: Path = None):
     click.echo(f"  ✓ Vault: {vault_path}")
 
     # ─── Step 2: About You ──────────────────────────────
-    click.echo("\n👤 Step 2/9 — About You")
+    click.echo("\n👤 Step 2/10 — About You")
     user_name = click.prompt("  Your full name")
     primary_lang = click.prompt(
         "  Primary language",
@@ -97,7 +97,7 @@ def run_onboarding(vault_root: Path = None):
     timezone = click.prompt("  Timezone", default=_detect_timezone())
 
     # ─── Step 3: GitHub Copilot Auth ────────────────────
-    click.echo("\n🔑 Step 3/9 — GitHub Copilot")
+    click.echo("\n🔑 Step 3/10 — GitHub Copilot")
     copilot_path = shutil.which("copilot")
     if copilot_path:
         click.echo(f"  ✓ Copilot CLI found: {copilot_path}")
@@ -119,7 +119,7 @@ def run_onboarding(vault_root: Path = None):
             click.echo("  Install and re-run `duckyai` when ready.")
 
     # ─── Step 4: MCP Server ────────────────────────────
-    click.echo("\n🔧 Step 4/9 — MCP Server")
+    click.echo("\n🔧 Step 4/10 — MCP Server")
     cli_root = Path(__file__).resolve().parent.parent.parent  # cli/duckyai_cli/main -> cli/
     mcp_js = cli_root / 'mcp-server' / 'dist' / 'index.js'
     if mcp_js.exists():
@@ -128,7 +128,7 @@ def run_onboarding(vault_root: Path = None):
         click.echo("  ⚠️  MCP server not built — run: cd cli/mcp-server && npm install && npm run build")
 
     # ─── Step 5: WorkIQ EULA ────────────────────────────
-    click.echo("\n📋 Step 5/9 — WorkIQ (Teams Data)")
+    click.echo("\n📋 Step 5/10 — WorkIQ (Teams Data)")
     eula_url = "https://github.com/microsoft/work-iq-mcp"
     click.echo(f"  EULA: {eula_url}")
     if click.confirm("  Accept WorkIQ EULA to enable Teams sync?", default=True):
@@ -137,7 +137,7 @@ def run_onboarding(vault_root: Path = None):
         click.echo("  ℹ️  Skipped — Teams sync agents will prompt later")
 
     # ─── Step 6: Vault Structure ────────────────────────
-    click.echo("\n📂 Step 6/9 — Vault Structure")
+    click.echo("\n📂 Step 6/10 — Vault Structure")
     folders = [
         "00-Inbox",
         "01-Work",
@@ -241,7 +241,7 @@ tags:
         click.echo(f"  · {today_str}.md (exists)")
 
     # ─── Step 7: IDE Selection ─────────────────────────────
-    click.echo("\n🖥️  Step 7/9 — IDE")
+    click.echo("\n🖥️  Step 7/10 — IDE")
     from .cli import _detect_ides
     available_ides = _detect_ides()
     selected_ide = None
@@ -255,7 +255,7 @@ tags:
         click.echo("  Install from: https://code.visualstudio.com/")
 
     # ─── Step 8: Model Preference ───────────────────────
-    click.echo("\n🤖 Step 8/9 — Default Model")
+    click.echo("\n🤖 Step 8/10 — Default Model")
     model = click.prompt(
         "  Default model for agents",
         type=click.Choice([
@@ -268,8 +268,25 @@ tags:
     )
 
     # ─── Step 9: Teams Sync Schedule ────────────────────
-    click.echo("\n🔄 Step 9/9 — Teams Sync Schedule")
+    click.echo("\n🔄 Step 9/10 — Teams Sync Schedule")
     teams_cron = _prompt_teams_schedule()
+
+    # ─── Step 10: Services (Code Repos) ──────────────────
+    click.echo("\n🛠️  Step 10/10 — Services (Code Repos)")
+    click.echo("  Services are code projects you work on (each can contain git repos).")
+    click.echo("  They live outside your vault in a sibling directory.\n")
+    service_names = []
+    while True:
+        svc_name = click.prompt(
+            "  Service name (leave empty to finish)",
+            default="", show_default=False
+        ).strip()
+        if not svc_name:
+            break
+        service_names.append(svc_name)
+        click.echo(f"    ✅ Added: {svc_name}")
+    if not service_names:
+        click.echo("  (No services added — you can add them later with 'duckyai service add')")
 
     # ─── Generate Config Files ──────────────────────────
     click.echo("\n⚙️  Generating configuration...")
@@ -352,6 +369,10 @@ user:
   name: "{user_name}"
   primaryLanguage: {primary_lang}
   timezone: "{timezone}"
+
+services:
+  path: "../{vault_name}-Services"
+  entries: []
 
 orchestrator:
   auto_start: true
@@ -477,6 +498,22 @@ nodes:
     )
     click.echo(f"  ✓ Registered in ~/.duckyai/vaults.json")
 
+    # Create services directory and register services
+    from ..services import ensure_services_dir, add_service, get_services_path
+    services_dir = ensure_services_dir(vault_path)
+    click.echo(f"  ✓ Services directory: {services_dir}")
+    for svc_name in service_names:
+        add_service(vault_path, svc_name)
+        click.echo(f"    ✓ Service: {svc_name}/")
+
+    # Update vault registry with services_path
+    register_vault(
+        vault_id=_vault_id,
+        name=vault_name,
+        path=vault_path,
+        services_path=str(services_dir),
+    )
+
     # Initialize .github/skills symlinks so built-in skills are available immediately
     from .cli import ensure_init
     ensure_init(vault_path)
@@ -538,3 +575,4 @@ def needs_onboarding(vault_root: Path) -> bool:
         return "user" not in data
     except Exception:
         return True
+

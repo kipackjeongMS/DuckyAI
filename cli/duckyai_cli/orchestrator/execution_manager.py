@@ -812,6 +812,20 @@ class ExecutionManager:
         # Skills are auto-discovered by CLI executors from .github/skills/
         # (built-in playbook skills are symlinked there by ensure_init)
 
+        # Add services context (code repos linked to this vault)
+        try:
+            from ..services import list_services, get_services_path
+            services_path = get_services_path(self.vault_path)
+            services = list_services(self.vault_path)
+            if services:
+                prompt += f"\n# Services (Code Repos)\n"
+                prompt += f"- Services directory: {services_path}\n"
+                for svc in services:
+                    repos_str = ", ".join(r["name"] for r in svc.get("repos", []))
+                    prompt += f"- {svc['name']}/: {repos_str or '(no repos)'}\n"
+        except Exception:
+            pass  # Services not configured — skip
+
         return prompt
 
     def _validate_agent_output(self, agent_output: str, agent: AgentDefinition, trigger_data: Dict, ctx: ExecutionContext) -> tuple:

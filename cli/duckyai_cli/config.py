@@ -235,6 +235,32 @@ class Config:
     def get_user_timezone(self) -> str:
         return self.get("user.timezone", "UTC")
 
+    # --------------------------------------------------------------------- #
+    # Services accessors
+    # --------------------------------------------------------------------- #
+    def get_services_path(self) -> str:
+        """Absolute path to the services directory for this vault.
+
+        Reads ``services.path`` from config (may be relative to vault root).
+        Falls back to ``<VaultParent>/<VaultName>-Services``.
+        """
+        configured = self.get("services.path")
+        if configured:
+            p = Path(configured)
+            if not p.is_absolute() and self.vault_path:
+                p = (self.vault_path / p).resolve()
+            return str(p)
+        # Default: sibling directory named <VaultDirName>-Services
+        if self.vault_path:
+            vault_dir = Path(self.vault_path).resolve()
+            return str(vault_dir.parent / f"{vault_dir.name}-Services")
+        return ""
+
+    def get_services(self) -> list:
+        """Return list of service entry dicts from ``services.entries``."""
+        entries = self.get("services.entries", [])
+        return entries if isinstance(entries, list) else []
+
 
 # Backward-compatible alias — callers that imported WorkspaceConfig keep working.
 WorkspaceConfig = Config
