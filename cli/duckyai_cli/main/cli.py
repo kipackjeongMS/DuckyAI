@@ -689,15 +689,8 @@ def main(
                 try:
                     response = input("\n🔄 Sync Teams chats & meetings now? (y/n): ").strip().lower()
                     if response in ("y", "yes"):
-                        lookback_hours = None
-                        try:
-                            lookback_input = input("⏰ Lookback hours (press Enter for default): ").strip()
-                            if lookback_input:
-                                lookback_hours = int(lookback_input)
-                        except (ValueError, EOFError):
-                            pass
-                        _enqueue_tcs_task(vault_root, lookback_hours=lookback_hours)
-                        _enqueue_tms_task(vault_root, lookback_hours=lookback_hours)
+                        _enqueue_tcs_task(vault_root)
+                        _enqueue_tms_task(vault_root)
                         click.echo("✓ TCS & TMS queued — orchestrator will pick them up shortly")
                 except (EOFError, KeyboardInterrupt):
                     pass  # Non-interactive — skip prompt

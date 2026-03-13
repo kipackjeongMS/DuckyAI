@@ -53,6 +53,10 @@ class ExecutionManager:
         self.mcp_config = mcp_config
         self.claude_settings = claude_settings
 
+        # Auto-discover MCP config if none provided
+        if not self.mcp_config:
+            self.mcp_config = self._auto_discover_mcp_config()
+
         # Instance-level state (no global state)
         self._running_count = 0
         self._count_lock = threading.Lock()
@@ -71,6 +75,15 @@ class ExecutionManager:
         
         # Load system prompt if it exists
         self.system_prompt = self._load_system_prompt()
+
+    def _auto_discover_mcp_config(self) -> Optional[tuple]:
+        """Auto-discover MCP config from CLI's get_mcp_config and vault's .github/copilot/mcp.json."""
+        from ..main.cli import get_mcp_config
+
+        auto_mcp = get_mcp_config(self.vault_path)
+        if auto_mcp:
+            return (auto_mcp,)
+        return None
 
     def can_execute(self, agent: AgentDefinition) -> bool:
         """
@@ -277,10 +290,21 @@ class ExecutionManager:
                 self._apply_post_processing(agent, trigger_data)
 
             # Detect WorkIQ permission errors and set flag for interactive re-auth
-            if agent_output and any(kw in agent_output.lower() for kw in [
-                'permission denied', 'eula', 're-authentication', 'workiq'
-            ]):
-                self._set_workiq_auth_flag()
+            # Use specific phrases to avoid false positives from agents just mentioning "workiq"
+            if agent_output:
+                output_lower = agent_output.lower()
+                workiq_auth_phrases = [
+                    'workiq auth expired',
+                    'workiq-auth-expired',
+                    'accept the eula',
+                    'accept_eula',
+                    'workiq re-authentication',
+                    'workiq permission denied',
+                    'workiq authentication required',
+                    'eula url should be',
+                ]
+                if any(phrase in output_lower for phrase in workiq_auth_phrases):
+                    self._set_workiq_auth_flag()
 
             # Log result to file (structured format: JSON metadata + raw output)
             if ctx.log_file:
@@ -472,7 +496,8 @@ class ExecutionManager:
 
         # MCP config
         if self.mcp_config:
-            cmd.extend(['--mcp-config', self.mcp_config[0]])
+            for config in self.mcp_config:
+                cmd.extend(['--mcp-config', config])
 
         self._execute_subprocess(ctx, 'Copilot SDK', cmd, agent.timeout_minutes * 60)
 
@@ -1011,19 +1036,29 @@ class ExecutionManager:
         with self._executions_lock:
             return list(self._running_executions.values())
 
-    def update_settings(self, max_concurrent: int) -> None:
+    def update_settings(self, max_concurrent: int, refresh_mcp: bool = False) -> None:
         """
         Update execution manager settings.
         
         Updates max_concurrent without affecting running executions.
+        Optionally refreshes MCP server configuration.
         
         Args:
             max_concurrent: New maximum concurrent executions
+            refresh_mcp: If True, re-discover MCP config from vault
         """
         with self._count_lock:
             old_max = self.max_concurrent
             self.max_concurrent = max_concurrent
             logger.info(f"Updated max_concurrent: {old_max} -> {max_concurrent}")
+        
+        if refresh_mcp:
+            old_mcp = self.mcp_config
+            self.mcp_config = self._auto_discover_mcp_config()
+            if self.mcp_config != old_mcp:
+                logger.info("MCP config refreshed during hot-reload", console=True)
+            else:
+                logger.debug("MCP config unchanged after refresh")
 
     def _apply_post_processing(self, agent: AgentDefinition, trigger_data: Dict):
         """

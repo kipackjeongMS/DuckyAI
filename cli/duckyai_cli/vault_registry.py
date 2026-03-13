@@ -12,18 +12,21 @@ REGISTRY_PATH = Path.home() / ".duckyai" / "vaults.json"
 def _load_registry() -> Dict[str, Any]:
     """Load the registry file, returning empty structure if missing/corrupt."""
     if not REGISTRY_PATH.exists():
-        return {"vaults": [], "default": None}
+        return {"vaults": []}
     try:
         data = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
         if isinstance(data, dict) and "vaults" in data:
+            # Strip legacy "default" key if present
+            data.pop("default", None)
             return data
     except (json.JSONDecodeError, OSError):
         pass
-    return {"vaults": [], "default": None}
+    return {"vaults": []}
 
 
 def _save_registry(data: Dict[str, Any]) -> None:
     """Write registry to disk."""
+    data.pop("default", None)  # never persist default
     REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
     REGISTRY_PATH.write_text(
         json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -35,9 +38,12 @@ def list_vaults() -> List[Dict[str, str]]:
     return _load_registry().get("vaults", [])
 
 
-def get_default_vault_id() -> Optional[str]:
-    """Return the default vault id, or None."""
-    return _load_registry().get("default")
+def find_vault_by_id(vault_id: str) -> Optional[Dict[str, str]]:
+    """Find a registered vault by its ID."""
+    for v in list_vaults():
+        if v["id"] == vault_id:
+            return v
+    return None
 
 
 def find_vault_by_path(vault_path: Path) -> Optional[Dict[str, str]]:
@@ -50,7 +56,7 @@ def find_vault_by_path(vault_path: Path) -> Optional[Dict[str, str]]:
 
 
 def register_vault(
-    vault_id: str, name: str, path: Path, set_default: bool = True
+    vault_id: str, name: str, path: Path, set_default: bool = False
 ) -> None:
     """Register a vault (or update if id already exists)."""
     data = _load_registry()
@@ -75,9 +81,6 @@ def register_vault(
             }
         )
 
-    if set_default or data.get("default") is None:
-        data["default"] = vault_id
-
     _save_registry(data)
 
 
@@ -96,7 +99,5 @@ def unregister_vault(vault_id: str) -> bool:
     data = _load_registry()
     before = len(data["vaults"])
     data["vaults"] = [v for v in data["vaults"] if v["id"] != vault_id]
-    if data.get("default") == vault_id:
-        data["default"] = data["vaults"][0]["id"] if data["vaults"] else None
     _save_registry(data)
     return len(data["vaults"]) < before

@@ -19,6 +19,8 @@ def _read_key() -> str:
     if os.name == 'nt':
         import msvcrt
         ch = msvcrt.getwch()
+        if ch == '\x03':
+            raise KeyboardInterrupt
         if ch in ('\r', '\n'):
             return 'enter'
         if ch in ('\x00', '\xe0'):
@@ -70,8 +72,10 @@ def _interactive_select(items: List[dict], default_index: int = 0) -> Optional[i
 
     def _render(first: bool = False):
         if not first:
-            # Move cursor to beginning of line N lines up
-            sys.stdout.write(f'\033[{count}F')
+            # Move cursor back to the first menu line.
+            # After rendering, the cursor sits on the last item (no trailing \n),
+            # so we only need to go up (count - 1) lines.
+            sys.stdout.write(f'\033[{count - 1}F')
         for i, v in enumerate(items):
             if i == cursor:
                 line = f'  \033[36;1m❯ {v["name"]}\033[0m \033[2m— {v["path"]}\033[0m'
@@ -105,7 +109,9 @@ def _interactive_select(items: List[dict], default_index: int = 0) -> Optional[i
                 sys.stdout.flush()
                 return None
     except (KeyboardInterrupt, EOFError):
-        return None
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+        raise SystemExit(130)
     finally:
         # Show cursor again
         sys.stdout.write('\033[?25h')

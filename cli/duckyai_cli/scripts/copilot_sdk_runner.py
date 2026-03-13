@@ -32,19 +32,25 @@ async def run_agent(prompt: str, model: str = None, mcp_config: str = None, cwd:
     if model:
         session_opts["model"] = model
 
-    # Load MCP config and pass as tools/MCP servers
+    # Load MCP config and pass as mcp_servers (SDK's MCPLocalServerConfig format)
     if mcp_config:
         try:
             config = json.loads(mcp_config)
-            if "mcpServers" in config:
-                session_opts["mcp_servers"] = config["mcpServers"]
         except json.JSONDecodeError:
-            # Treat as file path
+            config = None
             if os.path.exists(mcp_config):
                 with open(mcp_config) as f:
                     config = json.load(f)
-                if "mcpServers" in config:
-                    session_opts["mcp_servers"] = config["mcpServers"]
+
+        if config and "mcpServers" in config:
+            servers = {}
+            for name, srv in config["mcpServers"].items():
+                srv_config = dict(srv)
+                # SDK requires 'tools' field — default to all tools
+                if "tools" not in srv_config:
+                    srv_config["tools"] = ["*"]
+                servers[name] = srv_config
+            session_opts["mcp_servers"] = servers
 
     done = asyncio.Event()
     final_content = []

@@ -1,6 +1,7 @@
 ---
 created: 2026-03-11 18:45:00
 title: DEPA 1CS Compliance Assessment
+aliases: DEPA 1CS Compliance Assessment
 tags:
   - compliance
   - 1cs
@@ -8,6 +9,12 @@ tags:
   - security
   - ai-telemetry
 project: "[[Depo]]"
+related:
+  - "[[SDL Compliance]]"
+  - "[[OBO Flow]]"
+  - "[[Complete AI Product Review and Assessment for Depo]]"
+  - "[[2026-03-9 Deployment Agent Weekly Meeting]]"
+  - "[[2026-03-10 Ki-JM 1-1]]"
 ---
 
 ## Summary
@@ -89,8 +96,8 @@ DEPA uses Azure OpenAI (GPT-4.1-mini, o4-mini, GPT-5-mini) with Semantic Kernel 
 | API Controllers | `src/AzDevSvcAI.DeploymentAgent.WebApi/Controllers/AnalyzerController.cs` |
 | OneBranch Pipeline | `.pipelines/OneBranch.Official.yml` (ESRP signing) |
 
-## Related
+## Experiences
 
-- [[Complete AI Product Review and Assessment for Depo]]
-- [[2026-03-10 Deployment Agent Weekly Meeting]]
-- [[2026-03-10 Ki-JM 1-1]]
+- [[04-Periodic/Daily/2026-03-11#Tasks Completed]] - Completed 1CS assessment; Code Signature Verification N/A, AI Telemetry Logging gaps identified
+- [[02-People/Meetings/2026-03-9 Deployment Agent Weekly Meeting#SDL Review & Compliance (Kipack Jeong, Zhenlan Wang)]] - Live SDL assessment review with corrections on auth options and platform
+- [[02-People/Meetings/2026-03-10 Ki-JM 1-1#AI Product Review & Compliance]] - AI product assessment designated mandatory for internal cloud AI products
