@@ -28,8 +28,9 @@ from .trigger_agent import trigger_orchestrator_agent
     help="Path to a settings JSON file or a JSON string for Claude Code (passed as --settings to claude CLI)",
 )
 @click.option("--file", "input_file", default=None, help="Input file path to pass to the agent (relative to vault root).")
+@click.option("--lookback", "lookback_hours", type=int, default=None, help="Lookback hours for Teams agents (TCS/TMS) on first run or manual trigger.")
 @click.pass_context
-def trigger_cli(ctx, agent, config_file, mcp_config, claude_settings, input_file):
+def trigger_cli(ctx, agent, config_file, mcp_config, claude_settings, input_file, lookback_hours):
     """Trigger an orchestrator agent.
 
     If AGENT abbreviation is provided, triggers that agent directly.
@@ -38,6 +39,7 @@ def trigger_cli(ctx, agent, config_file, mcp_config, claude_settings, input_file
     Examples:
         duckyai trigger        # interactive selector
         duckyai trigger EIC --file Ingest/Clipping/what_is_pkm.md
+        duckyai trigger TCS --lookback 24
     """
     working_dir = ctx.obj.get("working_dir") if ctx.obj else None
     # Use local --config-file if provided, otherwise fall back to parent context
@@ -47,5 +49,5 @@ def trigger_cli(ctx, agent, config_file, mcp_config, claude_settings, input_file
     combined_mcp_config = parent_mcp_config + mcp_config if mcp_config else parent_mcp_config
     # Use local --claude-settings if provided, otherwise fall back to parent context
     effective_claude_settings = claude_settings or (ctx.obj.get("claude_settings") if ctx.obj else None)
-    trigger_orchestrator_agent(abbreviation=agent, config_file=effective_config_file, working_dir=working_dir, mcp_config=combined_mcp_config, claude_settings=effective_claude_settings, input_file=input_file)
+    trigger_orchestrator_agent(abbreviation=agent, config_file=effective_config_file, working_dir=working_dir, mcp_config=combined_mcp_config, claude_settings=effective_claude_settings, input_file=input_file, lookback_hours=lookback_hours)
 

@@ -10,7 +10,7 @@ from ..orchestrator.core import Orchestrator
 
 logger = Logger(console_output=True)
 
-def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=None, mcp_config=None, claude_settings=None, input_file=None, vault_path=None):
+def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=None, mcp_config=None, claude_settings=None, input_file=None, vault_path=None, lookback_hours=None):
     """Trigger an orchestrator agent or poller interactively.
 
     Args:
@@ -21,6 +21,7 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
         claude_settings: Optional path or JSON string for Claude --settings flag
         input_file: Optional input file path to pass to the agent
         vault_path: Optional vault root path (defaults to CWD)
+        lookback_hours: Optional lookback hours override for Teams agents (TCS/TMS)
     """
     try:
         vault_root = Path(vault_path) if vault_path else Path.cwd()
@@ -90,65 +91,32 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
                 logger.error("No agents or pollers available", console=True)
                 return
 
-            # Display available agents
-            if agents_list:
-                logger.info("\n[bold blue]Available Orchestrator Agents:[/bold blue]")
-                agent_num = 1
-                for agent in agents_list:
-                    cron_info = f" [dim]cron: {agent.cron}[/dim]" if agent.cron else ""
-                    output_info = (
-                        f" [dim]→ {agent.output_path}[/dim]" if agent.output_path else ""
-                    )
+            # Interactive arrow-key selector
+            from .vault import _interactive_select
 
-                    logger.info(
-                        f"[cyan]{agent_num}.[/cyan] [bold]{agent.name} ({agent.abbreviation})[/bold]"
-                    )
-                    logger.info(f"   Category: {agent.category}{cron_info}{output_info}\n")
-                    agent_num += 1
+            menu_items = []
+            for agent in agents_list:
+                cron_info = f" (cron: {agent.cron})" if agent.cron else ""
+                menu_items.append({
+                    "name": f"{agent.name} ({agent.abbreviation})",
+                    "path": f"{agent.category}{cron_info}",
+                })
+            for poller_name, poller in pollers_list:
+                target_dir_rel = poller.poller_config.get('target_dir', str(poller.target_dir))
+                menu_items.append({
+                    "name": poller_name,
+                    "path": f"Poller → {target_dir_rel}",
+                })
 
-            # Display available pollers
-            if pollers_list:
-                logger.info("\n[bold blue]Available Pollers:[/bold blue]")
-                poller_start_num = len(agents_list) + 1
-                for poller_name, poller in pollers_list:
-                    # Use relative path from config instead of absolute path
-                    target_dir_rel = poller.poller_config.get('target_dir', str(poller.target_dir))
-                    target_info = f" [dim]→ {target_dir_rel}[/dim]"
-                    interval_info = f" [dim]interval: {poller.poll_interval}s[/dim]"
-                    
-                    logger.info(
-                        f"[cyan]{poller_start_num}.[/cyan] [bold]{poller_name}[/bold]"
-                    )
-                    logger.info(f"   Poller{target_info}{interval_info}\n")
-                    poller_start_num += 1
-
-            # Get user selection
-            try:
-                choice = input(
-                    f"Enter number (1-{len(items)}) or 'q' to quit: "
-                ).strip()
-
-                if choice.lower() == "q":
-                    logger.info("Trigger cancelled by user")
-                    return
-
-                item_index = int(choice) - 1
-                if item_index < 0 or item_index >= len(items):
-                    logger.error(
-                        f"Invalid choice: {choice}. Please enter a number between 1 and {len(items)}"
-                    )
-                    return
-
-            except ValueError:
-                logger.error(f"Invalid input: {choice}. Please enter a number or 'q'")
-                return
-            except KeyboardInterrupt:
-                logger.info("\nTrigger cancelled by user")
+            logger.info("\n[bold blue]Select agent or poller to trigger[/bold blue] (↑/↓ navigate, Enter select, q quit)\n")
+            idx = _interactive_select(menu_items)
+            if idx is None:
+                logger.info("Trigger cancelled.")
                 return
 
             # Determine if selected item is agent or poller
-            selected_item = items[item_index]
-            item_type = item_types[item_index]
+            selected_item = items[idx]
+            item_type = item_types[idx]
             
             if item_type == 'agent':
                 selected_agent = selected_item
@@ -161,11 +129,27 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
         # Execute selected item
         start_time = time.time()
 
+        # For Teams agents (TCS/TMS), prompt for lookback hours if not provided
+        agent_params_override = None
+        if selected_agent and selected_agent.abbreviation in ('TCS', 'TMS'):
+            if lookback_hours is None:
+                default_hours = selected_agent.agent_params.get('lookback_hours', 1 if selected_agent.abbreviation == 'TCS' else 24)
+                console = Console()
+                console.print(f"\n[bold blue]Lookback hours[/bold blue] for {selected_agent.abbreviation} first-run/manual trigger")
+                console.print(f"[dim]How far back should the agent fetch data? (default: {default_hours}h)[/dim]")
+                try:
+                    user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
+                    lookback_hours = int(user_input) if user_input else default_hours
+                except (ValueError, EOFError):
+                    lookback_hours = default_hours
+                console.print(f"[dim]Using lookback: {lookback_hours} hours[/dim]\n")
+            agent_params_override = {'lookback_hours': lookback_hours}
+
         try:
             if selected_agent:
                 # Trigger agent
                 logger.info(f"Triggering agent: {selected_agent.abbreviation}")
-                ctx = orch.trigger_agent_once(selected_agent.abbreviation, input_file=input_file)
+                ctx = orch.trigger_agent_once(selected_agent.abbreviation, input_file=input_file, agent_params_override=agent_params_override)
 
                 end_time = time.time()
                 execution_time = end_time - start_time

@@ -106,11 +106,21 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
             try:
                 response = input(f"\n🔄 Sync Teams {labels} now? (y/n): ").strip().lower()
                 if response in ("y", "yes"):
+                    # Ask for lookback hours
+                    lookback_hours = None
+                    try:
+                        lookback_input = input("⏰ Lookback hours (default: use agent config): ").strip()
+                        if lookback_input:
+                            lookback_hours = int(lookback_input)
+                    except (ValueError, EOFError):
+                        pass
+                    agent_params_override = {'lookback_hours': lookback_hours} if lookback_hours is not None else None
+
                     import threading
                     for abbr, label in agents_to_sync:
                         logger.info(f"[cyan]Triggering {abbr}...[/cyan]")
-                        def _run_sync(agent_abbr=abbr):
-                            orch.trigger_agent_once(agent_abbr)
+                        def _run_sync(agent_abbr=abbr, override=agent_params_override):
+                            orch.trigger_agent_once(agent_abbr, agent_params_override=override)
                         sync_thread = threading.Thread(target=_run_sync, daemon=True)
                         sync_thread.start()
                         orch.cron_scheduler.set_cooldown(abbr)

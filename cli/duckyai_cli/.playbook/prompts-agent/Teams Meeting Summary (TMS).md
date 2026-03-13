@@ -18,7 +18,7 @@ You are the Teams Meeting Summary agent. Your job is to fetch recent Microsoft T
 
 Call the `getTeamsMeetingSyncState` MCP tool to get the last sync timestamp.
 
-- If `lastSynced` is `null`, this is the first run. Fetch meetings from the last 24 hours.
+- If `lastSynced` is `null`, this is the first run. Fetch meetings from the last **N hours**, where N is the `lookback_hours` value from the Agent Parameters section below (default: 24 hours if not specified).
 - If `lastSynced` has a value, fetch meetings **since** that timestamp.
 
 ### Step 2: Fetch Teams meetings
@@ -29,7 +29,7 @@ Call `workiq-ask_work_iq` with a query like:
 
 If `lastSynced` is null, use:
 
-> "What Teams meetings did I attend in the last 24 hours? For each meeting, include: meeting title, start/end time, organizer, attendees, and any available meeting notes, recap, or transcript summary."
+> "What Teams meetings did I attend in the last {lookback_hours} hours? For each meeting, include: meeting title, start/end time, organizer, attendees, and any available meeting notes, recap, or transcript summary."
 
 ### Step 3: Process and summarize
 

@@ -6,7 +6,7 @@ Ties together file monitoring, agent matching, and execution management.
 import threading
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 from queue import Empty
 
 from .file_monitor import FileSystemMonitor
@@ -337,8 +337,8 @@ class Orchestrator:
                     old_agent_registry = self.agent_registry
                     self.agent_registry = new_agent_registry
                     
-                    # Update execution manager settings
-                    self.execution_manager.update_settings(new_max_concurrent)
+                    # Update execution manager settings (including MCP config refresh)
+                    self.execution_manager.update_settings(new_max_concurrent, refresh_mcp=True)
                     
                     # Update max_concurrent for orchestrator
                     self.max_concurrent = new_max_concurrent
@@ -1030,7 +1030,7 @@ class Orchestrator:
             ]
         }
 
-    def trigger_agent_once(self, agent_abbreviation: str, session_id: Optional[str] = None, input_file: Optional[str] = None) -> Optional[ExecutionContext]:
+    def trigger_agent_once(self, agent_abbreviation: str, session_id: Optional[str] = None, input_file: Optional[str] = None, agent_params_override: Optional[Dict] = None) -> Optional[ExecutionContext]:
         """
         Manually trigger an agent once (synchronously).
 
@@ -1038,6 +1038,7 @@ class Orchestrator:
             agent_abbreviation: Agent abbreviation (e.g., "GDR", "EIC")
             session_id: Optional session ID for tracking related executions
             input_file: Optional input file path to pass to the agent
+            agent_params_override: Optional dict of agent_params to override (e.g., {'lookback_hours': 24})
 
         Returns:
             ExecutionContext if agent was found and executed, None otherwise
@@ -1049,6 +1050,12 @@ class Orchestrator:
         if not agent:
             logger.error(f"Agent '{agent_abbreviation}' not found")
             return None
+
+        # Apply runtime agent_params overrides (without mutating the registry copy)
+        if agent_params_override:
+            import copy
+            agent = copy.copy(agent)
+            agent.agent_params = {**agent.agent_params, **agent_params_override}
 
         logger.info(f"Manually triggering agent: {agent.abbreviation} ({agent.name})")
 
