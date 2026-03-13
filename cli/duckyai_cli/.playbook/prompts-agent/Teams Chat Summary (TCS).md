@@ -24,11 +24,17 @@ Call the `getTeamsChatSyncState` MCP tool to get the last sync timestamp.
 
 Call `workiq-ask_work_iq` with a query like:
 
-> "What Teams 1:1 and group chat messages was I involved in since {lastSynced}? Only include person-to-person and group chats — do NOT include messages from Teams channels. Include the sender name, timestamp, chat/thread topic, message content, and the deep link URL to each message for each message."
+> "What Teams 1:1 and group chat messages was I involved in since {lastSynced}? Only include person-to-person and group chats — do NOT include messages from Teams channels. Please provide the FULL complete message content — not truncated or summarized. I need every word of each message. Include: sender name, chat/thread topic, full message body, timestamp, and the deep link URL for each message. List ALL messages."
 
 If `lastSynced` is null, use:
 
-> "What Teams 1:1 and group chat messages was I involved in during the last {lookback_hours} hours? Only include person-to-person and group chats — do NOT include messages from Teams channels. Include the sender name, timestamp, chat/thread topic, message content, and the deep link URL to each message for each message."
+> "What Teams 1:1 and group chat messages was I involved in during the last {lookback_hours} hours? Only include person-to-person and group chats — do NOT include messages from Teams channels. Please provide the FULL complete message content — not truncated or summarized. I need every word of each message. Include: sender name, chat/thread topic, full message body, timestamp, and the deep link URL for each message. List ALL messages."
+
+**If WorkIQ response mentions more messages than it listed** (e.g., "showing 5 of 11"), immediately follow up with:
+
+> "You mentioned there are more messages. Please provide the FULL complete content of ALL remaining messages I was involved in — not truncated or summarized. Include: sender name, chat/thread topic, full message body, timestamp, and the deep link URL."
+
+Repeat until all messages are retrieved.
 
 **Chunked fetching for large windows:** If `lookback_hours` is greater than 6, split the window into 6-hour chunks and make multiple WorkIQ queries. For example, for 24 hours:
 1. Query: "...in the last 6 hours"
