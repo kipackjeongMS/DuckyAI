@@ -555,6 +555,38 @@ nodes:
     ensure_init(vault_path)
     click.echo(f"  ✓ Skills symlinked into .github/skills/")
 
+    # Offer to sync Teams data now (if Teams agents are enabled)
+    if teams_cron:
+        try:
+            response = click.prompt(
+                "\n🔄 Sync vault with Teams data now? (y/n)",
+                type=str, default="y"
+            ).strip().lower()
+            if response in ("y", "yes"):
+                from .trigger_agent import _read_watermark, _prompt_lookback_or_watermark
+                from rich.console import Console
+                console = Console()
+
+                from ..config import Config
+                from ..orchestrator.core import Orchestrator
+                orch = Orchestrator(
+                    vault_path=vault_path,
+                    config=Config(vault_path=vault_path),
+                )
+                for abbr, default_h in [("TCS", 1), ("TMS", 24)]:
+                    agent = orch.agent_registry.agents.get(abbr)
+                    if not agent:
+                        continue
+                    last_synced = _read_watermark(vault_path, abbr)
+                    override = _prompt_lookback_or_watermark(abbr, default_h, last_synced, console)
+                    click.echo(f"  Triggering {abbr}...")
+                    orch.trigger_agent_once(abbr, agent_params_override=override)
+                click.echo("  ✓ Teams sync complete")
+        except (EOFError, KeyboardInterrupt):
+            pass
+        except Exception as e:
+            click.echo(f"  ⚠️  Teams sync skipped: {e}")
+
     # Open vault in IDE if detected
     if selected_ide:
         ide_name, ide_exe = selected_ide
