@@ -1437,39 +1437,78 @@ server.tool(
 
     let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
 
-    // Build the section
-    const sectionContent = `## Teams Chat Highlights\n\n${highlights}`;
+    // Split incoming highlights into H3 blocks (### [[Person Name]])
+    // Each block = one participant's chats. Dedup by checking if the H3 heading already exists.
+    function deduplicateHighlights(existing: string, incoming: string): string {
+      // Split incoming into blocks at H3 boundaries
+      const incomingBlocks = incoming.split(/(?=^### )/m).filter(b => b.trim());
+      const newBlocks: string[] = [];
+      for (const block of incomingBlocks) {
+        // Extract the H3 line for matching
+        const h3Match = block.match(/^### .+/);
+        if (h3Match) {
+          // Check H4 sub-headings within this block — only add those not already present
+          const h3Line = h3Match[0];
+          const h4Sections = block.split(/(?=^#### )/m);
+          const h3Header = h4Sections.shift() || ""; // The H3 line + any content before first H4
+          const newH4s: string[] = [];
+          for (const h4 of h4Sections) {
+            const h4Title = h4.match(/^#### .+/)?.[0] || "";
+            // Strip markdown link for comparison: "#### [Topic](url)" → "Topic"
+            const h4Plain = h4Title.replace(/^####\s*\[([^\]]+)\].*/, "$1").replace(/^####\s*/, "").trim();
+            if (h4Plain && !existing.includes(h4Plain)) {
+              newH4s.push(h4.trimEnd());
+            }
+          }
+          if (newH4s.length > 0) {
+            // Check if H3 participant already exists
+            if (existing.includes(h3Line.trim())) {
+              // Participant exists — just add the new H4 sections
+              newBlocks.push(newH4s.join("\n\n"));
+            } else {
+              // New participant — add full block with only new H4s
+              newBlocks.push(h3Header.trimEnd() + "\n" + newH4s.join("\n\n"));
+            }
+          } else if (!h3Match && block.trim()) {
+            // No H4s, just raw content — check if it exists
+            if (!existing.includes(block.trim())) {
+              newBlocks.push(block.trimEnd());
+            }
+          }
+        } else if (block.trim() && !existing.includes(block.trim())) {
+          newBlocks.push(block.trimEnd());
+        }
+      }
+      return newBlocks.join("\n\n");
+    }
 
     // Idempotent: merge into existing section or insert new
     if (/^## Teams Chat Highlights/m.test(content)) {
-      // Append to existing section (insert new highlights before the next ## heading)
-      const sectionMatch = content.match(/## Teams Chat Highlights\n([\s\S]*?)(?=\n## )/);
+      // Extract existing section content
+      const sectionMatch = content.match(/## Teams Chat Highlights\n([\s\S]*?)(?=\n## )/) ||
+                           content.match(/## Teams Chat Highlights\n([\s\S]*)$/);
       if (sectionMatch && sectionMatch.index !== undefined) {
         const existingContent = sectionMatch[1].trimEnd();
-        const mergedSection = `## Teams Chat Highlights\n\n${existingContent}\n\n${highlights}`;
-        content = content.replace(
-          /## Teams Chat Highlights\n[\s\S]*?(?=\n## )/,
-          mergedSection + "\n\n"
-        );
-      } else {
-        // Section exists but is at the end of file (no next ## heading)
-        const sectionEndMatch = content.match(/## Teams Chat Highlights\n([\s\S]*)$/);
-        if (sectionEndMatch && sectionEndMatch.index !== undefined) {
-          const existingContent = sectionEndMatch[1].trimEnd();
-          content = content.slice(0, sectionEndMatch.index) +
-            `## Teams Chat Highlights\n\n${existingContent}\n\n${highlights}\n`;
+        const newContent = deduplicateHighlights(existingContent, highlights);
+        if (newContent) {
+          const mergedSection = `## Teams Chat Highlights\n\n${existingContent}\n\n${newContent}`;
+          content = content.slice(0, sectionMatch.index) +
+            mergedSection + "\n\n" +
+            content.slice(sectionMatch.index + sectionMatch[0].length);
         }
+        // If newContent is empty, everything was duplicate — no change needed
       }
     } else {
       // Insert before "## End of Day" or append at the end
+      const newSection = `## Teams Chat Highlights\n\n${highlights}`;
       const endOfDayMatch = content.match(/\n## End of Day/);
       if (endOfDayMatch && endOfDayMatch.index !== undefined) {
         content =
           content.slice(0, endOfDayMatch.index) +
-          "\n\n" + sectionContent + "\n" +
+          "\n\n" + newSection + "\n" +
           content.slice(endOfDayMatch.index);
       } else {
-        content = content.trimEnd() + "\n\n" + sectionContent + "\n";
+        content = content.trimEnd() + "\n\n" + newSection + "\n";
       }
     }
 
@@ -1652,23 +1691,36 @@ server.tool(
 
     const sectionContent = `## Teams Meeting Highlights\n\n${highlights}`;
 
+    // Dedup: split incoming into H3 blocks, only append those not already present
+    function deduplicateMeetingHighlights(existing: string, incoming: string): string {
+      const incomingBlocks = incoming.split(/(?=^### )/m).filter(b => b.trim());
+      const newBlocks: string[] = [];
+      for (const block of incomingBlocks) {
+        const h3Match = block.match(/^### .+/);
+        if (h3Match) {
+          // Strip markdown link for comparison: "### [Meeting](url)" → "Meeting"
+          const h3Plain = h3Match[0].replace(/^###\s*\[([^\]]+)\].*/, "$1").replace(/^###\s*/, "").trim();
+          if (h3Plain && !existing.includes(h3Plain)) {
+            newBlocks.push(block.trimEnd());
+          }
+        } else if (block.trim() && !existing.includes(block.trim())) {
+          newBlocks.push(block.trimEnd());
+        }
+      }
+      return newBlocks.join("\n\n");
+    }
+
     if (/^## Teams Meeting Highlights/m.test(content)) {
-      // Append to existing section
-      const sectionMatch = content.match(/## Teams Meeting Highlights\n([\s\S]*?)(?=\n## )/);
+      const sectionMatch = content.match(/## Teams Meeting Highlights\n([\s\S]*?)(?=\n## )/) ||
+                           content.match(/## Teams Meeting Highlights\n([\s\S]*)$/);
       if (sectionMatch && sectionMatch.index !== undefined) {
         const existingContent = sectionMatch[1].trimEnd();
-        const mergedSection = `## Teams Meeting Highlights\n\n${existingContent}\n\n${highlights}`;
-        content = content.replace(
-          /## Teams Meeting Highlights\n[\s\S]*?(?=\n## )/,
-          mergedSection + "\n\n"
-        );
-      } else {
-        // Section at end of file
-        const sectionEndMatch = content.match(/## Teams Meeting Highlights\n([\s\S]*)$/);
-        if (sectionEndMatch && sectionEndMatch.index !== undefined) {
-          const existingContent = sectionEndMatch[1].trimEnd();
-          content = content.slice(0, sectionEndMatch.index) +
-            `## Teams Meeting Highlights\n\n${existingContent}\n\n${highlights}\n`;
+        const newContent = deduplicateMeetingHighlights(existingContent, highlights);
+        if (newContent) {
+          const mergedSection = `## Teams Meeting Highlights\n\n${existingContent}\n\n${newContent}`;
+          content = content.slice(0, sectionMatch.index) +
+            mergedSection + "\n\n" +
+            content.slice(sectionMatch.index + sectionMatch[0].length);
         }
       }
     } else {
