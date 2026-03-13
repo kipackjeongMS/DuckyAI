@@ -187,10 +187,6 @@ def run_onboarding(vault_root: Path = None):
                 "**/.obsidian/workspace*.json": True,
                 "**/.services": True,
             },
-            "search.exclude": {
-                "**/.obsidian": True,
-                "**/.services": True,
-            },
             "git.scanRepositories": ["."],
         }
         vscode_settings_path.write_text(
