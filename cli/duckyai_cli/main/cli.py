@@ -129,7 +129,7 @@ def _open_vault_in_ide(vault_root: Path):
             pass
 
 
-def _enqueue_tcs_task(vault_root: Path):
+def _enqueue_tcs_task(vault_root: Path, lookback_hours: int = None):
     """Write a QUEUED TCS task file for the running orchestrator daemon to pick up."""
     from datetime import datetime
     from ..config import Config
@@ -148,6 +148,9 @@ def _enqueue_tcs_task(vault_root: Path):
         return  # Already queued
 
     trigger_data = '{\\"path\\": \\"\\", \\"event_type\\": \\"manual\\"}'
+    agent_params_line = ""
+    if lookback_hours is not None:
+        agent_params_line = f'\nagent_params:\n  lookback_hours: {lookback_hours}'
     content = f"""---
 title: "TCS - startup-{timestamp}"
 created: "{now.isoformat()}"
@@ -158,7 +161,7 @@ priority: "medium"
 output: ""
 task_type: "TCS"
 generation_log: ""
-trigger_data_json: "{trigger_data}"
+trigger_data_json: "{trigger_data}"{agent_params_line}
 ---
 
 ## Input
@@ -178,7 +181,7 @@ Teams Chat Summary (TCS) will update this section with output information.
     task_path.write_text(content, encoding='utf-8')
 
 
-def _enqueue_tms_task(vault_root: Path):
+def _enqueue_tms_task(vault_root: Path, lookback_hours: int = None):
     """Write a QUEUED TMS task file for the running orchestrator daemon to pick up."""
     from datetime import datetime
     from ..config import Config
@@ -197,6 +200,9 @@ def _enqueue_tms_task(vault_root: Path):
         return
 
     trigger_data = '{\\"path\\": \\"\\", \\"event_type\\": \\"manual\\"}'
+    agent_params_line = ""
+    if lookback_hours is not None:
+        agent_params_line = f'\nagent_params:\n  lookback_hours: {lookback_hours}'
     content = f"""---
 title: "TMS - startup-{timestamp}"
 created: "{now.isoformat()}"
@@ -207,7 +213,7 @@ priority: "medium"
 output: ""
 task_type: "TMS"
 generation_log: ""
-trigger_data_json: "{trigger_data}"
+trigger_data_json: "{trigger_data}"{agent_params_line}
 ---
 
 ## Input
@@ -319,10 +325,15 @@ def get_mcp_config(vault_root: Path) -> str:
     """Build MCP config JSON for DuckyAI MCP servers."""
     config = {"mcpServers": {}}
 
-    # Vault MCP server — resolve from vault root
+    # Vault MCP server — resolve from vault root first, then installed package location
     mcp_index = vault_root / 'cli' / 'mcp-server' / 'dist' / 'index.js'
     if not mcp_index.exists():
-        mcp_index = None
+        # Fallback: resolve relative to installed duckyai_cli package
+        # Package layout: cli/duckyai_cli/ and cli/mcp-server/ are siblings
+        pkg_dir = Path(__file__).resolve().parent  # duckyai_cli/main/
+        mcp_index = pkg_dir.parent.parent / 'mcp-server' / 'dist' / 'index.js'
+        if not mcp_index.exists():
+            mcp_index = None
 
     if mcp_index:
         config["mcpServers"]["duckyai-vault"] = {
@@ -386,6 +397,93 @@ def launch_copilot(vault_root: Path, prompt: str = None, interactive_prompt: str
         click.echo("Error: 'copilot' CLI not found. Install GitHub Copilot CLI first.", err=True)
         click.echo("  brew install gh && gh extension install github/gh-copilot", err=True)
         return 1
+
+
+def _show_global_orchestrator_status():
+    """Show orchestrator status for all registered vaults."""
+    from ..vault_registry import list_vaults
+    from rich.table import Table
+    from rich.console import Console
+
+    vaults = list_vaults()
+    if not vaults:
+        click.echo("No vaults registered. Use 'duckyai vault new <path>' or 'duckyai init'.")
+        return
+
+    table = Table(title="Orchestrator Status (All Vaults)")
+    table.add_column("Vault", style="cyan bold")
+    table.add_column("Status", justify="center")
+    table.add_column("PID", justify="right")
+    table.add_column("Agents", justify="right")
+    table.add_column("Path")
+
+    for v in vaults:
+        vault_path = Path(v["path"])
+        if not vault_path.exists():
+            table.add_row(v["name"], "⚠️  Missing", "-", "-", v["path"])
+            continue
+
+        pid, alive = _read_pid(vault_path)
+        status_str = "🟢 Running" if alive else "🔴 Stopped"
+        pid_str = str(pid) if pid else "-"
+
+        # Count agents from config
+        agent_count = "-"
+        try:
+            from ..config import Config
+            from ..orchestrator.core import Orchestrator
+            config = Config(vault_path=vault_path)
+            orch = Orchestrator(vault_path=vault_path, config=config)
+            status = orch.get_status()
+            agent_count = str(status.get("agents_loaded", 0))
+        except Exception:
+            pass
+
+        table.add_row(v["name"], status_str, pid_str, agent_count, v["path"])
+
+    Console().print(table)
+
+
+def _show_global_agents():
+    """Show agents for all registered vaults."""
+    from ..vault_registry import list_vaults
+    from ..config import Config
+    from ..orchestrator.core import Orchestrator
+    from rich.table import Table
+    from rich.console import Console
+
+    vaults = list_vaults()
+    if not vaults:
+        click.echo("No vaults registered. Use 'duckyai vault new <path>' or 'duckyai init'.")
+        return
+
+    table = Table(title="Agents (All Vaults)")
+    table.add_column("Vault", style="cyan")
+    table.add_column("Abbr", style="bold")
+    table.add_column("Name")
+    table.add_column("Category")
+    table.add_column("Cron")
+
+    for v in vaults:
+        vault_path = Path(v["path"])
+        if not vault_path.exists():
+            continue
+
+        try:
+            config = Config(vault_path=vault_path)
+            orch = Orchestrator(vault_path=vault_path, config=config)
+            status = orch.get_status()
+            for a in status.get("agent_list", []):
+                agent_obj = orch.agent_registry.agents.get(a["abbreviation"])
+                cron = agent_obj.cron if agent_obj else "-"
+                table.add_row(
+                    v["name"], a["abbreviation"], a["name"],
+                    a.get("category", "-"), cron or "-"
+                )
+        except Exception:
+            table.add_row(v["name"], "⚠️", "Error loading agents", "-", "-")
+
+    Console().print(table)
 
 
 @click.group(invoke_without_command=True)
@@ -496,6 +594,7 @@ def main(
         logging.basicConfig(level=logging.WARNING)
 
     # Resolve vault root
+    vault_root = None
     if vault_id:
         # Explicit --vault flag: look up from registry
         from ..vault_registry import list_vaults as _list_vaults, touch_vault as _touch
@@ -506,9 +605,18 @@ def main(
         else:
             click.echo(f"⚠️  Vault '{vault_id}' not found in registry.", err=True)
             raise SystemExit(1)
-    elif orchestrator or orchestrator_status or list_agents or show_config:
-        # Flag-based commands: use CWD-based resolution (no interactive prompt)
+    elif ctx.invoked_subcommand is not None:
+        # Subcommand will handle its own vault resolution if needed
+        # Only resolve if CWD is inside a vault (cheap, no prompts)
+        from .vault import is_inside_vault
+        if is_inside_vault(Path(working_dir) if working_dir else None):
+            vault_root = find_vault_root(Path(working_dir) if working_dir else None)
+    elif orchestrator or show_config:
+        # Flag-based commands that need a specific vault
         vault_root = find_vault_root(Path(working_dir) if working_dir else None)
+    elif orchestrator_status or list_agents:
+        # Global commands: vault_root stays None → triggers multi-vault display
+        pass
     else:
         # Interactive use: full vault resolution with selection prompt
         vault_root = resolve_vault(working_dir)
@@ -520,6 +628,7 @@ def main(
     ctx.obj["debug"] = debug
     ctx.obj["mcp_config"] = mcp_config
     ctx.obj["vault_root"] = vault_root
+    ctx.obj["vault_explicit"] = bool(vault_id)
 
     # If a subcommand was invoked, let it handle execution
     if ctx.invoked_subcommand is not None:
@@ -527,11 +636,19 @@ def main(
 
     # Handle flag-based commands (shortcuts for subcommands)
     if orchestrator_status:
-        ctx.invoke(orch_status, json_out=False)
+        if vault_id:
+            # Single vault status
+            ctx.invoke(orch_status, json_out=False)
+        else:
+            # Global status: show all vaults
+            _show_global_orchestrator_status()
     elif orchestrator:
         run_orchestrator_daemon(vault_path=vault_root, debug=debug, working_dir=working_dir, config_file=config_file, mcp_config=mcp_config)
     elif list_agents:
-        ctx.invoke(orch_list_agents, json_out=False)
+        if vault_id:
+            ctx.invoke(orch_list_agents, json_out=False)
+        else:
+            _show_global_agents()
     elif show_config:
         show_config_handler()
     elif prompt_text or interactive_prompt or not any([orchestrator, orchestrator_status, list_agents, show_config]):
@@ -572,8 +689,15 @@ def main(
                 try:
                     response = input("\n🔄 Sync Teams chats & meetings now? (y/n): ").strip().lower()
                     if response in ("y", "yes"):
-                        _enqueue_tcs_task(vault_root)
-                        _enqueue_tms_task(vault_root)
+                        lookback_hours = None
+                        try:
+                            lookback_input = input("⏰ Lookback hours (press Enter for default): ").strip()
+                            if lookback_input:
+                                lookback_hours = int(lookback_input)
+                        except (ValueError, EOFError):
+                            pass
+                        _enqueue_tcs_task(vault_root, lookback_hours=lookback_hours)
+                        _enqueue_tms_task(vault_root, lookback_hours=lookback_hours)
                         click.echo("✓ TCS & TMS queued — orchestrator will pick them up shortly")
                 except (EOFError, KeyboardInterrupt):
                     pass  # Non-interactive — skip prompt
@@ -596,14 +720,13 @@ def main(
 # Register subcommand groups
 main.add_command(orchestrator_group)
 
-# Keep 'trigger' as top-level subcommand for backward compat (duckyai trigger EIC)
-from .trigger import trigger_cli
-main.add_command(trigger_cli)
+# Vault management (global scope)
+from .vault_cmd import vault_group
+main.add_command(vault_group)
 
 # Onboarding wizard
-from .setup import setup_command, new_command
+from .setup import setup_command
 main.add_command(setup_command)
-main.add_command(new_command)
 
 # Voice AI
 from .voice_cmd import voice_command

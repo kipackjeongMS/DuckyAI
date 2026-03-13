@@ -703,6 +703,13 @@ class Orchestrator:
                 else:
                     agent = base_agent
 
+                # Apply agent_params overrides from task file frontmatter (e.g., lookback_hours)
+                task_agent_params = fm.get('agent_params')
+                if task_agent_params and isinstance(task_agent_params, dict):
+                    import copy
+                    agent = copy.copy(agent)
+                    agent.agent_params = {**agent.agent_params, **task_agent_params}
+
                 # Try to reserve a slot atomically
                 if not self.execution_manager.reserve_slot(agent):
                     break  # Still no capacity, wait for next iteration
