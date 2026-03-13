@@ -160,6 +160,53 @@ def run_onboarding(vault_root: Path = None):
         else:
             click.echo(f"  · {folder}/ (exists)")
 
+    # Create .gitignore
+    gitignore_path = vault_path / ".gitignore"
+    if not gitignore_path.exists():
+        gitignore_path.write_text(
+            "# OS\n.DS_Store\nThumbs.db\n\n"
+            "# Obsidian\n.obsidian/workspace*.json\n.obsidian/plugins/\n.trash/\n\n"
+            "# Python\n__pycache__/\n*.pyc\n\n"
+            "# Services directory junction (points outside vault)\n.services/\n",
+            encoding="utf-8",
+        )
+        click.echo(f"  ✓ .gitignore")
+    else:
+        click.echo(f"  · .gitignore (exists)")
+
+    # Create VS Code workspace file
+    workspace_file = vault_path / f"{vault_name}.code-workspace"
+    if not workspace_file.exists():
+        import json
+        workspace_config = {
+            "folders": [
+                {"name": vault_name, "path": "."}
+            ],
+            "settings": {
+                "files.exclude": {
+                    "**/.git": True,
+                    "**/.obsidian/plugins": True,
+                    "**/.obsidian/workspace*.json": True,
+                    "**/.services": True,
+                },
+                "search.exclude": {
+                    "**/.obsidian": True,
+                    "**/.services": True,
+                },
+                "git.scanRepositories": ["."],
+            },
+        }
+        workspace_file.write_text(
+            json.dumps(workspace_config, indent=2), encoding="utf-8"
+        )
+        click.echo(f"  ✓ {vault_name}.code-workspace")
+    else:
+        click.echo(f"  · {vault_name}.code-workspace (exists)")
+
+    # Create .vscode/mcp.json placeholder
+    vscode_dir = vault_path / ".vscode"
+    vscode_dir.mkdir(exist_ok=True)
+
     # Create profile note
     profile_path = vault_path / f"{user_name}.md"
     if not profile_path.exists():

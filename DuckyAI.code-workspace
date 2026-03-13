@@ -13,11 +13,14 @@
     "files.exclude": {
       "**/.git": true,
       "**/.obsidian/plugins": true,
-      "**/.obsidian/workspace*.json": true
+      "**/.obsidian/workspace*.json": true,
+      "**/.services": true
     },
     "search.exclude": {
-      "**/.obsidian": true
+      "**/.obsidian": true,
+      "**/.services": true
     },
+    "git.scanRepositories": ["."],
     "chat.tools.terminal.autoApprove": {
       "git push": true,
       "az": true

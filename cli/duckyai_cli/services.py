@@ -74,6 +74,17 @@ def ensure_services_dir(vault_path: Path) -> Path:
         except (OSError, subprocess.CalledProcessError):
             pass  # Symlink creation may fail — not critical
 
+    # Ensure .services/ is in .gitignore
+    gitignore_path = Path(vault_path) / ".gitignore"
+    try:
+        if gitignore_path.exists():
+            content = gitignore_path.read_text(encoding="utf-8")
+            if ".services/" not in content:
+                with gitignore_path.open("a", encoding="utf-8") as f:
+                    f.write("\n# Services directory junction (points outside vault)\n.services/\n")
+    except OSError:
+        pass
+
     return services_dir
 
 
