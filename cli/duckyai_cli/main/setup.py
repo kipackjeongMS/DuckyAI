@@ -573,9 +573,11 @@ nodes:
                 type=str, default="y"
             ).strip().lower()
             if response in ("y", "yes"):
-                from .trigger_agent import _read_watermark, _prompt_lookback_or_watermark
+                from .trigger_agent import _prompt_teams_sync_lookback
                 from rich.console import Console
                 console = Console()
+
+                override = _prompt_teams_sync_lookback(vault_path, console)
 
                 from ..config import Config
                 from ..orchestrator.core import Orchestrator
@@ -583,14 +585,20 @@ nodes:
                     vault_path=vault_path,
                     config=Config(vault_path=vault_path),
                 )
-                for abbr, default_h in [("TCS", 1), ("TMS", 24)]:
+                import threading
+                threads = []
+                for abbr in ("TCS", "TMS"):
                     agent = orch.agent_registry.agents.get(abbr)
                     if not agent:
                         continue
-                    last_synced = _read_watermark(vault_path, abbr)
-                    override = _prompt_lookback_or_watermark(abbr, default_h, last_synced, console)
                     click.echo(f"  Triggering {abbr}...")
-                    orch.trigger_agent_once(abbr, agent_params_override=override)
+                    def _run(a=abbr, o=override):
+                        orch.trigger_agent_once(a, agent_params_override=o)
+                    t = threading.Thread(target=_run, daemon=True)
+                    t.start()
+                    threads.append(t)
+                for t in threads:
+                    t.join()
                 click.echo("  ✓ Teams sync complete")
         except (EOFError, KeyboardInterrupt):
             pass

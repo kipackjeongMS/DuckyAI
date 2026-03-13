@@ -82,6 +82,55 @@ def _prompt_lookback_or_watermark(agent_abbr: str, default_hours: int, last_sync
         console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
         return {'lookback_hours': hours}
 
+
+def _prompt_teams_sync_lookback(vault_root: Path, console: Console, default_hours: int = 24) -> Optional[Dict]:
+    """Single lookback prompt for all Teams agents (TCS + TMS).
+
+    Checks watermarks for both agents and presents one unified prompt.
+    Returns agent_params_override dict or None to use watermarks as-is.
+    """
+    tcs_wm = _read_watermark(vault_root, "TCS")
+    tms_wm = _read_watermark(vault_root, "TMS")
+    has_watermark = tcs_wm or tms_wm
+
+    if has_watermark:
+        console.print(f"\n[bold blue]Teams Sync[/bold blue]")
+        if tcs_wm:
+            console.print(f"  TCS last synced: [cyan]{tcs_wm}[/cyan] ({_format_watermark_age(tcs_wm)})")
+        else:
+            console.print(f"  TCS: [yellow]no previous sync[/yellow]")
+        if tms_wm:
+            console.print(f"  TMS last synced: [cyan]{tms_wm}[/cyan] ({_format_watermark_age(tms_wm)})")
+        else:
+            console.print(f"  TMS: [yellow]no previous sync[/yellow]")
+        console.print(f"  [dim]1) Since last sync (default)[/dim]")
+        console.print(f"  [dim]2) Custom lookback hours[/dim]")
+        try:
+            choice = console.input(f"[bold]Choice [1]: [/bold]").strip()
+            if choice == "2":
+                try:
+                    user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
+                    hours = int(user_input) if user_input else default_hours
+                except (ValueError, EOFError):
+                    hours = default_hours
+                console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
+                return {'lookback_hours': hours, 'ignore_watermark': True}
+            else:
+                console.print(f"[dim]Syncing since last watermark[/dim]\n")
+                return None
+        except (EOFError, KeyboardInterrupt):
+            return None
+    else:
+        console.print(f"\n[bold blue]Teams first sync[/bold blue] — no previous data")
+        console.print(f"[dim]How far back should we fetch? (default: {default_hours}h)[/dim]")
+        try:
+            user_input = console.input(f"[bold]Hours [{default_hours}]: [/bold]").strip()
+            hours = int(user_input) if user_input else default_hours
+        except (ValueError, EOFError):
+            hours = default_hours
+        console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
+        return {'lookback_hours': hours}
+
 def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=None, mcp_config=None, claude_settings=None, input_file=None, vault_path=None, lookback_hours=None):
     """Trigger an orchestrator agent or poller interactively.
 

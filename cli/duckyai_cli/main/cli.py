@@ -689,16 +689,14 @@ def main(
                 try:
                     response = input("\n🔄 Sync Teams chats & meetings now? (y/n): ").strip().lower()
                     if response in ("y", "yes"):
-                        from .trigger_agent import _read_watermark, _prompt_lookback_or_watermark
+                        from .trigger_agent import _prompt_teams_sync_lookback
                         from rich.console import Console
                         console = Console()
 
-                        for abbr, default_h in [("TCS", 1), ("TMS", 24)]:
-                            last_synced = _read_watermark(vault_root, abbr)
-                            override = _prompt_lookback_or_watermark(abbr, default_h, last_synced, console)
-                            lbh = override.get('lookback_hours') if override else None
-                            _enqueue_tcs_task(vault_root, lookback_hours=lbh) if abbr == "TCS" else _enqueue_tms_task(vault_root, lookback_hours=lbh)
-
+                        override = _prompt_teams_sync_lookback(vault_root, console)
+                        lbh = override.get('lookback_hours') if override else None
+                        _enqueue_tcs_task(vault_root, lookback_hours=lbh)
+                        _enqueue_tms_task(vault_root, lookback_hours=lbh)
                         click.echo("✓ TCS & TMS queued — orchestrator will pick them up shortly")
                 except (EOFError, KeyboardInterrupt):
                     pass  # Non-interactive — skip prompt
