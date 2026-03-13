@@ -104,8 +104,8 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
         if agents_to_sync:
             labels = " & ".join(label for _, label in agents_to_sync)
             try:
-                response = input(f"\n🔄 Sync Teams {labels} now? (y/n): ").strip().lower()
-                if response in ("y", "yes"):
+                from .trigger_agent import _prompt_yn
+                if _prompt_yn(f"\n🔄 Sync Teams {labels} now?"):
                     from .trigger_agent import _prompt_teams_sync_lookback
                     from rich.console import Console
                     console = Console()

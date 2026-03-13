@@ -14,6 +14,27 @@ from ..orchestrator.core import Orchestrator
 logger = Logger(console_output=True)
 
 
+def _prompt_yn(message: str, default: bool = True) -> bool:
+    """Prompt for y/n with input validation. Loops until valid input.
+    
+    Returns True for yes, False for no. Ctrl+C/EOF returns default.
+    """
+    hint = "Y/n" if default else "y/N"
+    while True:
+        try:
+            response = input(f"{message} ({hint}): ").strip().lower()
+            if response in ("y", "yes"):
+                return True
+            elif response in ("n", "no"):
+                return False
+            elif response == "":
+                return default
+            else:
+                print("  Enter y or n")
+        except (EOFError, KeyboardInterrupt):
+            return default
+
+
 def _read_watermark(vault_root: Path, agent_abbr: str) -> Optional[str]:
     """Read the lastSynced timestamp from the agent's watermark file. Returns ISO string or None."""
     config = Config(vault_path=vault_root)

@@ -568,11 +568,8 @@ nodes:
     # Offer to sync Teams data now (if Teams agents are enabled)
     if teams_cron:
         try:
-            response = click.prompt(
-                "\n🔄 Sync vault with Teams data now? (y/n)",
-                type=str, default="y"
-            ).strip().lower()
-            if response in ("y", "yes"):
+            from .trigger_agent import _prompt_yn
+            if _prompt_yn("\n🔄 Sync vault with Teams data now?"):
                 from .trigger_agent import _prompt_teams_sync_lookback
                 from rich.console import Console
                 console = Console()

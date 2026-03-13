@@ -669,8 +669,8 @@ def main(
         if ExecutionManager.check_workiq_auth_flag(_vault_id):
             try:
                 click.echo("\n⚠️  WorkIQ authentication expired (permission denied on last run).")
-                response = input("Re-accept WorkIQ EULA now? (y/n): ").strip().lower()
-                if response in ("y", "yes"):
+                from .trigger_agent import _prompt_yn
+                if _prompt_yn("Re-accept WorkIQ EULA now?"):
                     from duckyai_cli.config import get_global_runtime_dir
                     ExecutionManager.clear_workiq_auth_flag(_vault_id)
                     click.echo("✓ Auth flag cleared. WorkIQ EULA will be re-accepted on next agent run.")
@@ -687,8 +687,8 @@ def main(
             # Prompt Teams sync when orchestrator was freshly started
             if freshly_started:
                 try:
-                    response = input("\n🔄 Sync Teams chats & meetings now? (y/n): ").strip().lower()
-                    if response in ("y", "yes"):
+                    from .trigger_agent import _prompt_yn
+                    if _prompt_yn("\n🔄 Sync Teams chats & meetings now?"):
                         from .trigger_agent import _prompt_teams_sync_lookback
                         from rich.console import Console
                         console = Console()
