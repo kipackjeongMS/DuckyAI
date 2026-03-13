@@ -4,6 +4,7 @@ import json
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Dict, Optional
 from rich.console import Console
 
 from ..logger import Logger
@@ -13,7 +14,7 @@ from ..orchestrator.core import Orchestrator
 logger = Logger(console_output=True)
 
 
-def _read_watermark(vault_root: Path, agent_abbr: str) -> str | None:
+def _read_watermark(vault_root: Path, agent_abbr: str) -> Optional[str]:
     """Read the lastSynced timestamp from the agent's watermark file. Returns ISO string or None."""
     config = Config(vault_path=vault_root)
     vault_id = config.get("id", "default")
@@ -43,7 +44,7 @@ def _format_watermark_age(last_synced_iso: str) -> str:
         return "unknown"
 
 
-def _prompt_lookback_or_watermark(agent_abbr: str, default_hours: int, last_synced: str | None, console: Console) -> dict | None:
+def _prompt_lookback_or_watermark(agent_abbr: str, default_hours: int, last_synced: Optional[str], console: Console) -> Optional[Dict]:
     """Prompt user to choose between syncing from watermark or custom lookback hours.
     
     Returns agent_params_override dict or None to use watermark as-is.

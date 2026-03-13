@@ -43,9 +43,11 @@ class Config:
         """
         if config_file:
             self.config_path = Path(config_file)
+            self.vault_path = self.config_path.parent
         else:
             base_path = Path(vault_path) if vault_path else Path.cwd()
             self.config_path = base_path / CONFIG_FILENAME
+            self.vault_path = base_path
 
         self.config: Dict[str, Any] = self._load_config()
 
