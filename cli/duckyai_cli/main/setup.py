@@ -555,6 +555,16 @@ nodes:
     ensure_init(vault_path)
     click.echo(f"  ✓ Skills symlinked into .github/skills/")
 
+    # Open vault in IDE if detected
+    if selected_ide:
+        ide_name, ide_exe = selected_ide
+        click.echo(f"  🖥️  Opening vault in {ide_name}...")
+        try:
+            subprocess.Popen([ide_exe, str(vault_path)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            click.echo(f"  ⚠️  Could not launch {ide_name} automatically. Open it manually.")
+
     # Offer to sync Teams data now (if Teams agents are enabled)
     if teams_cron:
         try:
@@ -586,16 +596,6 @@ nodes:
             pass
         except Exception as e:
             click.echo(f"  ⚠️  Teams sync skipped: {e}")
-
-    # Open vault in IDE if detected
-    if selected_ide:
-        ide_name, ide_exe = selected_ide
-        click.echo(f"  🖥️  Opening vault in {ide_name}...")
-        try:
-            subprocess.Popen([ide_exe, str(vault_path)],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception:
-            click.echo(f"  ⚠️  Could not launch {ide_name} automatically. Open it manually.")
 
     click.echo("")
     click.echo("  Run `duckyai` to start your first session.")
