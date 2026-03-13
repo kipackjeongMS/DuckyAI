@@ -35,3 +35,6 @@ mcp-server/dist/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Services directory junction (points outside vault)
+.services/
