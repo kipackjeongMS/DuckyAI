@@ -8,7 +8,7 @@ logger = Logger()
 
 
 class PollerManager:
-    """Manages poller instances based on orchestrator.yaml configuration."""
+    """Manages poller instances based on duckyai.yml configuration."""
 
     def __init__(self, vault_path: Path, config: 'Config'):
         """

@@ -26,7 +26,7 @@ Improve captured content through transcript correction, summarization, and knowl
 ```
 1. IMPROVE CAPTURE & TRANSCRIPT (ICT)
    - Fix all grammar or transcript errors
-   - Translate to the vault's default language (primaryLanguage in .gobi/settings.yaml) for Clippings
+   - Translate to the vault's default language (primaryLanguage in duckyai.yml) for Clippings
    - Remove extra/duplicated newlines
    - Add chapters using heading3 (###)
    - Add formatting (lists, highlights)

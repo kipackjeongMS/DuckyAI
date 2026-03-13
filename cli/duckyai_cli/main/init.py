@@ -68,13 +68,13 @@ def init_vault(force):
         click.echo("  .github/skills/ (exists, user-owned)")
 
     # --- 2. Create ~/.duckyai/ global runtime dirs ---
-    from duckyai_cli.config import get_global_runtime_dir
+    from duckyai_cli.config import get_global_runtime_dir, CONFIG_FILENAME
     import yaml as _yaml
     vault_id = "default"
-    orch_path = vault_root / "orchestrator.yaml"
-    if orch_path.exists():
+    config_path = vault_root / CONFIG_FILENAME
+    if config_path.exists():
         try:
-            with orch_path.open("r", encoding="utf-8") as fh:
+            with config_path.open("r", encoding="utf-8") as fh:
                 data = _yaml.safe_load(fh) or {}
                 vault_id = data.get("id", "default")
         except Exception:

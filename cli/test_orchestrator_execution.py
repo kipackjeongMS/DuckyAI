@@ -20,8 +20,8 @@ import re
 
 # Test configuration
 VAULT_PATH = Path("/Users/minsukkang/GitHub/temp/DuckyAI/duckyai_vault")
-ORCHESTRATOR_YAML = VAULT_PATH / "orchestrator.yaml"
-BACKUP_YAML = VAULT_PATH / "orchestrator.yaml.backup"
+ORCHESTRATOR_YAML = VAULT_PATH / "duckyai.yml"
+BACKUP_YAML = VAULT_PATH / "duckyai.yml.backup"
 LOG_FILE = VAULT_PATH / "_Settings_/Logs" / f"duckyai_{datetime.now().strftime('%Y-%m-%d')}.log"
 TEST_TIMEOUT = 300  # 5 minutes per test
 
@@ -44,15 +44,15 @@ class OrchestratorExecutionTestSuite:
         print("Orchestrator Execution Test Suite Setup")
         print("=" * 80)
         
-        # Backup original orchestrator.yaml
+        # Backup original duckyai.yml
         if self.orchestrator_yaml.exists():
             with open(self.orchestrator_yaml, 'r', encoding='utf-8') as f:
                 backup_content = f.read()
             with open(self.backup_yaml, 'w', encoding='utf-8') as f:
                 f.write(backup_content)
-            print(f"✓ Backed up orchestrator.yaml")
+            print(f"✓ Backed up duckyai.yml")
         else:
-            print("⚠ orchestrator.yaml not found")
+            print("⚠ duckyai.yml not found")
             return False
         
         # Ensure log directory exists
@@ -71,7 +71,7 @@ class OrchestratorExecutionTestSuite:
         if self.orchestrator_process:
             self.stop_orchestrator()
         
-        # Restore original orchestrator.yaml
+        # Restore original duckyai.yml
         if self.backup_yaml.exists():
             try:
                 with open(self.backup_yaml, 'r', encoding='utf-8') as f:
@@ -82,9 +82,9 @@ class OrchestratorExecutionTestSuite:
                     f.flush()
                     os.fsync(f.fileno())
                 temp_file.replace(self.orchestrator_yaml)
-                print(f"✓ Restored orchestrator.yaml from backup")
+                print(f"✓ Restored duckyai.yml from backup")
             except Exception as e:
-                print(f"✗ Error restoring orchestrator.yaml: {e}")
+                print(f"✗ Error restoring duckyai.yml: {e}")
     
     def start_orchestrator(self) -> bool:
         """Start orchestrator daemon."""

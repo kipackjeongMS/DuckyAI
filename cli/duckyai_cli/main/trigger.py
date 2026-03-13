@@ -13,7 +13,7 @@ from .trigger_agent import trigger_orchestrator_agent
     "--config-file",
     "config_file",
     type=click.Path(exists=True, file_okay=True, dir_okay=False),
-    help="Path to orchestrator config file (default: orchestrator.yaml in working directory)",
+    help="Path to vault config file (default: duckyai.yml in working directory)",
 )
 @click.option(
     "--mcp-config",

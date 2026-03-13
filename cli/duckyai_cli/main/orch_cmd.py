@@ -107,13 +107,14 @@ def orch_start(ctx, json_out):
     if pid_file.exists():
         pid_file.unlink(missing_ok=True)
 
-    # Check orchestrator.yaml exists
-    orch_yaml = vault_root / "orchestrator.yaml"
-    if not orch_yaml.exists():
+    # Check duckyai.yml exists
+    from duckyai_cli.config import CONFIG_FILENAME
+    config_yaml = vault_root / CONFIG_FILENAME
+    if not config_yaml.exists():
         if json_out:
-            click.echo(json.dumps({"status": "error", "message": "orchestrator.yaml not found"}))
+            click.echo(json.dumps({"status": "error", "message": "duckyai.yml not found"}))
         else:
-            click.echo("orchestrator.yaml not found. Run 'duckyai init' first.", err=True)
+            click.echo("duckyai.yml not found. Run 'duckyai init' first.", err=True)
         sys.exit(1)
 
     # Spawn orchestrator as detached background process

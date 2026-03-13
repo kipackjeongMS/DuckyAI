@@ -43,11 +43,11 @@ class OrchestratorEICIntegrationTest:
         self.workspace_path = os.getcwd()
 
         # Check for config file in CWD
-        config_path = os.path.join(self.workspace_path, 'orchestrator.yaml')
+        config_path = os.path.join(self.workspace_path, 'duckyai.yml')
         if not os.path.exists(config_path):
             raise ValueError(
-                f"orchestrator.yaml not found in current directory: {self.workspace_path}\n"
-                f"Test must run from vault directory containing orchestrator.yaml"
+                f"duckyai.yml not found in current directory: {self.workspace_path}\n"
+                f"Test must run from vault directory containing duckyai.yml"
             )
 
         # Load config from CWD

@@ -15,7 +15,7 @@ Generate comprehensive research summaries from DUCKYAI content for deep dive ana
 ## Output
 - Research report in DUCKY03-Knowledge/Documentation directory
 - File: {research topic} - {Agent}.md
-- Use vault's default language (primaryLanguage in .gobi/settings.yaml) (except English source quotes)
+- Use vault's default language (primaryLanguage in duckyai.yml) (except English source quotes)
 - Quotes and links to source notes
 - Further research questions and web search prompts
 - Link & summary added to source note

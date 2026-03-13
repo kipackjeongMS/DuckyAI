@@ -38,6 +38,8 @@ class TestOrchestratorFunctions:
                 {'abbreviation': 'CTP', 'name': 'Create Thread Postings', 'category': 'publish'}
             ]
         }
+        mock_orchestrator.poller_manager.pollers.items.return_value = []
+        mock_orchestrator.agent_registry.agents = {}
         mock_orchestrator_class.return_value = mock_orchestrator
         
         # Call function (will hang on run_forever, so we'll mock it)
@@ -71,6 +73,8 @@ class TestOrchestratorFunctions:
         
         mock_orchestrator = Mock()
         mock_orchestrator.get_status.return_value = {'agents_loaded': 0, 'agent_list': []}
+        mock_orchestrator.poller_manager.pollers.items.return_value = []
+        mock_orchestrator.agent_registry.agents = {}
         mock_orchestrator.run_forever = Mock()
         mock_orchestrator_class.return_value = mock_orchestrator
         
@@ -90,6 +94,8 @@ class TestOrchestratorFunctions:
             
             mock_orchestrator = Mock()
             mock_orchestrator.get_status.return_value = {'agents_loaded': 0, 'agent_list': []}
+            mock_orchestrator.poller_manager.pollers.items.return_value = []
+            mock_orchestrator.agent_registry.agents = {}
             mock_orchestrator.run_forever = Mock()
             mock_orchestrator_class.return_value = mock_orchestrator
             

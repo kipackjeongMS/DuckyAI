@@ -31,14 +31,11 @@ If `lastSynced` is null, use:
 
 ### Step 3: Process and summarize
 
-For each distinct conversation thread:
+**Group by participant, not by thread.** For each person (excluding "Me"/the user):
 
-1. **Summarize** the thread in 2-3 sentences capturing the key points
-2. **Extract people** involved (sender names)
-3. **Identify action items** — anything that requires follow-up (tasks assigned to the user, requests, deadlines mentioned)
-4. **Note the thread topic/subject** if available
-
-Skip threads that are trivial (e.g., single emoji reactions, "thanks", "ok").
+1. Collect all conversation threads involving that person
+2. For each thread, extract key points and action items as bullet points
+3. Skip threads that are trivial (e.g., single emoji reactions, "thanks", "ok")
 
 ### Step 4: Update vault
 
@@ -47,19 +44,34 @@ Skip threads that are trivial (e.g., single emoji reactions, "thanks", "ok").
 Call `appendTeamsChatHighlights` with:
 
 - `date`: today's date (YYYY-MM-DD)
-- `highlights`: Formatted markdown like:
+- `highlights`: Formatted markdown **organized by participant** (H3), with each chat context as a sub-heading (H4):
 
 ```markdown
-### {Thread Topic or Participants}
-**Participants**: [[Person A]], [[Person B]]
-**Summary**: Brief summary of the conversation.
-- Key point 1
-- Key point 2
-> Notable quote if relevant
+### [[Abraham Lincoln]]
+#### Project Alpha Standup
+- Discussed sprint priorities and timeline adjustments
+- Agreed to move demo to Friday
+- [[Abraham Lincoln]]: Review auth module PR by Thursday
+- [[Abraham Lincoln]]: Share updated timeline with stakeholders
 
-### {Next Thread}
-...
+#### Budget Review Follow-up
+- Confirmed Q3 budget allocation for infrastructure
+- [[Abraham Lincoln]]: Send revised cost breakdown by EOD
+
+### [[George Washington]]
+#### Deployment Hotfix
+- Urgent fix needed for login redirect issue
+- Rolled back to v2.3.1 as interim measure
+- [[George Washington]]: Deploy hotfix to staging by 3pm
+- [[George Washington]]: Update incident report in wiki
 ```
+
+**Format rules:**
+- H3 (`###`) = Participant name as wiki link `[[Full Name]]` — exclude "Me"/the user
+- H4 (`####`) = Chat context/thread topic
+- Bullet points for key points and action items
+- Action items prefixed with `[[Name]]:` indicating who owns the action
+- No "Summary" or "Participants" labels — keep it clean
 
 - `people`: Array of all person names mentioned
 - `personNotes`: Array of `{ name, note }` for each person with a meaningful interaction (skip trivial)

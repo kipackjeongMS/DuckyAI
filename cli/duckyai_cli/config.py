@@ -1,4 +1,4 @@
-"""Configuration management for DuckyAI CLI (orchestrator.yaml)."""
+"""Configuration management for DuckyAI CLI (duckyai.yml)."""
 
 from __future__ import annotations
 
@@ -10,6 +10,9 @@ import yaml
 from .logger import Logger
 
 logger = Logger()
+
+CONFIG_FILENAME = "duckyai.yml"
+"""Canonical vault configuration filename."""
 
 
 def get_global_runtime_dir(vault_id: Optional[str] = None) -> Path:
@@ -24,7 +27,7 @@ def get_global_runtime_dir(vault_id: Optional[str] = None) -> Path:
 
 
 class Config:
-    """Read orchestrator configuration sourced from orchestrator.yaml."""
+    """Read vault configuration sourced from duckyai.yml."""
 
     def __init__(
         self,
@@ -35,14 +38,14 @@ class Config:
         Initialize configuration loader.
 
         Args:
-            config_file: Explicit path to orchestrator.yaml (overrides vault_path)
-            vault_path: Vault directory containing orchestrator.yaml
+            config_file: Explicit path to duckyai.yml (overrides vault_path)
+            vault_path: Vault directory containing duckyai.yml
         """
         if config_file:
             self.config_path = Path(config_file)
         else:
             base_path = Path(vault_path) if vault_path else Path.cwd()
-            self.config_path = base_path / "orchestrator.yaml"
+            self.config_path = base_path / CONFIG_FILENAME
 
         self.config: Dict[str, Any] = self._load_config()
 
@@ -60,7 +63,7 @@ class Config:
         return result
 
     def _load_config(self) -> Dict[str, Any]:
-        """Load orchestrator.yaml and merge with secrets.yaml if present."""
+        """Load duckyai.yml and merge with secrets.yaml if present."""
         config_data: Dict[str, Any] = {}
 
         if self.config_path.exists():
@@ -69,16 +72,16 @@ class Config:
                     loaded = yaml.safe_load(fh) or {}
                     if not isinstance(loaded, dict):
                         logger.warning(
-                            "orchestrator.yaml did not contain a mapping; falling back to defaults"
+                            "duckyai.yml did not contain a mapping; falling back to defaults"
                         )
                     else:
                         config_data = loaded
             except yaml.YAMLError as exc:
-                logger.error(f"Failed to parse orchestrator.yaml: {exc}")
+                logger.error(f"Failed to parse duckyai.yml: {exc}")
             except OSError as exc:
-                logger.error(f"Failed to read orchestrator.yaml: {exc}")
+                logger.error(f"Failed to read duckyai.yml: {exc}")
         else:
-            logger.warning(f"orchestrator.yaml not found at {self.config_path}")
+            logger.warning(f"duckyai.yml not found at {self.config_path}")
 
         secrets_path = self.config_path.parent / "secrets.yaml"
         if secrets_path.exists():
@@ -99,7 +102,7 @@ class Config:
 
     def reload(self) -> bool:
         """
-        Reload orchestrator.yaml and secrets.yaml from disk.
+        Reload duckyai.yml and secrets.yaml from disk.
         
         Returns:
             True if reload succeeded, False otherwise
@@ -215,51 +218,23 @@ class Config:
         section = self.get("pollers", {})
         return section.copy() if isinstance(section, dict) else {}
 
-
-class WorkspaceConfig:
-    """Read user-facing workspace configuration from duckyai.yaml."""
-
-    DEFAULTS: Dict[str, Any] = {
-        "orchestrator": {
-            "auto_start": True,
-        },
-    }
-
-    def __init__(self, vault_path: Optional[Path] = None):
-        base_path = Path(vault_path) if vault_path else Path.cwd()
-        self.config_path = base_path / "duckyai.yaml"
-        self.config: Dict[str, Any] = self._load()
-
-    def _deep_merge(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
-        result = base.copy()
-        for key, value in override.items():
-            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-                result[key] = self._deep_merge(result[key], value)
-            else:
-                result[key] = value
-        return result
-
-    def _load(self) -> Dict[str, Any]:
-        config_data: Dict[str, Any] = {}
-        if self.config_path.exists():
-            try:
-                with self.config_path.open("r", encoding="utf-8") as fh:
-                    loaded = yaml.safe_load(fh) or {}
-                    if isinstance(loaded, dict):
-                        config_data = loaded
-            except (yaml.YAMLError, OSError):
-                pass
-        return self._deep_merge(self.DEFAULTS, config_data)
-
-    def get(self, key: str, default: Any = None) -> Any:
-        value: Any = self.config
-        for part in key.split("."):
-            if isinstance(value, dict) and part in value:
-                value = value[part]
-            else:
-                return default
-        return value
-
+    # --------------------------------------------------------------------- #
+    # User / workspace accessors (previously in WorkspaceConfig)
+    # --------------------------------------------------------------------- #
     @property
     def orchestrator_auto_start(self) -> bool:
+        """Whether the orchestrator daemon should auto-start."""
         return bool(self.get("orchestrator.auto_start", True))
+
+    def get_user_name(self) -> str:
+        return self.get("user.name", "")
+
+    def get_user_primary_language(self) -> str:
+        return self.get("user.primaryLanguage", "en")
+
+    def get_user_timezone(self) -> str:
+        return self.get("user.timezone", "UTC")
+
+
+# Backward-compatible alias — callers that imported WorkspaceConfig keep working.
+WorkspaceConfig = Config

@@ -108,15 +108,35 @@ Call `updateTeamsChatSyncState` with the current timestamp and any thread IDs.
 ## Output Format
 
 ### Daily Note — Teams Chat Highlights
+
+Organized by **participant** (H3), with each chat context as a sub-heading (H4):
+
 ```markdown
 ## Teams Chat Highlights
 
-### Project Standup
-**Participants**: [[Alice Smith]], [[Bob Jones]]
-**Summary**: Discussed sprint priorities. Alice will handle the auth module.
-- Decided to use JWT over session tokens [🔗](https://teams.microsoft.com/l/message/...)
-- Sprint demo moved to Friday [🔗](https://teams.microsoft.com/l/message/...)
+### [[Alice Smith]]
+#### Project Standup
+- Discussed sprint priorities and auth module ownership [🔗](https://teams.microsoft.com/l/message/...)
+- Agreed on JWT over session tokens [🔗](https://teams.microsoft.com/l/message/...)
+- [[Alice Smith]]: Handle auth module implementation
+- [[Alice Smith]]: Share design doc by Wednesday
+
+#### Code Review Follow-up
+- Reviewed PR #142 feedback [🔗](https://teams.microsoft.com/l/message/...)
+- [[Alice Smith]]: Address review comments and re-submit
+
+### [[Bob Jones]]
+#### Sprint Demo Prep
+- Moved demo to Friday [🔗](https://teams.microsoft.com/l/message/...)
+- [[Bob Jones]]: Prepare demo environment by Thursday
 ```
+
+**Format rules:**
+- H3 (`###`) = Participant name as wiki link `[[Full Name]]` — exclude "Me"/the user
+- H4 (`####`) = Chat context/thread topic
+- Bullet points for key points and action items
+- Action items prefixed with `[[Name]]:` indicating who owns the action
+- Deep links appended to key point bullets where available
 
 ### Person Notes
 Each person gets a dated entry under their `## Notes` section:
@@ -172,7 +192,7 @@ Follow `obsidian-links` skill conventions:
 ## Cron Schedule
 
 Default: `0 * * * *` (every hour on the hour).
-Customizable via `orchestrator.yaml`:
+Customizable via `duckyai.yml`:
 
 ```yaml
 - type: agent

@@ -33,7 +33,7 @@ class Logger:
 
     @staticmethod
     def _read_logs_dir_from_config():
-        """Read logs directory from orchestrator.yaml without importing Config.
+        """Read logs directory from duckyai.yml without importing Config.
 
         Returns the configured ``orchestrator.logs_dir`` value, or the default
         ``~/.duckyai/vaults/{vault_id}/logs`` when the file is missing or unparseable.
@@ -42,7 +42,7 @@ class Logger:
         default = os.path.join(str(Path.home()), ".duckyai", "vaults", vault_id, "logs")
         try:
             import yaml
-            config_path = Path(os.getcwd()) / "orchestrator.yaml"
+            config_path = Path(os.getcwd()) / "duckyai.yml"
             if config_path.exists():
                 with config_path.open("r", encoding="utf-8") as fh:
                     data = yaml.safe_load(fh) or {}

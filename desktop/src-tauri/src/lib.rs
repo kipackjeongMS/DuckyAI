@@ -202,7 +202,7 @@ fn extract_sdk_response(output: &str) -> String {
 fn find_vault_root() -> Option<std::path::PathBuf> {
     let mut dir = std::env::current_dir().ok()?;
     loop {
-        if dir.join("orchestrator.yaml").exists() {
+        if dir.join("duckyai.yml").exists() {
             return Some(dir);
         }
         if !dir.pop() {

@@ -74,7 +74,7 @@ class AgentDefinition:
     append_system_prompt: Optional[str] = None
     append_system_prompt_file: Optional[Path] = None
     
-    # Agent-specific parameters from orchestrator.yaml
+    # Agent-specific parameters from duckyai.yml
     agent_params: Dict[str, Any] = field(default_factory=dict)
 
 

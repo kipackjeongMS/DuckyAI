@@ -327,7 +327,7 @@ def main():
     
     poller_config = config.get('pollers', {}).get("apple_notes", {})
     if not poller_config:
-        logger.error("apple_notes poller configuration not found in orchestrator.yaml")
+        logger.error("apple_notes poller configuration not found in duckyai.yml")
         sys.exit(1)
     
     poller = AppleNotesPoller(poller_config)

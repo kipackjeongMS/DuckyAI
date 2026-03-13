@@ -154,7 +154,7 @@ Brief overview of today's key findings across all topics.
 ## Configuration
 
 ```yaml
-# orchestrator.yaml example
+# duckyai.yml example
 - type: agent
   name: Daily Research Briefing (DRB)
   cron: 0 8 * * *  # Daily at 8 AM

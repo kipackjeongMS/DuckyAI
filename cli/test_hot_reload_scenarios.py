@@ -2,7 +2,7 @@
 """
 End-to-end test suite for hot-reload functionality.
 
-Tests all possible scenarios for orchestrator.yaml hot-reload.
+Tests all possible scenarios for duckyai.yml hot-reload.
 Validates behavior by analyzing orchestrator logs.
 """
 
@@ -20,8 +20,8 @@ import re
 
 # Test configuration
 VAULT_PATH = Path("/Users/minsukkang/GitHub/temp/DuckyAI/duckyai_vault")
-ORCHESTRATOR_YAML = VAULT_PATH / "orchestrator.yaml"
-BACKUP_YAML = VAULT_PATH / "orchestrator.yaml.backup"
+ORCHESTRATOR_YAML = VAULT_PATH / "duckyai.yml"
+BACKUP_YAML = VAULT_PATH / "duckyai.yml.backup"
 LOG_FILE = VAULT_PATH / "_Settings_/Logs" / f"duckyai_{datetime.now().strftime('%Y-%m-%d')}.log"
 TEST_TIMEOUT = 300  # 5 minutes per test
 
@@ -45,15 +45,15 @@ class HotReloadTestSuite:
         print("Hot-Reload Test Suite Setup")
         print("=" * 80)
         
-        # Backup original orchestrator.yaml
+        # Backup original duckyai.yml
         if self.orchestrator_yaml.exists():
             with open(self.orchestrator_yaml, 'r') as f:
                 self.original_config = yaml.safe_load(f)
             import shutil
             shutil.copy(self.orchestrator_yaml, self.backup_yaml)
-            print(f"✓ Backed up orchestrator.yaml to {self.backup_yaml}")
+            print(f"✓ Backed up duckyai.yml to {self.backup_yaml}")
         else:
-            print("✗ orchestrator.yaml not found!")
+            print("✗ duckyai.yml not found!")
             return False
             
         # Ensure log directory exists
@@ -63,7 +63,7 @@ class HotReloadTestSuite:
         return True
     
     def restore_config(self, trigger_reload: bool = False):
-        """Restore orchestrator.yaml from backup before each test.
+        """Restore duckyai.yml from backup before each test.
         
         Args:
             trigger_reload: If True, trigger file system event (default: False to avoid unwanted reloads)
@@ -89,7 +89,7 @@ class HotReloadTestSuite:
                 if trigger_reload:
                     os.utime(self.orchestrator_yaml, None)
             except Exception as e:
-                raise RuntimeError(f"Failed to restore orchestrator.yaml from backup: {e}")
+                raise RuntimeError(f"Failed to restore duckyai.yml from backup: {e}")
     
     def teardown(self):
         """Cleanup test environment."""
@@ -101,13 +101,13 @@ class HotReloadTestSuite:
         if self.orchestrator_process:
             self.stop_orchestrator()
         
-        # Restore original orchestrator.yaml
+        # Restore original duckyai.yml
         if self.backup_yaml.exists():
             with open(self.backup_yaml, 'r') as f:
                 backup_content = f.read()
             with open(self.orchestrator_yaml, 'w') as f:
                 f.write(backup_content)
-            print(f"✓ Restored orchestrator.yaml from backup")
+            print(f"✓ Restored duckyai.yml from backup")
             try:
                 if self.backup_yaml.exists():
                     self.backup_yaml.unlink()
@@ -164,7 +164,7 @@ class HotReloadTestSuite:
             self.orchestrator_process = None
     
     def modify_orchestrator_yaml(self, modifications: dict):
-        """Modify orchestrator.yaml with given changes."""
+        """Modify duckyai.yml with given changes."""
         # Read with error handling and retry logic
         config = None
         max_retries = 3
@@ -189,7 +189,7 @@ class HotReloadTestSuite:
                             f.write(backup_content)
                         config = yaml.safe_load(backup_content)
                     else:
-                        raise RuntimeError(f"Failed to read orchestrator.yaml after {max_retries} attempts: {e}")
+                        raise RuntimeError(f"Failed to read duckyai.yml after {max_retries} attempts: {e}")
         
         # Apply modifications
         for key_path, value in modifications.items():
@@ -218,7 +218,7 @@ class HotReloadTestSuite:
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         
         # Trigger file system event (touch the file)
         os.utime(self.orchestrator_yaml, None)
@@ -349,7 +349,7 @@ class HotReloadTestSuite:
         # Wait for initialization
         time.sleep(2)
         
-        # Modify orchestrator.yaml (change max_concurrent)
+        # Modify duckyai.yml (change max_concurrent)
         self.modify_orchestrator_yaml({"orchestrator.max_concurrent": 5})
         
         # Wait for reload
@@ -385,7 +385,7 @@ task_type: "EIC"
 trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\": \\"created\\"}"
 ---""")
         
-        # Modify orchestrator.yaml
+        # Modify duckyai.yml
         self.modify_orchestrator_yaml({"orchestrator.max_concurrent": 4})
         
         # Wait for reload
@@ -436,7 +436,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload
@@ -501,7 +501,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload
@@ -760,7 +760,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload
@@ -953,7 +953,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
             return False, f"Expected 1-3 reload starts but found {reload_starts} (grouping failed)"
         
         # Should see follow-up reload message if events came during reload
-        has_followup = "Another orchestrator.yaml change detected during reload" in log_content or "triggering follow-up reload" in log_content.lower()
+        has_followup = "Another duckyai.yml change detected during reload" in log_content or "triggering follow-up reload" in log_content.lower()
         
         success, issues = self.check_log_patterns([
             r"Configuration hot-reload completed successfully"
@@ -1060,7 +1060,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload
@@ -1122,7 +1122,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload
@@ -1164,7 +1164,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
             with open(self.log_file, 'r') as f:
                 log_content = f.read()
         
-        # Now modify orchestrator.yaml while agent is running
+        # Now modify duckyai.yml while agent is running
         self.modify_orchestrator_yaml({"orchestrator.max_concurrent": 6})
         
         # Wait for reload
@@ -1253,7 +1253,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
         # With new behavior: first event triggers reload immediately, second event during reload is grouped
         # Expected: 2 reloads (initial + follow-up after first completes)
         # Should see follow-up reload message
-        has_followup = "Another orchestrator.yaml change detected during reload" in log_content or "triggering follow-up reload" in log_content.lower()
+        has_followup = "Another duckyai.yml change detected during reload" in log_content or "triggering follow-up reload" in log_content.lower()
         
         success = True
         issues = []
@@ -1346,7 +1346,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for all reloads to complete (might have follow-up reload)
@@ -1523,7 +1523,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload
@@ -1570,7 +1570,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
         # Wait for execution to start
         time.sleep(2)
         
-        # Modify orchestrator.yaml
+        # Modify duckyai.yml
         self.modify_orchestrator_yaml({"orchestrator.max_concurrent": 8})
         
         # Wait for reload (should complete normally since executions finish quickly)
@@ -1635,7 +1635,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload
@@ -1680,7 +1680,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload
@@ -1729,7 +1729,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload
@@ -1800,7 +1800,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Verify config file was written correctly (CTP should be removed)
@@ -2071,7 +2071,7 @@ trigger_data_json: "{\\"path\\": \\"AI/Articles/test.md\\", \\"event_type\\": \\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for first reload
@@ -2099,7 +2099,7 @@ trigger_data_json: "{\\"path\\": \\"AI/Articles/test.md\\", \\"event_type\\": \\
                     temp_file.unlink()
                 except:
                     pass
-            raise RuntimeError(f"Failed to write orchestrator.yaml: {e}")
+            raise RuntimeError(f"Failed to write duckyai.yml: {e}")
         os.utime(self.orchestrator_yaml, None)
         
         # Wait for reload

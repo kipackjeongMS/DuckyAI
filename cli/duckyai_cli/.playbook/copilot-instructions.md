@@ -469,8 +469,8 @@ The vault includes a Python CLI orchestrator (`cli/`) for automated workflows:
 
 - **Run daemon:** `duckyai -o` — watches vault for file changes and triggers agents
 - **Trigger agent:** `duckyai trigger EIC --file 00-Inbox/article.md`
-- **Config:** `orchestrator.yaml` at vault root — defines agents, triggers, schedules
-- **Hot-reload:** Edit `orchestrator.yaml` while daemon runs — zero-downtime updates
+- **Config:** `duckyai.yml` at vault root — defines agents, triggers, schedules
+- **Hot-reload:** Edit `duckyai.yml` while daemon runs — zero-downtime updates
 
 The CLI handles automation (file triggers + cron scheduling). Copilot + MCP handles interactive work. Both coexist.
 
@@ -478,7 +478,7 @@ The CLI handles automation (file triggers + cron scheduling). Copilot + MCP hand
 
 ## Prompts & Workflows
 
-- Orchestrator config in `orchestrator.yaml` (root)
+- Orchestrator config in `duckyai.yml` (root)
 - Prompts can be found in `.github/prompts-agent/`
 - Skills can be found in `.github/skills/`
 - Templates in `.github/templates/` and `Templates/`

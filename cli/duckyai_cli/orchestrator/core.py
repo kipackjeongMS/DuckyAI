@@ -371,7 +371,7 @@ class Orchestrator:
             
             # Check if another reload was requested during this reload
             if self._pending_reload_during_reload:
-                logger.info("Another orchestrator.yaml change detected during reload, triggering follow-up reload...")
+                logger.info("Another duckyai.yml change detected during reload, triggering follow-up reload...")
                 self._pending_reload_during_reload = False
                 self._trigger_reload()
 
@@ -399,7 +399,7 @@ class Orchestrator:
 
                 # Handle config reload events specially
                 if trigger_event.event_type == 'config_reload':
-                    logger.info("Detected orchestrator.yaml change")
+                    logger.info("Detected duckyai.yml change")
                     # If reload is already in progress, mark that we need another reload after this one completes
                     if self._reload_in_progress:
                         logger.debug("Reload already in progress, will trigger another reload after current one completes")

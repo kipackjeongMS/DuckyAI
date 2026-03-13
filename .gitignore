@@ -16,7 +16,6 @@
 
 # User configuration
 .env
-duckyai.yaml
 scripts/repos.json
 
 # Orchestrator runtime

@@ -298,14 +298,14 @@ def ensure_init(vault_root: Path):
                 pass  # non-critical — skill just won't be auto-discovered
 
     # Create global ~/.duckyai runtime dirs (logs, tasks, history)
-    from duckyai_cli.config import get_global_runtime_dir
+    from duckyai_cli.config import get_global_runtime_dir, CONFIG_FILENAME
     try:
-        # Read vault_id from orchestrator.yaml
+        # Read vault_id from duckyai.yml
         import yaml
-        orch_path = vault_root / "orchestrator.yaml"
+        config_path = vault_root / CONFIG_FILENAME
         vault_id = "default"
-        if orch_path.exists():
-            with orch_path.open("r", encoding="utf-8") as fh:
+        if config_path.exists():
+            with config_path.open("r", encoding="utf-8") as fh:
                 data = yaml.safe_load(fh) or {}
                 vault_id = data.get("id", "default")
         runtime_dir = get_global_runtime_dir(vault_id)
@@ -319,20 +319,10 @@ def get_mcp_config(vault_root: Path) -> str:
     """Build MCP config JSON for DuckyAI MCP servers."""
     config = {"mcpServers": {}}
 
-    # Vault MCP server — check embedded (CLI package) first, then vault-local
-    mcp_index = None
-    try:
-        from ..mcp_server import get_mcp_index_js
-        embedded = get_mcp_index_js()
-        if embedded.exists():
-            mcp_index = embedded
-    except ImportError:
-        pass
-
-    if not mcp_index:
-        local = vault_root / 'mcp-server' / 'dist' / 'index.js'
-        if local.exists():
-            mcp_index = local
+    # Vault MCP server — resolve from vault root
+    mcp_index = vault_root / 'cli' / 'mcp-server' / 'dist' / 'index.js'
+    if not mcp_index.exists():
+        mcp_index = None
 
     if mcp_index:
         config["mcpServers"]["duckyai-vault"] = {
@@ -342,9 +332,9 @@ def get_mcp_config(vault_root: Path) -> str:
         }
 
     # Release Dashboard MCP server (Python)
-    rd_pkg = vault_root / 'mcp-server' / 'release-dashboard' / 'src' / 'release_dashboard_mcp' / 'server.py'
+    rd_pkg = vault_root / 'cli' / 'mcp-server' / 'release-dashboard' / 'src' / 'release_dashboard_mcp' / 'server.py'
     if rd_pkg.exists():
-        rd_config = vault_root / 'mcp-server' / 'release-dashboard' / 'config.yaml'
+        rd_config = vault_root / 'cli' / 'mcp-server' / 'release-dashboard' / 'config.yaml'
         config["mcpServers"]["release-dashboard"] = {
             "command": "release-dashboard-mcp",
             "args": [],
@@ -416,7 +406,7 @@ def launch_copilot(vault_root: Path, prompt: str = None, interactive_prompt: str
     "--config-file",
     "config_file",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path),
-    help="Path to orchestrator config file (default: orchestrator.yaml)",
+    help="Path to vault config file (default: duckyai.yml)",
 )
 @click.option("-d", "--debug", is_flag=True, help="Enable debug logging")
 @click.option(
@@ -571,9 +561,9 @@ def main(
             except (EOFError, KeyboardInterrupt):
                 pass
 
-        # Auto-start orchestrator if enabled in duckyai.yaml
-        from duckyai_cli.config import WorkspaceConfig
-        ws_config = WorkspaceConfig(vault_path=vault_root)
+        # Auto-start orchestrator if enabled in duckyai.yml
+        from duckyai_cli.config import Config
+        ws_config = Config(vault_path=vault_root)
         if ws_config.orchestrator_auto_start:
             freshly_started = ensure_orchestrator_running(vault_root, debug=debug)
 

@@ -454,8 +454,10 @@ class ExecutionManager:
         else:
             ctx.prompt = self._build_prompt(agent, trigger_data, ctx)
 
-        # Find the runner script
-        runner_script = self.vault_path / 'scripts' / 'copilot_sdk_runner.py'
+        # Find the runner script — check CLI package first, then vault
+        cli_runner = Path(__file__).parent.parent / 'scripts' / 'copilot_sdk_runner.py'
+        vault_runner = self.vault_path / 'scripts' / 'copilot_sdk_runner.py'
+        runner_script = cli_runner if cli_runner.exists() else vault_runner
         if not runner_script.exists():
             raise FileNotFoundError(f"Copilot SDK runner not found: {runner_script}")
 
@@ -593,6 +595,7 @@ class ExecutionManager:
             stderr=subprocess.STDOUT,
             text=True,
             encoding='utf-8',
+            errors='replace',
             cwd=str(self.working_dir),
             env=env
         )

@@ -29,12 +29,12 @@ This skill provides guidance for configuring and managing DUCKYAI orchestrator, 
 ## When to Use This Skill
 
 Agent should automatically load this skill when:
-- User wants to add, modify, or remove agents/nodes in orchestrator.yaml
+- User wants to add, modify, or remove agents/nodes in duckyai.yml
 - User wants to configure multi-worker execution (comparing AI models)
 - User wants to update orchestrator defaults (executor, timeout, max_parallel)
 - User wants to add or modify pollers (limitless, apple_photos, apple_notes)
 - User asks about CLI commands for orchestrator management
-- User needs help with orchestrator.yaml structure
+- User needs help with duckyai.yml structure
 
 ## Quick Commands
 
@@ -53,7 +53,7 @@ Agent should automatically load this skill when:
 
 ### Module 1: Orchestrator Setup (워크플로우 자동화)
 
-**Purpose**: Configure orchestrator.yaml for event-driven automation
+**Purpose**: Configure duckyai.yml for event-driven automation
 
 **Key Concepts**:
 - **Node**: Event-driven agent that triggers on file changes or schedules
@@ -63,7 +63,7 @@ Agent should automatically load this skill when:
 
 **Setup Process**:
 1. Explain orchestrator purpose and benefits
-2. Show orchestrator.yaml structure (nodes, pollers, defaults)
+2. Show duckyai.yml structure (nodes, pollers, defaults)
 3. Configure first agent (e.g., EIC - Enrich Ingested Content)
 4. Test agent execution with file trigger
 
@@ -217,7 +217,7 @@ pollers:
 
 #### Add New Agent
 
-1. Open `orchestrator.yaml`
+1. Open `duckyai.yml`
 2. Add new node under `nodes:`:
 ```yaml
   - type: agent
@@ -268,7 +268,7 @@ pollers:
 
 **Update Flow** (agent-driven, step by step):
 
-1. **Read current version** from `orchestrator.yaml` `version` field
+1. **Read current version** from `duckyai.yml` `version` field
 2. **Check latest release** via `gh release list --repo jykim/duckyai-vault --limit 1`
 3. **List releases** between current and latest, present summary to user
 4. **Get changed files** via `gh api repos/jykim/duckyai-vault/compare/v{CURRENT}...{LATEST}` — group by status:
@@ -281,12 +281,12 @@ pollers:
    - Keep local (skip this file)
    - Show diff (display both versions)
 7. **Apply changes** — fetch files via `gh api repos/jykim/duckyai-vault/contents/{path}?ref={tag}`, decode base64, write locally; delete removed files
-8. **Update version** in `orchestrator.yaml`
+8. **Update version** in `duckyai.yml`
 9. **Summary** — report applied/skipped files, offer to commit
 
 **Safety Rules**:
 - **Skip user content directories**: `00-Inbox/`, `04-Periodic/Daily/`, `03-Knowledge/Topics/`, `AI/`
-- **Skip user config files**: `.gobi/settings.yaml`, `secrets.yaml`, `.obsidian/workspace.json`
+- **Skip user config files**: `duckyai.yml`, `secrets.yaml`, `.obsidian/workspace.json`
 - **Always show changes before applying** — never auto-apply without user review
 - **Allow skipping individual files** — user can accept/reject per file
 - **Preserve local modifications** — flag conflicts rather than overwriting
@@ -298,7 +298,7 @@ Agent: 현재 버전: v3.4, 최신 버전: v3.5
        변경 사항:
        - [추가] .github/skills/new-skill/SKILL.md
        - [수정] AGENTS.md
-       - [수정] orchestrator.yaml
+       - [수정] duckyai.yml
        - [삭제] .github/prompts-agent/old-prompt.md
 
        로컬 수정 충돌: AGENTS.md (로컬에서도 수정됨)
@@ -307,7 +307,7 @@ User: 차이점 보기
 Agent: [shows diff]
 User: 원격 적용
 Agent: 업데이트 완료! 3개 파일 적용, 1개 삭제, 0개 스킵
-       orchestrator.yaml 버전을 v3.5로 업데이트했습니다.
+       duckyai.yml 버전을 v3.5로 업데이트했습니다.
        커밋할까요?
 ```
 
@@ -393,13 +393,13 @@ Each prompt is independent but connected:
 ├── DUCKYAI - Add Task.md
 └── ...
 
-orchestrator.yaml               # Main config file (vault root)
+duckyai.yml               # Main config file (vault root)
 ```
 
 ## References
 
 ### Documentation
-- Orchestrator config reference: `orchestrator.yaml`
+- Orchestrator config reference: `duckyai.yml`
 - CLI documentation: `duckyai --help`
 
 ### Design Documents
@@ -436,6 +436,6 @@ orchestrator.yaml               # Main config file (vault root)
 ## Notes
 
 - **Config validation**: Always validate YAML syntax before saving
-- **Backup**: Keep backup of working orchestrator.yaml
+- **Backup**: Keep backup of working duckyai.yml
 - **Testing**: Test new agents with small input sets first
 - **Logging**: Check logs for troubleshooting execution issues

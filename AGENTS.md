@@ -23,7 +23,7 @@ NEVER proactively create documentation or README files.
 	- Use your judgment to complete the task unless asked otherwise
 
 ## Prompts & Workflows
-- Orchestrator config in `orchestrator.yaml` (root)
+- Orchestrator config in `duckyai.yml` (root)
 - Prompts can be found in `.github/prompts-agent`
 - Skills can be found in `.github/skills`
 - Templates (of md docs) in `.github/templates`
@@ -125,7 +125,7 @@ tags:
   - When updating, don't just append new content; revise with overall consistency in mind (duplication is a sin)
 
 ### Language Preferences
-- Use the `primaryLanguage` from `.gobi/settings.yaml` as the default language for all output (English is fine, say, to quote original note)
+- Use the `primaryLanguage` from `duckyai.yml` as the default language for all output (English is fine, say, to quote original note)
 - For voice/conversation: match the user's spoken language; fall back to `primaryLanguage` if ambiguous
 
 ### 🔗 Critical: Wiki Links Must Be Valid

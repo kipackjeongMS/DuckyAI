@@ -3,7 +3,7 @@
     "duckyai-vault": {
       "type": "stdio",
       "command": "node",
-      "args": ["${workspaceFolder}/mcp-server/dist/index.js"]
+      "args": ["${workspaceFolder}/cli/mcp-server/dist/index.js"]
     },
     "workiq": {
       "type": "stdio",

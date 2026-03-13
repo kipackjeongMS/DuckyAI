@@ -172,8 +172,8 @@ class _FileEventHandler(FileSystemEventHandler):
         except ValueError:
             relative_path = file_path
         
-        # Check if this is orchestrator.yaml (special handling for hot-reload)
-        if str(relative_path) == "orchestrator.yaml":
+        # Check if this is duckyai.yml (special handling for hot-reload)
+        if str(relative_path) == "duckyai.yml":
             self._debounce_reload_event(event)
         elif not event.is_directory and self._matches_extension(event.src_path):
             self._debounce_file_event(event, 'created')
@@ -188,8 +188,8 @@ class _FileEventHandler(FileSystemEventHandler):
         except ValueError:
             relative_path = file_path
         
-        # Check if this is orchestrator.yaml (special handling for hot-reload)
-        if str(relative_path) == "orchestrator.yaml":
+        # Check if this is duckyai.yml (special handling for hot-reload)
+        if str(relative_path) == "duckyai.yml":
             self._debounce_reload_event(event)
         elif not event.is_directory and self._matches_extension(event.src_path):
             self._debounce_file_event(event, 'modified')
@@ -253,15 +253,15 @@ class _FileEventHandler(FileSystemEventHandler):
         self.file_monitor._debounce_event(str(relative_path), event_type, event_data)
 
     def _debounce_reload_event(self, event: FileSystemEvent):
-        """Debounce a config reload event for orchestrator.yaml changes."""
+        """Debounce a config reload event for duckyai.yml changes."""
         event_data = {
-            'path': "orchestrator.yaml",
+            'path': "duckyai.yml",
             'event_type': "config_reload",
             'is_directory': False,
             'timestamp': datetime.now(),
             'frontmatter': {}
         }
 
-        # Debounce the event (orchestrator.yaml uses same debouncing)
-        self.file_monitor._debounce_event("orchestrator.yaml", "config_reload", event_data)
-        logger.debug("Debouncing config reload event: orchestrator.yaml changed")
+        # Debounce the event (duckyai.yml uses same debouncing)
+        self.file_monitor._debounce_event("duckyai.yml", "config_reload", event_data)
+        logger.debug("Debouncing config reload event: duckyai.yml changed")

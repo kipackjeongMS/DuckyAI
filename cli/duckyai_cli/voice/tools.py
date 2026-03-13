@@ -47,7 +47,7 @@ def _find_vault_root() -> Path:
     """Find the vault root directory."""
     cwd = Path.cwd()
     for p in [cwd] + list(cwd.parents):
-        if (p / "orchestrator.yaml").exists():
+        if (p / "duckyai.yml").exists():
             return p
     return cwd
 
@@ -87,7 +87,10 @@ async def _run_copilot_agent(request: str) -> str:
     """Run a request through the Copilot SDK and return the text response."""
     vault_root = _find_vault_root()
     sdk_python = _get_copilot_sdk_python()
-    runner = vault_root / "scripts" / "copilot_sdk_runner.py"
+    # Check CLI package first, then vault
+    cli_runner = Path(__file__).parent.parent / "scripts" / "copilot_sdk_runner.py"
+    vault_runner = vault_root / "scripts" / "copilot_sdk_runner.py"
+    runner = cli_runner if cli_runner.exists() else vault_runner
 
     if not runner.exists():
         return "Copilot SDK runner not found. Run duckyai setup."

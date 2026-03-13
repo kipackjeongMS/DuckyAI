@@ -23,7 +23,7 @@ This folder contains canonical agent definitions for the DUCKYAI orchestrator sy
 
 Agent configuration is split into two parts:
 1. **Agent Prompt** (`.md` file): Contains agent identity and instructions
-2. **Orchestrator Config** (`orchestrator.yaml`): Contains input/output routing
+2. **Orchestrator Config** (`duckyai.yml`): Contains input/output routing
 
 ### Agent Frontmatter (Required Fields)
 
@@ -35,7 +35,7 @@ category: ingestion|research|publish
 ---
 ```
 
-**Note**: Input/output configuration has been moved to `orchestrator.yaml` at vault root.
+**Note**: Input/output configuration has been moved to `duckyai.yml` at vault root.
 
 ### Field Descriptions
 
@@ -58,15 +58,15 @@ category: ingestion|research|publish
 
 ---
 
-## Orchestrator Configuration (`orchestrator.yaml`)
+## Orchestrator Configuration (`duckyai.yml`)
 
-Input/output routing is now centralized in `orchestrator.yaml` at the vault root. This file defines where each agent reads from and writes to.
+Input/output routing is now centralized in `duckyai.yml` at the vault root. This file defines where each agent reads from and writes to.
 
 ### File Location
 
 ```
 vault/
-├── orchestrator.yaml          # Configuration file
+├── duckyai.yml          # Configuration file
 ├── duckyai_cli.json           # Existing config
 └── _Settings_/
     └── Prompts/              # Agent definitions

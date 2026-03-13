@@ -70,15 +70,15 @@ class AgentRegistry:
 
     def load_all_agents(self):
         """
-        Load agents from orchestrator.yaml nodes list.
+        Load agents from duckyai.yml nodes list.
 
-        Agents are loaded based on the 'nodes' list in orchestrator.yaml.
-        orchestrator.yaml is the single source of truth for all configuration.
+        Agents are loaded based on the 'nodes' list in duckyai.yml.
+        duckyai.yml is the single source of truth for all configuration.
         """
         nodes = self.orchestrator_config.get('nodes', [])
 
         if not nodes:
-            logger.warning("No nodes defined in orchestrator.yaml")
+            logger.warning("No nodes defined in duckyai.yml")
             return
 
         # Filter for enabled agent nodes (enabled defaults to True if not specified)
@@ -86,7 +86,7 @@ class AgentRegistry:
         disabled_count = len([n for n in nodes if n.get('type') == 'agent' and not n.get('enabled', True)])
         if disabled_count > 0:
             logger.info(f"Skipping {disabled_count} disabled agent(s)")
-        logger.info(f"Loading {len(agent_nodes)} agents from orchestrator.yaml")
+        logger.info(f"Loading {len(agent_nodes)} agents from duckyai.yml")
 
         for node in agent_nodes:
             try:
@@ -191,13 +191,13 @@ class AgentRegistry:
         Load centralized orchestrator configuration from YAML file.
 
         Args:
-            yaml_path: Path to orchestrator.yaml file
+            yaml_path: Path to duckyai.yml file
 
         Returns:
             Dictionary with 'agents' and 'defaults' keys
         """
         if not yaml_path.exists():
-            logger.warning(f"orchestrator.yaml not found at {yaml_path}")
+            logger.warning(f"duckyai.yml not found at {yaml_path}")
             logger.warning("Agent input/output configuration will not be available")
             return {'agents': {}, 'defaults': {}}
 
@@ -206,14 +206,14 @@ class AgentRegistry:
                 config = yaml.safe_load(f)
 
             if not config:
-                logger.warning(f"Empty orchestrator.yaml at {yaml_path}")
+                logger.warning(f"Empty duckyai.yml at {yaml_path}")
                 return {'agents': {}, 'defaults': {}}
 
             logger.info(f"Loaded orchestrator configuration from {yaml_path}")
 
             return config
         except Exception as e:
-            logger.error(f"Failed to load orchestrator.yaml: {e}")
+            logger.error(f"Failed to load duckyai.yml: {e}")
             return {'agents': {}, 'defaults': {}}
 
     def _load_agent(self, file_path: Path, node: dict, agent_id: str) -> Optional[AgentDefinition]:
@@ -222,7 +222,7 @@ class AgentRegistry:
 
         Args:
             file_path: Path to agent prompt file
-            node: Node configuration from orchestrator.yaml
+            node: Node configuration from duckyai.yml
             agent_id: Unique agent identifier (derived from name and prompt)
 
         Returns:
@@ -234,7 +234,7 @@ class AgentRegistry:
             return None
 
         # Only validate basic metadata from frontmatter
-        # All configuration comes from orchestrator.yaml node
+        # All configuration comes from duckyai.yml node
         required = ['title', 'abbreviation', 'category']
         for field in required:
             if field not in frontmatter:
@@ -247,7 +247,7 @@ class AgentRegistry:
         # Get defaults from orchestrator config
         defaults = self.orchestrator_config.get('defaults', {})
 
-        # Extract input_path from node config (orchestrator.yaml only source)
+        # Extract input_path from node config (duckyai.yml only source)
         input_path = node.get('input_path', [])
 
         # Handle null input_path (for manual agents)
@@ -301,7 +301,7 @@ class AgentRegistry:
         # Extract cron expression from node config
         cron = node.get('cron')
 
-        # Apply node config with defaults (orchestrator.yaml is only source)
+        # Apply node config with defaults (duckyai.yml is only source)
         executor = node.get('executor', defaults.get('executor', 'claude_code'))
         max_parallel = int(node.get('max_parallel', defaults.get('max_parallel', 1)))
         timeout_minutes = int(node.get('timeout_minutes', defaults.get('timeout_minutes', 30)))

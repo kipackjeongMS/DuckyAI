@@ -7,6 +7,7 @@ from pathlib import Path
 from rich.panel import Panel
 
 from ..orchestrator.core import Orchestrator
+from ..config import Config
 from ..logger import Logger
 
 logger = Logger(console_output=True)
@@ -20,10 +21,9 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
         vault_path: Path to vault root (defaults to CWD)
         debug: Enable debug logging to console
         working_dir: Working directory for agent subprocess execution (defaults to vault_path)
-        config_file: Path to orchestrator config file (defaults to orchestrator.yaml in working directory)
+        config_file: Path to vault config file (defaults to duckyai.yml in working directory)
         mcp_config: Optional tuple of MCP config JSON files or strings
     """
-    from ..config import Config
 
     vault_path = vault_path or Path.cwd()
     config = Config(
@@ -150,10 +150,9 @@ def execute_prompt_with_session(
         session_id: Optional session ID for tracking related executions (auto resume/create)
         vault_path: Path to vault root (defaults to CWD)
         working_dir: Working directory for agent subprocess execution (defaults to vault_path)
-        config_file: Path to orchestrator config file (defaults to orchestrator.yaml in working directory)
+        config_file: Path to vault config file (defaults to duckyai.yml in working directory)
         mcp_config: Optional tuple of MCP config JSON files or strings
     """
-    from ..config import Config
     import time
 
     vault_path = vault_path or Path.cwd()

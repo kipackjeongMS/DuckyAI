@@ -14,18 +14,74 @@ const MEETINGS_DIR = path.join(VAULT_ROOT, "02-People/Meetings");
 const ONE_ON_ONES_DIR = path.join(VAULT_ROOT, "02-People/1-on-1s");
 const ARCHIVE_DIR = path.join(VAULT_ROOT, "05-Archive");
 const TEMPLATES_DIR = path.join(VAULT_ROOT, "Templates");
-// Helper: Resolve global runtime state directory (~/.duckyai/vaults/{vault_id}/state/)
-async function getGlobalStateDir() {
-    // Read vault ID from orchestrator.yaml
-    let vaultId = "default";
+// Common timezone abbreviation → IANA name mapping
+const TIMEZONE_MAP = {
+    "PST": "America/Los_Angeles",
+    "PDT": "America/Los_Angeles",
+    "MST": "America/Denver",
+    "MDT": "America/Denver",
+    "CST": "America/Chicago",
+    "CDT": "America/Chicago",
+    "EST": "America/New_York",
+    "EDT": "America/New_York",
+    "UTC": "UTC",
+    "GMT": "UTC",
+    "KST": "Asia/Seoul",
+    "JST": "Asia/Tokyo",
+    "IST": "Asia/Kolkata",
+    "CET": "Europe/Berlin",
+    "CEST": "Europe/Berlin",
+    "GMT+0": "UTC",
+    "Pacific Standard Time": "America/Los_Angeles",
+    "Mountain Standard Time": "America/Denver",
+    "Central Standard Time": "America/Chicago",
+    "Eastern Standard Time": "America/New_York",
+};
+// Resolve a timezone string (abbreviation or IANA) to a valid IANA timezone name
+function resolveTimezone(tz) {
+    if (TIMEZONE_MAP[tz])
+        return TIMEZONE_MAP[tz];
+    // Validate as IANA name by attempting to use it
     try {
-        const orchPath = path.join(VAULT_ROOT, "orchestrator.yaml");
-        const orchContent = await fs.readFile(orchPath, "utf-8");
-        const idMatch = orchContent.match(/^id:\s*(.+)$/m);
+        Intl.DateTimeFormat(undefined, { timeZone: tz });
+        return tz;
+    }
+    catch {
+        return "UTC";
+    }
+}
+// Cached vault config values read from duckyai.yml
+let _cachedVaultId = null;
+let _cachedTimezone = null;
+async function readVaultConfig() {
+    if (_cachedVaultId !== null && _cachedTimezone !== null) {
+        return { vaultId: _cachedVaultId, timezone: _cachedTimezone };
+    }
+    let vaultId = "default";
+    let timezone = "UTC";
+    try {
+        const configPath = path.join(VAULT_ROOT, "duckyai.yml");
+        const configContent = await fs.readFile(configPath, "utf-8");
+        const idMatch = configContent.match(/^id:\s*(.+)$/m);
         if (idMatch)
             vaultId = idMatch[1].trim();
+        const tzMatch = configContent.match(/^\s*timezone:\s*"?([^"\n]+)"?$/m);
+        if (tzMatch)
+            timezone = resolveTimezone(tzMatch[1].trim());
     }
-    catch { /* fallback to default */ }
+    catch { /* fallback to defaults */ }
+    _cachedVaultId = vaultId;
+    _cachedTimezone = timezone;
+    return { vaultId, timezone };
+}
+// Get the user-configured IANA timezone
+async function getUserTimezone() {
+    const { timezone } = await readVaultConfig();
+    return timezone;
+}
+// Helper: Resolve global runtime state directory (~/.duckyai/vaults/{vault_id}/state/)
+async function getGlobalStateDir() {
+    const { vaultId } = await readVaultConfig();
     const stateDir = path.join(os.homedir(), ".duckyai", "vaults", vaultId, "state");
     await fs.mkdir(stateDir, { recursive: true });
     return stateDir;
@@ -35,19 +91,35 @@ const server = new McpServer({
     name: "duckyai-vault",
     version: "1.0.0",
 });
+// Helper: Format a Date to YYYY-MM-DD in the user's timezone
+function toLocalDateString(date, timezone) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(date);
+    const year = parts.find((p) => p.type === "year").value;
+    const month = parts.find((p) => p.type === "month").value;
+    const day = parts.find((p) => p.type === "day").value;
+    return `${year}-${month}-${day}`;
+}
 // Helper: Format date as "Friday, February 6, 2026"
-function formatDateHeading(dateStr) {
+async function formatDateHeading(dateStr) {
+    const tz = await getUserTimezone();
     const date = new Date(dateStr + "T12:00:00"); // Noon to avoid timezone issues
     return date.toLocaleDateString("en-US", {
+        timeZone: tz,
         weekday: "long",
         month: "long",
         day: "numeric",
         year: "numeric",
     });
 }
-// Helper: Get today's date in YYYY-MM-DD format
-function getTodayDate() {
-    return new Date().toISOString().split("T")[0];
+// Helper: Get today's date in YYYY-MM-DD format (timezone-aware)
+async function getTodayDate() {
+    const tz = await getUserTimezone();
+    return toLocalDateString(new Date(), tz);
 }
 // Helper: Find the most recent daily note before a given date
 async function findPreviousDailyNote(beforeDate) {
@@ -177,7 +249,7 @@ async function ensureContactExists(personName, context) {
         return false; // Already exists
     }
     catch {
-        const today = getTodayDate();
+        const today = await getTodayDate();
         // Template matches Templates/Person.md structure
         const template = `---
 created: ${today}
@@ -240,7 +312,7 @@ server.tool("prepareDailyNote", "Create today's daily note with carry-forward it
         .optional()
         .describe("Date in YYYY-MM-DD format, defaults to today"),
 }, async ({ date }) => {
-    const targetDate = date || getTodayDate();
+    const targetDate = date || await getTodayDate();
     const targetPath = path.join(DAILY_DIR, `${targetDate}.md`);
     // Check if already exists
     try {
@@ -264,7 +336,7 @@ server.tool("prepareDailyNote", "Create today's daily note with carry-forward it
         carryForward = await extractCarryForward(path.join(DAILY_DIR, previousNote));
     }
     // Generate the daily note
-    const dayHeading = formatDateHeading(targetDate);
+    const dayHeading = await formatDateHeading(targetDate);
     const carrySection = carryForward.length > 0 ? carryForward.join("\n") : "- (none)";
     // Template matches Templates/Daily Note.md structure
     const template = `---
@@ -324,7 +396,7 @@ server.tool("logPRReview", "Log a PR review or comment to today's daily note", {
         .enum(["reviewed", "commented"])
         .describe("Whether you reviewed or commented on the PR"),
 }, async ({ person, prNumber, prUrl, description, action }) => {
-    const today = getTodayDate();
+    const today = await getTodayDate();
     const dailyPath = path.join(DAILY_DIR, `${today}.md`);
     // Ensure daily note exists
     try {
@@ -378,7 +450,7 @@ server.tool("logAction", "Log a completed action to today's daily note", {
         .optional()
         .describe("Optional follow-up item to add to carry forward"),
 }, async ({ action, addToCarryForward }) => {
-    const today = getTodayDate();
+    const today = await getTodayDate();
     const dailyPath = path.join(DAILY_DIR, `${today}.md`);
     try {
         await fs.access(dailyPath);
@@ -438,7 +510,7 @@ server.tool("createTask", "Create a new task in 01-Work/Tasks/", {
     project: z.string().optional().describe("Related project name (without [[]])"),
     due: z.string().optional().describe("Due date in YYYY-MM-DD format"),
 }, async ({ title, description, priority, project, due }) => {
-    const today = getTodayDate();
+    const today = await getTodayDate();
     const taskPath = path.join(TASKS_DIR, `${title}.md`);
     // Check if already exists
     try {
@@ -481,7 +553,7 @@ server.tool("archiveTask", "Move a completed/cancelled task to 05-Archive/", {
 }, async ({ title, status }) => {
     const sourcePath = path.join(TASKS_DIR, `${title}.md`);
     const destPath = path.join(ARCHIVE_DIR, `${title}.md`);
-    const today = getTodayDate();
+    const today = await getTodayDate();
     // Check source exists
     try {
         await fs.access(sourcePath);
@@ -515,7 +587,7 @@ server.tool("updateTaskStatus", "Update the status of a task", {
     status: z.enum(["todo", "in-progress", "blocked", "done", "cancelled"]).describe("New status"),
 }, async ({ title, status }) => {
     const taskPath = path.join(TASKS_DIR, `${title}.md`);
-    const today = getTodayDate();
+    const today = await getTodayDate();
     try {
         await fs.access(taskPath);
     }
@@ -546,7 +618,7 @@ server.tool("createMeeting", "Create a new meeting note in 02-People/Meetings/",
     attendees: z.array(z.string()).optional().describe("List of attendee names"),
     project: z.string().optional().describe("Related project name"),
 }, async ({ title, date, time, attendees, project }) => {
-    const meetingDate = date || getTodayDate();
+    const meetingDate = date || await getTodayDate();
     const filename = `${meetingDate} ${title}.md`;
     const meetingPath = path.join(MEETINGS_DIR, filename);
     // Check if already exists
@@ -604,7 +676,7 @@ server.tool("create1on1", "Create a new 1:1 meeting note in 02-People/1-on-1s/",
     person: z.string().describe("Person's name for the 1:1"),
     date: z.string().optional().describe("Meeting date in YYYY-MM-DD (defaults to today)"),
 }, async ({ person, date }) => {
-    const meetingDate = date || getTodayDate();
+    const meetingDate = date || await getTodayDate();
     const filename = `${meetingDate} ${person}.md`;
     const filePath = path.join(ONE_ON_ONES_DIR, filename);
     // Check if already exists
@@ -678,8 +750,9 @@ server.tool("prepareWeeklyReview", "Create a weekly review note with aggregated 
     monday.setDate(week1Monday.getDate() + (weekNum - 1) * 7);
     const friday = new Date(monday);
     friday.setDate(monday.getDate() + 4);
-    const mondayStr = monday.toISOString().split("T")[0];
-    const fridayStr = friday.toISOString().split("T")[0];
+    const tz = await getUserTimezone();
+    const mondayStr = toLocalDateString(monday, tz);
+    const fridayStr = toLocalDateString(friday, tz);
     // Aggregate completed tasks from daily notes
     const completedTasks = [];
     const dailyFiles = await fs.readdir(DAILY_DIR);
@@ -789,7 +862,7 @@ server.tool("enrichNote", "Enrich a note by adding frontmatter, wiki links, summ
     catch {
         return { content: [{ type: "text", text: `File not found: ${filePath}` }] };
     }
-    const today = getTodayDate();
+    const today = await getTodayDate();
     const changes = [];
     // Add frontmatter if missing
     if (!content.startsWith("---")) {
@@ -836,7 +909,7 @@ server.tool("updateTopicIndex", "Update or create a topic index file in 03-Knowl
 }, async ({ topic }) => {
     const TOPICS_DIR = path.join(VAULT_ROOT, "03-Knowledge/Topics");
     const topicFile = path.join(TOPICS_DIR, `${topic}.md`);
-    const today = getTodayDate();
+    const today = await getTodayDate();
     await fs.mkdir(TOPICS_DIR, { recursive: true });
     // Scan vault for files mentioning this topic
     const dirsToScan = [
@@ -916,7 +989,7 @@ server.tool("generateRoundup", "Generate a rich daily roundup by aggregating com
         .optional()
         .describe("Date to generate roundup for (YYYY-MM-DD). Defaults to today."),
 }, async ({ date }) => {
-    const targetDate = date || getTodayDate();
+    const targetDate = date || await getTodayDate();
     const dailyPath = path.join(DAILY_DIR, `${targetDate}.md`);
     let dailyContent;
     try {
@@ -987,7 +1060,7 @@ server.tool("generateRoundup", "Generate a rich daily roundup by aggregating com
     }
     catch { /* Meetings dir may not exist */ }
     // Build roundup
-    const heading = formatDateHeading(targetDate);
+    const heading = await formatDateHeading(targetDate);
     const sections = [
         `# Daily Roundup — ${heading}`,
         "",
@@ -1111,7 +1184,7 @@ server.tool("appendTeamsChatHighlights", "Append a Teams Chat Highlights section
         note: z.string(),
     })).optional().describe("Per-person notes to append to their contact files"),
 }, async ({ date, highlights, people, personNotes }) => {
-    const targetDate = date || getTodayDate();
+    const targetDate = date || await getTodayDate();
     const dailyPath = path.join(DAILY_DIR, `${targetDate}.md`);
     // Ensure daily note exists
     try {
@@ -1278,7 +1351,7 @@ server.tool("appendTeamsMeetingHighlights", "Append a Teams Meeting Highlights s
         note: z.string(),
     })).optional().describe("Per-person notes to append to their contact files"),
 }, async ({ date, highlights, people, personNotes }) => {
-    const targetDate = date || getTodayDate();
+    const targetDate = date || await getTodayDate();
     const dailyPath = path.join(DAILY_DIR, `${targetDate}.md`);
     try {
         await fs.access(dailyPath);

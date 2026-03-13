@@ -12,6 +12,7 @@ Manually trigger a DuckyAI orchestrator agent.
 - **GDR** — Generate Daily Roundup (daily summary)
 - **TIU** — Topic Index Update (refresh topic indices)
 - **EDM** — Extract Document to Markdown (convert PDF/DOCX)
+- **TCS** - Teams Chat Summarization (summarize Teams chats)
 
 ## Instructions
 
