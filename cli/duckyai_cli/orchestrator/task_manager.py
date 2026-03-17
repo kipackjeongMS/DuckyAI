@@ -301,7 +301,7 @@ class TaskFileManager:
         Returns:
             Task filename (truncated to fit macOS 255-byte limit)
         """
-        date_str = ctx.start_time.strftime('%Y-%m-%d') if ctx.start_time else datetime.now().strftime('%Y-%m-%d')
+        date_str = ctx.start_time.strftime('%Y-%m-%d') if ctx.start_time else self.config.user_now().strftime('%Y-%m-%d')
 
         # Extract input filename from trigger data
         input_path = ctx.trigger_data.get('path', '')
@@ -309,7 +309,7 @@ class TaskFileManager:
             input_name = Path(input_path).stem
         else:
             # For scheduled agents, use 'scheduled' with timestamp
-            timestamp = ctx.start_time.strftime('%H%M') if ctx.start_time else datetime.now().strftime('%H%M')
+            timestamp = ctx.start_time.strftime('%H%M') if ctx.start_time else self.config.user_now().strftime('%H%M')
             input_name = f'scheduled-{timestamp}'
 
         filename = f"{date_str} {agent.abbreviation} - {input_name}.md"
@@ -345,7 +345,7 @@ class TaskFileManager:
         from io import StringIO
         
         # Build frontmatter data structure
-        created_time = ctx.start_time.isoformat() if ctx.start_time else datetime.now().isoformat()
+        created_time = ctx.start_time.isoformat() if ctx.start_time else self.config.user_now().isoformat()
         
         title = f"{agent.abbreviation} - {Path(input_file_path).stem}"
         
@@ -459,7 +459,7 @@ class TaskFileManager:
         """
         # Find Process Log section
         if "## Process Log" in content:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            timestamp = self.config.user_now().strftime("%Y-%m-%d %H:%M:%S")
             log_line = f"\n- [{timestamp}] {log_entry}\n"
             content = content.replace("## Process Log", f"## Process Log{log_line}", 1)
 

@@ -3,6 +3,7 @@ duckyai_cli/__init__.py
 duckyai_cli/config.py
 duckyai_cli/logger.py
 duckyai_cli/markdown_utils.py
+duckyai_cli/services.py
 duckyai_cli/vault_registry.py
 duckyai_cli.egg-info/PKG-INFO
 duckyai_cli.egg-info/SOURCES.txt
@@ -16,6 +17,7 @@ duckyai_cli/main/list_agents.py
 duckyai_cli/main/orch_cmd.py
 duckyai_cli/main/orchestrator.py
 duckyai_cli/main/run.py
+duckyai_cli/main/service_cmd.py
 duckyai_cli/main/setup.py
 duckyai_cli/main/show_config.py
 duckyai_cli/main/template.py
@@ -23,9 +25,8 @@ duckyai_cli/main/trigger.py
 duckyai_cli/main/trigger_agent.py
 duckyai_cli/main/update.py
 duckyai_cli/main/vault.py
+duckyai_cli/main/vault_cmd.py
 duckyai_cli/main/voice_cmd.py
-duckyai_cli/mcp_server/__init__.py
-duckyai_cli/mcp_server/dist/index.js
 duckyai_cli/orchestrator/__init__.py
 duckyai_cli/orchestrator/agent_registry.py
 duckyai_cli/orchestrator/core.py
@@ -37,11 +38,15 @@ duckyai_cli/orchestrator/poller_manager.py
 duckyai_cli/orchestrator/task_manager.py
 duckyai_cli/pollers/apple_notes.py
 duckyai_cli/pollers/base_poller.py
+duckyai_cli/scripts/__init__.py
+duckyai_cli/scripts/copilot_sdk_runner.py
 duckyai_cli/tests/test_markdown_utils.py
 duckyai_cli/tests/test_orchestrator_eic_integration.py
 duckyai_cli/tests/integration/__init__.py
 duckyai_cli/tests/integration/test_orchestrator_integration.py
 duckyai_cli/tests/integration/orchestrator/test_content_matching.py
+duckyai_cli/tests/unit/test_config_services.py
+duckyai_cli/tests/unit/test_services.py
 duckyai_cli/tests/unit/main/__init__.py
 duckyai_cli/tests/unit/main/test_orchestrator.py
 duckyai_cli/tests/unit/orchestrator/__init__.py

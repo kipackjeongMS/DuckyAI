@@ -75,7 +75,7 @@ version: "1.0"
 
 orchestrator:
   prompts_dir: .github/prompts-agent
-  # tasks_dir and logs_dir default to ~/.duckyai/vaults/{id}/tasks and logs
+  # tasks_dir and logs_dir default to .duckyai/tasks and .duckyai/logs (vault-local)
   skills_dir: .github/skills
   max_concurrent: 3
   poll_interval: 1

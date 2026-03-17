@@ -27,9 +27,9 @@ def _build_cron(frequency: str, minute: int = 0, hour: int = 18, interval: int =
         if interval == 1:
             return f"{minute} * * * *"
         else:
-        return f"{minute} {hour} * * *"
             return f"{minute} */{interval} * * *"
     elif frequency == "daily":
+        return f"{minute} {hour} * * *"
     return "0 * * * *"
 
 

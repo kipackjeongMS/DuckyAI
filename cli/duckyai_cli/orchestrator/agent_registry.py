@@ -465,7 +465,7 @@ class AgentRegistry:
                 return False
 
             try:
-                now = datetime.now()
+                now = self.config.user_now()
                 cron = croniter(agent.cron, now)
                 prev_run = cron.get_prev(datetime)
 

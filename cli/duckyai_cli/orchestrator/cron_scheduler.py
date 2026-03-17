@@ -28,16 +28,19 @@ class CronScheduler:
 
     COOLDOWN_SECONDS = 600  # 10-minute cooldown to prevent duplicate runs
 
-    def __init__(self, agent_registry: AgentRegistry, event_queue: Queue):
+    def __init__(self, agent_registry: AgentRegistry, event_queue: Queue, config=None):
         """
         Initialize cron scheduler.
 
         Args:
             agent_registry: AgentRegistry instance to get agents with cron expressions
             event_queue: Queue to put scheduled TriggerEvent objects
+            config: Config instance for user timezone
         """
+        from ..config import Config
         self.agent_registry = agent_registry
         self.event_queue = event_queue
+        self.config = config or Config()
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._cooldowns: dict[str, float] = {}  # agent_abbr -> last_run_timestamp
@@ -84,7 +87,7 @@ class CronScheduler:
         """
         Check if any agents with cron expressions should be triggered now.
         """
-        now = datetime.now()
+        now = self.config.user_now()
 
         # Get all agents with cron expressions
         agents_with_cron = [
@@ -128,7 +131,7 @@ class CronScheduler:
             path="",  # No file path for scheduled events
             event_type="scheduled",
             is_directory=False,
-            timestamp=datetime.now(),
+            timestamp=self.config.user_now(),
             frontmatter={}
         )
 

@@ -94,7 +94,8 @@ class Orchestrator:
         from .cron_scheduler import CronScheduler
         self.cron_scheduler = CronScheduler(
             self.agent_registry,
-            self.file_monitor.event_queue
+            self.file_monitor.event_queue,
+            config=self.config
         )
 
         # Initialize poller manager
@@ -572,7 +573,7 @@ class Orchestrator:
         ctx = ExecutionContext(
             agent=agent,
             trigger_data=event_data,
-            start_time=datetime.now()
+            start_time=self.config.user_now()
         )
 
         # Create QUEUED task
@@ -948,7 +949,7 @@ class Orchestrator:
                 'path': input_path,
                 'event_type': 'manual_reprocess',
                 'is_directory': False,
-                'timestamp': datetime.now(),
+                'timestamp': self.config.user_now(),
                 'frontmatter': {}
             }
 
@@ -1083,7 +1084,7 @@ class Orchestrator:
                 path=relative_path,
                 event_type="created",
                 is_directory=False,
-                timestamp=datetime.now(),
+                timestamp=self.config.user_now(),
                 frontmatter=fm
             )
         else:
@@ -1091,7 +1092,7 @@ class Orchestrator:
                 path="",  # No file path for manual triggers
                 event_type="manual",
                 is_directory=False,
-                timestamp=datetime.now(),
+                timestamp=self.config.user_now(),
                 frontmatter={}
             )
 
@@ -1132,7 +1133,12 @@ class Orchestrator:
                 return ctx
         except Exception as e:
             logger.error(f"Error executing agent {agent_abbreviation}: {e}", exc_info=True)
-            return None
+            # Surface the error message to the caller instead of silently returning None
+            from .models import ExecutionContext
+            err_ctx = ExecutionContext(agent=agent, trigger_data=event_data)
+            err_ctx.status = 'failed'
+            err_ctx.error_message = str(e)
+            return err_ctx
 
     def execute_prompt_with_session(self, prompt: str, system_prompt: str = None, system_prompt_file: Optional[Path] = None, append_system_prompt: str = None, append_system_prompt_file: Optional[Path] = None, session_id: Optional[str] = None) -> Optional[ExecutionContext]:
         """
@@ -1180,7 +1186,7 @@ class Orchestrator:
             'path': "",
             'event_type': 'onetime_prompt',
             'is_directory': False,
-            'timestamp': datetime.now(),
+            'timestamp': self.config.user_now(),
             'frontmatter': {},
             'session_id': session_id  # Add session_id to event_data
         }
