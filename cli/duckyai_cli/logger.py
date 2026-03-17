@@ -36,20 +36,17 @@ class Logger:
         """Read logs directory from duckyai.yml without importing Config.
 
         Returns the configured ``orchestrator.logs_dir`` value, or the default
-        ``~/.duckyai/vaults/{vault_id}/logs`` when the file is missing or unparseable.
+        ``<vault_root>/.duckyai/logs`` when the file is missing or unparseable.
         """
-        vault_id = "default"
-        default = os.path.join(str(Path.home()), ".duckyai", "vaults", vault_id, "logs")
+        vault_root = Path(os.getcwd())
+        default = os.path.join(str(vault_root), ".duckyai", "logs")
         try:
             import yaml
-            config_path = Path(os.getcwd()) / "duckyai.yml"
+            config_path = vault_root / "duckyai.yml"
             if config_path.exists():
                 with config_path.open("r", encoding="utf-8") as fh:
                     data = yaml.safe_load(fh) or {}
                 if isinstance(data, dict):
-                    # Read vault_id for namespacing
-                    vault_id = data.get("id", "default")
-                    default = os.path.join(str(Path.home()), ".duckyai", "vaults", vault_id, "logs")
                     orch = data.get("orchestrator", {})
                     if isinstance(orch, dict):
                         return orch.get("logs_dir", default)
@@ -102,7 +99,7 @@ class Logger:
                 return
 
             vault_id = data.get("id", "default")
-            logs_dir = os.path.join(str(Path.home()), ".duckyai", "vaults", vault_id, "logs")
+            logs_dir = os.path.join(str(vault_path), ".duckyai", "logs")
 
             orch = data.get("orchestrator", {})
             if isinstance(orch, dict) and "logs_dir" in orch:

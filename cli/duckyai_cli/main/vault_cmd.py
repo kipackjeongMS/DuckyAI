@@ -21,7 +21,7 @@ from ..vault_registry import (
     unregister_vault,
     find_vault_by_path,
 )
-from ..config import get_global_runtime_dir
+from ..config import Config
 from .orch_cmd import _read_pid
 
 logger = Logger(console_output=True)
@@ -133,14 +133,12 @@ def vault_remove(vault_id, force):
     vault_path = Path(match["path"])
     vault_name = match["name"]
     services_path = match.get("services_path")
-    runtime_dir = get_global_runtime_dir(vault_id)
 
     # Show what will be deleted
     click.echo(f"\n  Vault: {vault_name} ({vault_id})")
     click.echo(f"  Vault folder:    {vault_path}" + (" ✓" if vault_path.exists() else " (not found)"))
     if services_path:
         click.echo(f"  Services folder: {services_path}" + (" ✓" if Path(services_path).exists() else " (not found)"))
-    click.echo(f"  Runtime data:    {runtime_dir}" + (" ✓" if runtime_dir.exists() else " (not found)"))
 
     if not force:
         from .trigger_agent import _prompt_yn
@@ -160,7 +158,7 @@ def vault_remove(vault_id, force):
             pid_file = vault_path / ".orchestrator.pid"
             pid_file.unlink(missing_ok=True)
 
-    # 2. Delete vault folder
+    # 2. Delete vault folder (includes .duckyai/ runtime data)
     if vault_path.exists():
         try:
             shutil.rmtree(vault_path)
@@ -175,14 +173,6 @@ def vault_remove(vault_id, force):
             click.echo(f"  ✓ Deleted services folder: {services_path}")
         except Exception as e:
             click.echo(f"  ⚠️  Could not delete services folder: {e}", err=True)
-
-    # 4. Delete runtime data (~/.duckyai/vaults/{id}/)
-    if runtime_dir.exists():
-        try:
-            shutil.rmtree(runtime_dir)
-            click.echo(f"  ✓ Deleted runtime data: {runtime_dir}")
-        except Exception as e:
-            click.echo(f"  ⚠️  Could not delete runtime data: {e}", err=True)
 
     # 5. Remove from registry
     removed = unregister_vault(vault_id)

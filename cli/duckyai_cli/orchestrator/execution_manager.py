@@ -160,7 +160,7 @@ class ExecutionManager:
         ctx = ExecutionContext(
             agent=agent,
             trigger_data=trigger_data,
-            start_time=datetime.now(),
+            start_time=self.config.user_now(),
             session_id=session_id,
             resume_session=resume_session,
             system_prompt=agent.system_prompt,
@@ -221,7 +221,7 @@ class ExecutionManager:
             logger.error(f"Failed execution: {agent.abbreviation} (ID: {ctx.execution_id}): {e}")
 
         finally:
-            ctx.end_time = datetime.now()
+            ctx.end_time = self.config.user_now()
 
             # Update task file with final status
             if ctx.task_file:
@@ -355,30 +355,26 @@ class ExecutionManager:
 
     def _set_workiq_auth_flag(self):
         """Set a flag indicating WorkIQ needs re-authentication."""
-        from .models import AgentDefinition  # avoid circular
-        state_dir = self.vault_path / '.duckyai' if (self.vault_path / '.duckyai').exists() else Path.home() / '.duckyai'
-        # Use the global state dir
-        from ..config import get_global_runtime_dir, Config
-        config = Config()
-        vault_id = config.get("id", "default")
-        flag_dir = get_global_runtime_dir(vault_id) / "state"
+        from ..config import get_global_runtime_dir
+        vault_id = self.config.get("id", "default")
+        flag_dir = get_global_runtime_dir(vault_id, vault_path=self.vault_path) / "state"
         flag_dir.mkdir(parents=True, exist_ok=True)
         flag_file = flag_dir / "workiq-auth-expired"
         flag_file.write_text("WorkIQ permission denied detected. Re-accept EULA in interactive session.", encoding='utf-8')
         logger.warning("⚠️ WorkIQ auth expired — run `duckyai` interactively to re-authenticate", console=True)
 
     @staticmethod
-    def check_workiq_auth_flag(vault_id: str = "default") -> bool:
+    def check_workiq_auth_flag(vault_id: str = "default", vault_path: Path = None) -> bool:
         """Check if the WorkIQ auth expired flag is set."""
         from ..config import get_global_runtime_dir
-        flag_file = get_global_runtime_dir(vault_id) / "state" / "workiq-auth-expired"
+        flag_file = get_global_runtime_dir(vault_id, vault_path=vault_path) / "state" / "workiq-auth-expired"
         return flag_file.exists()
 
     @staticmethod
-    def clear_workiq_auth_flag(vault_id: str = "default"):
+    def clear_workiq_auth_flag(vault_id: str = "default", vault_path: Path = None):
         """Clear the WorkIQ auth expired flag after re-authentication."""
         from ..config import get_global_runtime_dir
-        flag_file = get_global_runtime_dir(vault_id) / "state" / "workiq-auth-expired"
+        flag_file = get_global_runtime_dir(vault_id, vault_path=vault_path) / "state" / "workiq-auth-expired"
         flag_file.unlink(missing_ok=True)
 
     def _execute_claude_code(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
@@ -613,6 +609,8 @@ class ExecutionManager:
                 if resolved_cmd:
                     cmd = [resolved_cmd] + cmd[1:]
 
+        logger.info(f"[{agent_name}] Executing in cwd={self.working_dir}")
+
         process = subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
@@ -680,8 +678,9 @@ class ExecutionManager:
 
         
         if process.returncode != 0:
-            ctx.error_message = "\n".join(logs)
-            raise RuntimeError(f"{agent_name} execution failed")
+            error_detail = "\n".join(logs) if logs else f"Process exited with code {process.returncode} (no output captured)"
+            ctx.error_message = error_detail
+            raise RuntimeError(f"{agent_name} execution failed (exit code {process.returncode}): {error_detail[:500]}")
         else:
             ctx.response = "\n".join(logs)
 
@@ -718,6 +717,54 @@ class ExecutionManager:
                 return ""
         return ""
 
+    def _read_teams_watermark(self, agent_abbr: str) -> Optional[str]:
+        """Read the lastSynced timestamp from the Teams agent's watermark file.
+
+        Returns ISO timestamp string or None if no watermark exists.
+        """
+        import json
+        from ..config import get_global_runtime_dir
+        vault_id = self.config.get("id", "default")
+        filename = "tcs-last-sync.json" if agent_abbr == "TCS" else "tms-last-sync.json"
+        state_file = get_global_runtime_dir(vault_id, vault_path=self.vault_path) / "state" / filename
+        try:
+            data = json.loads(state_file.read_text(encoding="utf-8"))
+            return data.get("lastSynced")
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
+            return None
+
+    def _resolve_teams_fetch_window(self, agent: AgentDefinition) -> Dict:
+        """Pre-resolve the fetch window for Teams agents (TCS/TMS).
+
+        Eliminates LLM decision-making by computing the exact fetch mode
+        and injecting explicit parameters. Returns a new dict of agent params
+        with fetch_mode and fetch_since set appropriately.
+
+        Priority: ignore_watermark+lookback > watermark > lookback fallback
+        """
+        params = dict(agent.agent_params) if agent.agent_params else {}
+
+        # Inject user timezone so the LLM can convert UTC timestamps to local dates
+        params['user_timezone'] = self.config.get_user_timezone()
+
+        # Mode A: Explicit ignore_watermark
+        if params.get('ignore_watermark'):
+            params['fetch_mode'] = 'lookback'
+            return params
+
+        # Mode B: Check watermark
+        watermark = self._read_teams_watermark(agent.abbreviation)
+        if watermark:
+            params['fetch_mode'] = 'watermark'
+            params['fetch_since'] = watermark
+            # Remove lookback_hours to prevent LLM confusion
+            params.pop('lookback_hours', None)
+        else:
+            # No watermark — first run, use lookback
+            params['fetch_mode'] = 'lookback'
+
+        return params
+
     def _build_prompt(self, agent: AgentDefinition, trigger_data: Dict, ctx: Optional[ExecutionContext] = None) -> str:
         """
         Build execution prompt from agent definition and trigger data.
@@ -739,8 +786,9 @@ class ExecutionManager:
         prompt_body = agent.prompt_body
 
         # Substitute date template variables ({{YYYY-MM-DD}}, {{YYYY}}, {{MM}}, {{DD}}, etc.)
-        from datetime import datetime, timedelta
-        now = datetime.now()
+        # Uses user's configured timezone from duckyai.yml (not system UTC)
+        from datetime import timedelta
+        now = self.config.user_now()
         yesterday = now - timedelta(days=1)
         date_replacements = {
             '{{YYYY-MM-DD}}': now.strftime('%Y-%m-%d'),
@@ -804,9 +852,23 @@ class ExecutionManager:
                 prompt += f"- {key}: {value}\n"
 
         # Add agent parameters if available
-        if agent.agent_params:
+        # For Teams agents (TCS/TMS), pre-resolve the fetch window
+        # so the LLM doesn't need to decide between watermark vs lookback
+        resolved_params = self._resolve_teams_fetch_window(agent) if agent.abbreviation in ('TCS', 'TMS') else agent.agent_params
+
+        # Inject user_name into agent params for all agents so they can identify
+        # the user in outputs (e.g., replace own name with "Me" in notes)
+        if resolved_params is None:
+            resolved_params = {}
+        else:
+            resolved_params = dict(resolved_params)
+        user_name = self.config.get_user_name()
+        if user_name:
+            resolved_params['user_name'] = user_name
+
+        if resolved_params:
             prompt += "\n# Agent Parameters\n"
-            for key, value in agent.agent_params.items():
+            for key, value in resolved_params.items():
                 prompt += f"- {key}: {value}\n"
 
         # Skills are auto-discovered by CLI executors from .github/skills/

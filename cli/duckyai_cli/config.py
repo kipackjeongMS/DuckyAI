@@ -15,15 +15,51 @@ CONFIG_FILENAME = "duckyai.yml"
 """Canonical vault configuration filename."""
 
 
-def get_global_runtime_dir(vault_id: Optional[str] = None) -> Path:
-    """Return the global runtime directory for a vault: ~/.duckyai/vaults/{vault_id}/.
+def get_global_runtime_dir(vault_id: Optional[str] = None, vault_path: Optional[Path] = None) -> Path:
+    """Return the runtime directory for a vault: ``<vault_path>/.duckyai/``.
 
-    If *vault_id* is ``None``, falls back to ``"default"``.
+    Falls back to legacy ``~/.duckyai/vaults/{vault_id}/`` if *vault_path* is
+    not supplied, and migrates data forward on first access.
     Creates the directory tree on first access.
     """
+    if vault_path:
+        new_dir = Path(vault_path) / ".duckyai"
+        _migrate_runtime_dir(vault_id or "default", new_dir)
+        new_dir.mkdir(parents=True, exist_ok=True)
+        return new_dir
+
+    # Legacy fallback when only vault_id is available
     base = Path.home() / ".duckyai" / "vaults" / (vault_id or "default")
     base.mkdir(parents=True, exist_ok=True)
     return base
+
+
+def _migrate_runtime_dir(vault_id: str, new_dir: Path) -> None:
+    """Migrate runtime data from ``~/.duckyai/vaults/{vault_id}/`` to vault-local ``.duckyai/``.
+
+    Copies state/, tasks/, logs/, history/ if they exist in the old location
+    and the new location doesn't already have them. The old directory is removed
+    after a successful migration.
+    """
+    import shutil
+    old_dir = Path.home() / ".duckyai" / "vaults" / vault_id
+    if not old_dir.exists():
+        return
+    if new_dir.exists() and (new_dir / ".migrated").exists():
+        return  # Already migrated
+
+    new_dir.mkdir(parents=True, exist_ok=True)
+    for subdir in ("state", "tasks", "logs", "history"):
+        old_sub = old_dir / subdir
+        new_sub = new_dir / subdir
+        if old_sub.exists() and not new_sub.exists():
+            shutil.copytree(old_sub, new_sub)
+
+    # Mark as migrated so we don't repeat
+    (new_dir / ".migrated").write_text(f"Migrated from {old_dir}", encoding="utf-8")
+
+    # Remove old directory
+    shutil.rmtree(old_dir, ignore_errors=True)
 
 
 class Config:
@@ -158,24 +194,24 @@ class Config:
     def get_orchestrator_tasks_dir(self) -> str:
         """Directory containing task tracking files.
 
-        Defaults to ``~/.duckyai/vaults/{vault_id}/tasks``.
+        Defaults to ``<vault_path>/.duckyai/tasks``.
         """
         configured = self.get("orchestrator.tasks_dir")
         if configured:
             return configured
         vault_id = self.get("id", "default")
-        return str(get_global_runtime_dir(vault_id) / "tasks")
+        return str(get_global_runtime_dir(vault_id, vault_path=self.vault_path) / "tasks")
 
     def get_orchestrator_logs_dir(self) -> str:
         """Directory where orchestrator writes execution logs.
 
-        Defaults to ``~/.duckyai/vaults/{vault_id}/logs``.
+        Defaults to ``<vault_path>/.duckyai/logs``.
         """
         configured = self.get("orchestrator.logs_dir")
         if configured:
             return configured
         vault_id = self.get("id", "default")
-        return str(get_global_runtime_dir(vault_id) / "logs")
+        return str(get_global_runtime_dir(vault_id, vault_path=self.vault_path) / "logs")
 
     def get_orchestrator_skills_dir(self) -> str:
         """Directory for orchestrator skills library."""
@@ -235,7 +271,37 @@ class Config:
         return self.get("user.primaryLanguage", "en")
 
     def get_user_timezone(self) -> str:
-        return self.get("user.timezone", "UTC")
+        """Return the user's timezone as an IANA name.
+
+        Priority: duckyai.yml ``user.timezone`` → OS local timezone via tzlocal → ``"UTC"``.
+        """
+        configured = self.get("user.timezone")
+        if configured:
+            return configured
+        try:
+            from tzlocal import get_localzone
+            return str(get_localzone())
+        except Exception:
+            return "UTC"
+
+    def user_now(self) -> 'datetime':
+        """Return the current datetime in the user's configured timezone.
+
+        Reads ``user.timezone`` from duckyai.yml (e.g. ``America/Los_Angeles``).
+        Falls back to OS local timezone, then UTC.
+        """
+        from datetime import datetime, timezone
+        try:
+            from zoneinfo import ZoneInfo
+        except ImportError:
+            from backports.zoneinfo import ZoneInfo
+
+        tz_name = self.get_user_timezone()
+        try:
+            tz = ZoneInfo(tz_name)
+        except (KeyError, Exception):
+            tz = timezone.utc
+        return datetime.now(tz)
 
     # --------------------------------------------------------------------- #
     # Services accessors

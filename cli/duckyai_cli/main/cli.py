@@ -150,7 +150,7 @@ def _enqueue_tcs_task(vault_root: Path, lookback_hours: int = None):
     trigger_data = '{\\"path\\": \\"\\", \\"event_type\\": \\"manual\\"}'
     agent_params_line = ""
     if lookback_hours is not None:
-        agent_params_line = f'\nagent_params:\n  lookback_hours: {lookback_hours}'
+        agent_params_line = f'\nagent_params:\n  lookback_hours: {lookback_hours}\n  ignore_watermark: true'
     content = f"""---
 title: "TCS - startup-{timestamp}"
 created: "{now.isoformat()}"
@@ -202,7 +202,7 @@ def _enqueue_tms_task(vault_root: Path, lookback_hours: int = None):
     trigger_data = '{\\"path\\": \\"\\", \\"event_type\\": \\"manual\\"}'
     agent_params_line = ""
     if lookback_hours is not None:
-        agent_params_line = f'\nagent_params:\n  lookback_hours: {lookback_hours}'
+        agent_params_line = f'\nagent_params:\n  lookback_hours: {lookback_hours}\n  ignore_watermark: true'
     content = f"""---
 title: "TMS - startup-{timestamp}"
 created: "{now.isoformat()}"
@@ -314,7 +314,7 @@ def ensure_init(vault_root: Path):
             with config_path.open("r", encoding="utf-8") as fh:
                 data = yaml.safe_load(fh) or {}
                 vault_id = data.get("id", "default")
-        runtime_dir = get_global_runtime_dir(vault_id)
+        runtime_dir = get_global_runtime_dir(vault_id, vault_path=vault_root)
         for subdir in ["tasks", "logs", "history"]:
             (runtime_dir / subdir).mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -672,13 +672,12 @@ def main(
         from duckyai_cli.config import Config as _Config
         _cfg = _Config(vault_path=vault_root)
         _vault_id = _cfg.get("id", "default")
-        if ExecutionManager.check_workiq_auth_flag(_vault_id):
+        if ExecutionManager.check_workiq_auth_flag(_vault_id, vault_path=vault_root):
             try:
                 click.echo("\n⚠️  WorkIQ authentication expired (permission denied on last run).")
                 from .trigger_agent import _prompt_yn
                 if _prompt_yn("Re-accept WorkIQ EULA now?"):
-                    from duckyai_cli.config import get_global_runtime_dir
-                    ExecutionManager.clear_workiq_auth_flag(_vault_id)
+                    ExecutionManager.clear_workiq_auth_flag(_vault_id, vault_path=vault_root)
                     click.echo("✓ Auth flag cleared. WorkIQ EULA will be re-accepted on next agent run.")
                     click.echo("  (If prompted by WorkIQ in your Copilot session, accept the EULA.)")
             except (EOFError, KeyboardInterrupt):
@@ -692,20 +691,8 @@ def main(
 
             # Prompt Teams sync when orchestrator was freshly started
             if freshly_started:
-                try:
-                    from .trigger_agent import _prompt_yn
-                    if _prompt_yn("\n🔄 Sync Teams chats & meetings now?"):
-                        from .trigger_agent import _prompt_teams_sync_lookback
-                        from rich.console import Console
-                        console = Console()
-
-                        override = _prompt_teams_sync_lookback(vault_root, console)
-                        lbh = override.get('lookback_hours') if override else None
-                        _enqueue_tcs_task(vault_root, lookback_hours=lbh)
-                        _enqueue_tms_task(vault_root, lookback_hours=lbh)
-                        click.echo("✓ TCS & TMS queued — orchestrator will pick them up shortly")
-                except (EOFError, KeyboardInterrupt):
-                    pass  # Non-interactive — skip prompt
+                from .vault import _prompt_teams_sync
+                _prompt_teams_sync(vault_root)
 
         # Open vault in IDE
         _open_vault_in_ide(vault_root)

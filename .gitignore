@@ -1,4 +1,6 @@
 # Personal content (never committed)
+# Vault-local runtime data (tasks, logs, state, watermarks)
+.duckyai/
 04-Periodic/**/*.md
 01-Work/**/*.md
 01-Work/**/*.md

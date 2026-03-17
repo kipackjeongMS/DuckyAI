@@ -14,7 +14,7 @@ def init_vault(force):
     \b
     Sets up:
       1. .github/skills/ (user-owned custom skills directory)
-      2. ~/.duckyai/vaults/{vault_id}/ runtime dirs (tasks, logs, history)
+      2. <vault_root>/.duckyai/ runtime dirs (tasks, logs, history, state)
 
     System files (prompts-agent, bases, templates, etc.) are
     managed by the CLI package and NOT placed in .github/.
@@ -67,7 +67,7 @@ def init_vault(force):
     else:
         click.echo("  .github/skills/ (exists, user-owned)")
 
-    # --- 2. Create ~/.duckyai/ global runtime dirs ---
+    # --- 2. Create .duckyai/ vault-local runtime dirs ---
     from duckyai_cli.config import get_global_runtime_dir, CONFIG_FILENAME
     import yaml as _yaml
     vault_id = "default"
@@ -79,14 +79,14 @@ def init_vault(force):
                 vault_id = data.get("id", "default")
         except Exception:
             pass
-    runtime_dir = get_global_runtime_dir(vault_id)
-    runtime_subdirs = ["tasks", "logs", "history"]
+    runtime_dir = get_global_runtime_dir(vault_id, vault_path=vault_root)
+    runtime_subdirs = ["tasks", "logs", "history", "state"]
     for d in runtime_subdirs:
         full = runtime_dir / d
         if not full.exists():
             full.mkdir(parents=True, exist_ok=True)
-            click.echo(f"  Created ~/.duckyai/vaults/{vault_id}/{d}/")
+            click.echo(f"  Created .duckyai/{d}/")
         else:
-            click.echo(f"  ~/.duckyai/vaults/{vault_id}/{d}/ exists")
+            click.echo(f"  .duckyai/{d}/ exists")
 
     click.echo("\nDuckyAI initialized. Run `duckyai` to start.")

@@ -53,6 +53,19 @@ function resolveTimezone(tz) {
 // Cached vault config values read from duckyai.yml
 let _cachedVaultId = null;
 let _cachedTimezone = null;
+// Diagnostic file logger for MCP tool calls
+const MCP_LOG_PATH = path.join(os.homedir(), ".duckyai", "mcp-server.log");
+async function mcpLog(message) {
+    const timestamp = new Date().toISOString();
+    const line = `[${timestamp}] ${message}\n`;
+    try {
+        await fs.appendFile(MCP_LOG_PATH, line, "utf-8");
+    }
+    catch {
+        // If we can't write the log, write to stderr as fallback
+        console.error(line.trim());
+    }
+}
 async function readVaultConfig() {
     if (_cachedVaultId !== null && _cachedTimezone !== null) {
         return { vaultId: _cachedVaultId, timezone: _cachedTimezone };
@@ -79,12 +92,41 @@ async function getUserTimezone() {
     const { timezone } = await readVaultConfig();
     return timezone;
 }
-// Helper: Resolve global runtime state directory (~/.duckyai/vaults/{vault_id}/state/)
+// Helper: Resolve vault-local runtime state directory (<vault_root>/.duckyai/state/)
+// Falls back to legacy ~/.duckyai/vaults/{vault_id}/state/ and migrates data forward.
 async function getGlobalStateDir() {
     const { vaultId } = await readVaultConfig();
-    const stateDir = path.join(os.homedir(), ".duckyai", "vaults", vaultId, "state");
-    await fs.mkdir(stateDir, { recursive: true });
-    return stateDir;
+    const newStateDir = path.join(VAULT_ROOT, ".duckyai", "state");
+    const oldStateDir = path.join(os.homedir(), ".duckyai", "vaults", vaultId, "state");
+    // Migrate from old location if needed
+    try {
+        const migrationMarker = path.join(VAULT_ROOT, ".duckyai", ".migrated");
+        await fs.access(migrationMarker);
+        // Already migrated
+    }
+    catch {
+        // Check if old state dir exists and new doesn't
+        try {
+            await fs.access(oldStateDir);
+            try {
+                await fs.access(newStateDir);
+            }
+            catch {
+                // Old exists, new doesn't — migrate
+                await fs.mkdir(newStateDir, { recursive: true });
+                const files = await fs.readdir(oldStateDir);
+                for (const file of files) {
+                    await fs.copyFile(path.join(oldStateDir, file), path.join(newStateDir, file));
+                }
+                await fs.writeFile(path.join(VAULT_ROOT, ".duckyai", ".migrated"), `Migrated from ${oldStateDir}`, "utf-8");
+            }
+        }
+        catch {
+            // Old doesn't exist — nothing to migrate
+        }
+    }
+    await fs.mkdir(newStateDir, { recursive: true });
+    return newStateDir;
 }
 // Initialize MCP Server
 const server = new McpServer({
@@ -133,6 +175,54 @@ async function findPreviousDailyNote(beforeDate) {
     }
     catch {
         return null;
+    }
+}
+// Helper: Ensure a daily note exists for a given date, creating it if needed
+async function ensureDailyNote(targetDate) {
+    const dailyPath = path.join(DAILY_DIR, `${targetDate}.md`);
+    try {
+        await fs.access(dailyPath);
+    }
+    catch {
+        // Daily note doesn't exist — create a minimal one
+        await fs.mkdir(DAILY_DIR, { recursive: true });
+        const dayHeading = await formatDateHeading(targetDate);
+        const template = `---
+created: ${targetDate}
+type: daily
+date: ${targetDate}
+tags:
+  - daily
+---
+
+# ${dayHeading}
+
+## Focus Today
+- [ ] 
+
+## Carried from yesterday
+- (none)
+
+## Meetings
+- 
+
+## Tasks Completed
+- [x] 
+
+## Notes
+
+
+## End of Day
+### What went well?
+- 
+
+### What could improve?
+- 
+
+### Carry forward to tomorrow
+- [ ] 
+`;
+        await fs.writeFile(dailyPath, template, "utf-8");
     }
 }
 // Helper: Extract carry-forward items from a daily note
@@ -510,6 +600,7 @@ server.tool("createTask", "Create a new task in 01-Work/Tasks/", {
     project: z.string().optional().describe("Related project name (without [[]])"),
     due: z.string().optional().describe("Due date in YYYY-MM-DD format"),
 }, async ({ title, description, priority, project, due }) => {
+    await mcpLog(`createTask called — title=${title}, priority=${priority}`);
     const today = await getTodayDate();
     const taskPath = path.join(TASKS_DIR, `${title}.md`);
     // Check if already exists
@@ -1142,6 +1233,7 @@ server.tool("updateTeamsChatSyncState", "Update the Teams chat sync watermark af
     lastSynced: z.string().describe("ISO timestamp of this sync (e.g., 2026-03-09T20:00:00Z)"),
     processedThreadIds: z.array(z.string()).optional().describe("Thread/conversation IDs processed in this sync"),
 }, async ({ lastSynced, processedThreadIds }) => {
+    await mcpLog(`updateTeamsChatSyncState called — lastSynced=${lastSynced}, threads=${processedThreadIds?.length ?? 0}`);
     const stateDir = await getGlobalStateDir();
     const stateFile = path.join(stateDir, "tcs-last-sync.json");
     // Read existing state to merge
@@ -1184,20 +1276,12 @@ server.tool("appendTeamsChatHighlights", "Append a Teams Chat Highlights section
         note: z.string(),
     })).optional().describe("Per-person notes to append to their contact files"),
 }, async ({ date, highlights, people, personNotes }) => {
+    await mcpLog(`appendTeamsChatHighlights called — date=${date}, highlights=${highlights?.length ?? 0} chars, people=${people?.length ?? 0}, personNotes=${personNotes?.length ?? 0}`);
     const targetDate = date || await getTodayDate();
     const dailyPath = path.join(DAILY_DIR, `${targetDate}.md`);
-    // Ensure daily note exists
-    try {
-        await fs.access(dailyPath);
-    }
-    catch {
-        return {
-            content: [{
-                    type: "text",
-                    text: `Daily note for ${targetDate} doesn't exist. Run prepareDailyNote first.`,
-                }],
-        };
-    }
+    await mcpLog(`  resolved targetDate=${targetDate}, dailyPath=${dailyPath}`);
+    // Ensure daily note exists (auto-create if missing)
+    await ensureDailyNote(targetDate);
     let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
     // Split incoming highlights into H3 blocks (### [[Person Name]])
     // Each block = one participant's chats. Dedup by checking if the H3 heading already exists.
@@ -1411,17 +1495,8 @@ server.tool("appendTeamsMeetingHighlights", "Append a Teams Meeting Highlights s
 }, async ({ date, highlights, people, personNotes }) => {
     const targetDate = date || await getTodayDate();
     const dailyPath = path.join(DAILY_DIR, `${targetDate}.md`);
-    try {
-        await fs.access(dailyPath);
-    }
-    catch {
-        return {
-            content: [{
-                    type: "text",
-                    text: `Daily note for ${targetDate} doesn't exist. Run prepareDailyNote first.`,
-                }],
-        };
-    }
+    // Ensure daily note exists (auto-create if missing)
+    await ensureDailyNote(targetDate);
     let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
     const sectionContent = `## Teams Meeting Highlights\n\n${highlights}`;
     // Dedup: split incoming into H3 blocks, only append those not already present
@@ -1522,8 +1597,10 @@ server.tool("appendTeamsMeetingHighlights", "Append a Teams Meeting Highlights s
 // Start the server
 // =============================================================================
 async function main() {
+    await mcpLog(`Server starting — VAULT_ROOT=${VAULT_ROOT}`);
     const transport = new StdioServerTransport();
     await server.connect(transport);
+    await mcpLog("Server connected on stdio");
     console.error("DuckyAI Vault MCP Server running on stdio");
 }
 main().catch(console.error);

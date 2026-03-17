@@ -40,7 +40,7 @@ def _read_watermark(vault_root: Path, agent_abbr: str) -> Optional[str]:
     config = Config(vault_path=vault_root)
     vault_id = config.get("id", "default")
     filename = "tcs-last-sync.json" if agent_abbr == "TCS" else "tms-last-sync.json"
-    state_file = get_global_runtime_dir(vault_id) / "state" / filename
+    state_file = get_global_runtime_dir(vault_id, vault_path=vault_root) / "state" / filename
     try:
         data = json.loads(state_file.read_text(encoding="utf-8"))
         return data.get("lastSynced")
@@ -180,7 +180,6 @@ def _prompt_teams_sync_lookback(vault_root: Path, console: Console, default_hour
                 except ValueError:
                     console.print(f"  [red]Enter a number[/red]")
         except (EOFError, KeyboardInterrupt):
-            hours = default_hours
             hours = default_hours
         console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
         return {'lookback_hours': hours}

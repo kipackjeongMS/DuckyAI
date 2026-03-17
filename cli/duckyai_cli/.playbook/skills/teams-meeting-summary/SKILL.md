@@ -54,7 +54,7 @@ Appends a "## Teams Meeting Highlights" section to the daily note. Idempotent �
 
 ## Watermark Tracking
 
-The sync state is stored at `~/.duckyai/vaults/{vault_id}/state/tms-last-sync.json`:
+The sync state is stored at `<vault_root>/.duckyai/state/tms-last-sync.json`:
 
 ```json
 {
@@ -68,11 +68,26 @@ The sync state is stored at `~/.duckyai/vaults/{vault_id}/state/tms-last-sync.js
 
 ## Step-by-Step Workflow
 
-### Step 1: Check Watermark
-Call `getTeamsMeetingSyncState` to get the last sync timestamp.
+### Step 1: Determine Date Range
+
+**Manual invocation**: Use the range the user explicitly specified (e.g., "January meetings", "last week", "2026-03-01 to 2026-03-07"). Parse natural language into concrete `{start}` and `{end}` timestamps.
+
+**Automated cron**: Call `getTeamsMeetingSyncState` to get the watermark.
+- If `lastSynced` is `null`, use start of current day as `{start}`.
+- Otherwise, use `lastSynced` as `{start}`.
+- Use the current UTC timestamp as `{end}`.
 
 ### Step 2: Fetch Meetings
-Query WorkIQ for meetings since the watermark. Request title, time, organizer, attendees, and any available notes/recap/transcript.
+
+Query WorkIQ for meetings within the **resolved date range**:
+
+```
+"List all Teams meetings I attended between {start} and {end} (inclusive).
+STRICT DATE FILTER: Only include meetings whose start time falls within this exact window — do NOT include anything before {start} or after {end}.
+For each meeting include: title, start/end time, organizer, attendees, and any available notes, recap, or transcript."
+```
+
+**Strictness rule**: Regardless of how `{start}` / `{end}` were determined, always enforce them. **Discard any meeting WorkIQ returns that falls outside the window** — do not trust WorkIQ to filter perfectly; validate each meeting's start time before writing to the vault.
 
 ### Step 3: Summarize Each Meeting
 For each meeting: summary, attendees, decisions, action items. Skip canceled/declined/trivial meetings.

@@ -52,7 +52,7 @@ Appends a "## Teams Chat Highlights" section to the daily note. Idempotent — u
 
 ## Watermark Tracking
 
-The sync state is stored at `~/.duckyai/vaults/{vault_id}/state/tcs-last-sync.json`:
+The sync state is stored at `<vault_root>/.duckyai/state/tcs-last-sync.json`:
 
 ```json
 {
@@ -68,32 +68,48 @@ This prevents re-processing chats across cron runs. Always call `getTeamsChatSyn
 
 ## Step-by-Step Workflow
 
-### Step 1: Check Watermark
+### Step 1: Determine Date Range
 
-Call `getTeamsChatSyncState` to get the last sync timestamp.
-- If `lastSynced` is `null`, this is the first run. Fetch chats from the last 1 hour.
-- Otherwise, fetch chats **since** `lastSynced`.
+**Manual invocation**: Use the range the user explicitly specified (e.g., "January chats", "last week", "2026-03-01 to 2026-03-07"). Parse natural language into concrete `{start}` and `{end}` timestamps.
+
+**Automated cron**: Call `getTeamsChatSyncState` to get the watermark.
+- If `lastSynced` is `null`, use start of current day as `{start}`.
+- Otherwise, use `lastSynced` as `{start}`.
+- Use the current UTC timestamp as `{end}`.
 
 ### Step 2: Fetch Chats with Source Links
 
-Query WorkIQ with an explicit request for **message-level deep links**:
+Query WorkIQ with an explicit request for **message-level deep links** and the **resolved date range**:
 
 ```
-"Summarize all Teams 1:1 and group chats I had since {lastSynced}.
+"Summarize all Teams 1:1 and group chats I had between {start} and {end} (inclusive).
+STRICT DATE FILTER: Only include messages that occurred within this exact window — do NOT include anything before {start} or after {end}.
 Only include person-to-person and group chats — do NOT include Teams channel messages.
 For EACH topic or key message, include the Teams deep link URL.
-Group by person. Include decisions and action items."
+For 1:1 chats, group highlights by person.
+For group chats, include who said what to whom for each key point.
+Include decisions and action items."
 ```
 
 **CRITICAL**: The prompt MUST ask for deep links. WorkIQ returns them as numbered references like `[1](https://teams.microsoft.com/l/message/...)`. Extract and preserve every one.
 
+**Strictness rule**: Regardless of how `{start}` / `{end}` were determined, always enforce them. **Discard any item WorkIQ returns that falls outside the window** — do not trust WorkIQ to filter perfectly; validate each item's timestamp before writing to the vault.
+
 ### Step 3: Parse Response and Extract Links
 
-From the WorkIQ response, extract:
-1. **Person name** and dates of conversation
-2. **Topics discussed** — each with its source link
-3. **Decisions made** — each with its source link
-4. **Action items** — with owner and source link
+From the WorkIQ response, identify the **chat type** first, then extract accordingly:
+
+**1:1 chats:**
+1. Person name and dates of conversation
+2. Topics discussed — each with its source link
+3. Decisions made — each with its source link
+4. Action items — with owner and source link
+
+**Group chats:**
+1. Group chat name
+2. Key highlights — each with speaker name and source link
+3. Decisions — attributed to the person who made them
+4. Action items — with owner and source link
 
 ### Step 4: Update Vault
 
@@ -109,7 +125,10 @@ Call `updateTeamsChatSyncState` with the current timestamp and any thread IDs.
 
 ### Daily Note — Teams Chat Highlights
 
-Organized by **participant** (H3), with each chat context as a sub-heading (H4):
+Use **different formats based on chat type**:
+
+- **1:1 chats** → H3 = participant name, H4 = topic/thread
+- **Group chats** → H3 = group chat name (plain text, not a wiki link), flat bullet list of highlights with speaker attribution
 
 ```markdown
 ## Teams Chat Highlights
@@ -129,13 +148,28 @@ Organized by **participant** (H3), with each chat context as a sub-heading (H4):
 #### Sprint Demo Prep
 - Moved demo to Friday [🔗](https://teams.microsoft.com/l/message/...)
 - [[Bob Jones]]: Prepare demo environment by Thursday
+
+### API Design Working Group
+- [[Alice Smith]] proposed switching to REST over gRPC [🔗](https://teams.microsoft.com/l/message/...)
+- [[Bob Jones]] raised latency concerns with REST for high-frequency calls [🔗](https://teams.microsoft.com/l/message/...)
+- [[Alice Smith]] → [[Bob Jones]]: suggested benchmarking both approaches before deciding [🔗](https://teams.microsoft.com/l/message/...)
+- ✅ Decided to run a latency benchmark by end of week [🔗](https://teams.microsoft.com/l/message/...)
+- [[Carol White]]: Write up a REST vs gRPC comparison doc by Friday
+- [[Bob Jones]]: Set up benchmark environment by Wednesday
 ```
 
 **Format rules:**
-- H3 (`###`) = Participant name as wiki link `[[Full Name]]` — exclude "Me"/the user
-- H4 (`####`) = Chat context/thread topic
-- Bullet points for key points and action items
-- Action items prefixed with `[[Name]]:` indicating who owns the action
+- **1:1 chats**:
+  - H3 (`###`) = Participant name as wiki link `[[Full Name]]` — exclude "Me"/the user
+  - H4 (`####`) = Chat context/thread topic
+  - Action items prefixed with `[[Name]]:` indicating owner
+- **Group chats**:
+  - H3 (`###`) = Group chat name (plain text — no wiki link, it's not a person)
+  - Flat bullet list — no H4 sub-headings
+  - Each bullet prefixed with `[[Speaker Name]]` to show who said it
+  - For directed remarks, use `[[Sender]] → [[Recipient]]:` format
+  - Decisions prefixed with `✅`
+  - Action items prefixed with `[[Name]]:` indicating owner
 - Deep links appended to key point bullets where available
 
 ### Person Notes
@@ -206,6 +240,8 @@ Customizable via `duckyai.yml`:
 ## Quality Checklist
 
 - [ ] Watermark checked before fetching (no re-processing)
+- [ ] WorkIQ query included explicit `{lastSynced}` to `{now}` date range
+- [ ] Each returned item's timestamp validated — items outside the window discarded
 - [ ] Every topic bullet has a Teams deep link
 - [ ] Every decision has a Teams deep link
 - [ ] Every action item has a Teams deep link

@@ -10,7 +10,6 @@ from datetime import datetime
 
 import click
 
-
 def _detect_timezone() -> str:
     """Detect local timezone name."""
     try:
@@ -28,9 +27,9 @@ def _build_cron(frequency: str, minute: int = 0, hour: int = 18, interval: int =
         if interval == 1:
             return f"{minute} * * * *"
         else:
+        return f"{minute} {hour} * * *"
             return f"{minute} */{interval} * * *"
     elif frequency == "daily":
-        return f"{minute} {hour} * * *"
     return "0 * * * *"
 
 
@@ -404,95 +403,30 @@ tags:
         duckyai_yml_path.write_text(content, encoding="utf-8")
         click.echo(f"  ✓ duckyai.yml (updated)")
     else:
-        # Generate a fresh duckyai.yml for the new vault
+        # Generate a fresh duckyai.yml from the single-source-of-truth template
         import re as _re2
+        from string import Template as _StrTemplate
+
         _vault_slug = _re2.sub(r'[^a-z0-9]+', '_', vault_name.lower()).strip('_') or "vault"
         tcs_enabled = "true" if teams_cron else "false"
         tms_enabled = "true" if teams_cron else "false"
         tcs_cron_val = teams_cron or "10 * * * *"
         tms_cron_val = teams_cron or "10 * * * *"
-        duckyai_content = f"""version: "0.0.18"
-id: {_vault_slug}
-name: {vault_name}
 
-user:
-  name: "{user_name}"
-  primaryLanguage: {primary_lang}
-  timezone: "{timezone}"
-
-services:
-  path: "../{vault_name}-Services"
-  entries: []
-
-orchestrator:
-  auto_start: true
-  prompts_dir: .github/prompts-agent
-  skills_dir: .github/skills
-  bases_dir: .github/bases
-  max_concurrent: 3
-  poll_interval: 1
-  file_extensions:
-    - .md
-    - .pdf
-    - .docx
-    - .doc
-    - .txt
-defaults:
-  executor: copilot_cli
-  timeout_minutes: 30
-  max_parallel: 3
-  task_create: true
-  task_priority: medium
-  task_archived: false
-  agent_params:
-    model: {model}
-nodes:
-  - type: agent
-    name: Enrich Ingested Content (EIC)
-    input_path: 00-Inbox
-    output_path: 03-Knowledge/Documentation
-    output_type: new_file
-    enabled: true
-  - type: agent
-    name: Extract Document to Markdown (EDM)
-    input_path: 00-Inbox
-    output_path: 03-Knowledge/Documentation
-    executor: copilot_cli
-    input_type: new_file
-    input_pattern: "*.pdf|*.docx|*.doc|*.txt"
-    trigger_exclude_pattern: "*.md"
-    output_naming: "{{title}}.md"
-    enabled: true
-  - type: agent
-    name: Generate Daily Roundup (GDR)
-    cron: 0 18 * * 1-5
-    output_path: 04-Periodic/Daily
-    requires_input_file: false
-    enabled: true
-  - type: agent
-    name: Topic Index Update (TIU)
-    cron: 30 18 * * 5
-    input_path: 04-Periodic/Daily
-    output_path: 03-Knowledge/Topics
-    requires_input_file: false
-    enabled: true
-  - type: agent
-    name: Teams Chat Summary (TCS)
-    cron: "{tcs_cron_val}"
-    output_path: 04-Periodic/Daily
-    output_type: update_file
-    executor: copilot_sdk
-    requires_input_file: false
-    enabled: {tcs_enabled}
-  - type: agent
-    name: Teams Meeting Summary (TMS)
-    cron: "{tms_cron_val}"
-    output_path: 04-Periodic/Daily
-    output_type: update_file
-    executor: copilot_sdk
-    requires_input_file: false
-    enabled: {tms_enabled}
-"""
+        template_path = Path(__file__).parent.parent / '.playbook' / 'duckyai.yml.template'
+        template_content = template_path.read_text(encoding='utf-8')
+        duckyai_content = _StrTemplate(template_content).safe_substitute(
+            vault_id=_vault_slug,
+            vault_name=vault_name,
+            user_name=user_name,
+            primary_language=primary_lang,
+            timezone=timezone,
+            model=model,
+            tcs_cron=tcs_cron_val,
+            tms_cron=tms_cron_val,
+            tcs_enabled=tcs_enabled,
+            tms_enabled=tms_enabled,
+        )
         duckyai_yml_path.write_text(duckyai_content, encoding="utf-8")
         click.echo(f"  ✓ duckyai.yml (created)")
 
