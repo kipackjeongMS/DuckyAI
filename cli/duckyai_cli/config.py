@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -18,79 +17,27 @@ CONFIG_FILENAME = "duckyai.yml"
 def get_global_runtime_dir(vault_id: Optional[str] = None, vault_path: Optional[Path] = None) -> Path:
     """Return the runtime directory for a vault: ``<vault_path>/.duckyai/``.
 
-    Falls back to legacy ``~/.duckyai/vaults/{vault_id}/`` if *vault_path* is
-    not supplied. This fallback is deprecated and will be removed; callers
-    should always pass *vault_path* so runtime state remains vault-local.
-    When *vault_path* is supplied, legacy data is migrated forward on first access.
+    Callers must provide *vault_path* so runtime state remains vault-local.
     Creates the directory tree on first access.
     """
-    if vault_path:
-        new_dir = Path(vault_path) / ".duckyai"
-        _migrate_runtime_dir(vault_id or "default", new_dir)
-        new_dir.mkdir(parents=True, exist_ok=True)
-
-        # Warn if stale legacy directory still exists after migration
-        old_dir = Path.home() / ".duckyai" / "vaults" / (vault_id or "default")
-        if old_dir.exists():
-            logger.warning(
-                f"Stale legacy runtime directory still exists: {old_dir}  "
-                f"Active runtime root is: {new_dir}  "
-                f"Delete the legacy directory manually if no other process uses it."
-            )
-
-        return new_dir
-
-    # Legacy fallback when only vault_id is available.
-    # Deprecated: runtime state should live under <vault>/.duckyai.
-    logger.warning(
-        "Deprecated runtime path fallback used without vault_path for vault "
-        f"'{vault_id or 'default'}'. This currently resolves to ~/.duckyai/vaults/"
-        f"{vault_id or 'default'}, but future versions will require vault-local "
-        "runtime paths."
-    )
-    base = Path.home() / ".duckyai" / "vaults" / (vault_id or "default")
-    base.mkdir(parents=True, exist_ok=True)
-    return base
-
-
-def _migrate_runtime_dir(vault_id: str, new_dir: Path) -> None:
-    """Migrate runtime data from ``~/.duckyai/vaults/{vault_id}/`` to vault-local ``.duckyai/``.
-
-    Copies state/, tasks/, logs/, history/ if they exist in the old location
-    and the new location doesn't already have them. The old directory is removed
-    after a successful migration.
-    """
-    import shutil
-    old_dir = Path.home() / ".duckyai" / "vaults" / vault_id
-    if not old_dir.exists():
-        return
-    if new_dir.exists() and (new_dir / ".migrated").exists():
-        return  # Already migrated
-
-    logger.info(f"Migrating runtime data: {old_dir} → {new_dir}")
-    new_dir.mkdir(parents=True, exist_ok=True)
-    migrated_count = 0
-    for subdir in ("state", "tasks", "logs", "history"):
-        old_sub = old_dir / subdir
-        new_sub = new_dir / subdir
-        if old_sub.exists() and not new_sub.exists():
-            shutil.copytree(old_sub, new_sub)
-            migrated_count += 1
-            logger.info(f"  Migrated {subdir}/")
-
-    # Mark as migrated so we don't repeat
-    (new_dir / ".migrated").write_text(f"Migrated from {old_dir}", encoding="utf-8")
-    logger.info(f"Migration complete: {migrated_count} directories copied")
-
-    # Remove old directory with explicit error handling
-    try:
-        shutil.rmtree(old_dir)
-        logger.info(f"Removed legacy directory: {old_dir}")
-    except OSError as exc:
-        logger.warning(
-            f"Could not remove legacy runtime directory {old_dir}: {exc}  "
-            f"It may be locked by another process. Please remove it manually."
+    if vault_path is None:
+        raise ValueError(
+            "vault_path is required when resolving the runtime directory. "
+            "Legacy ~/.duckyai/vaults fallback has been removed."
         )
+
+    new_dir = Path(vault_path) / ".duckyai"
+    new_dir.mkdir(parents=True, exist_ok=True)
+
+    old_dir = Path.home() / ".duckyai" / "vaults" / (vault_id or "default")
+    if old_dir.exists():
+        logger.warning(
+            f"Stale legacy runtime directory still exists: {old_dir}  "
+            f"Active runtime root is: {new_dir}  "
+            f"Delete the legacy directory manually if no other process uses it."
+        )
+
+    return new_dir
 
 
 class Config:

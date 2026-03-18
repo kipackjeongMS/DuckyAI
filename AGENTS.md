@@ -27,7 +27,7 @@ NEVER proactively create documentation or README files.
 - Prompts can be found in `.github/prompts-agent`
 - Skills can be found in `.github/skills`
 - Templates (of md docs) in `.github/templates`
-- Knowledge Tasks in `~/.duckyai/vaults/{id}/tasks` (only when requested)
+- Knowledge Tasks in `<vault>/.duckyai/tasks` (only when requested)
 - Each command can be called using abbreviations
 - Check this first for new command (especially if it's abbreviations)
 

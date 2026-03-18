@@ -1085,7 +1085,7 @@ class ExecutionManager:
         Prepare log file path for execution.
 
         Logs are organized per-agent in subdirectories:
-          ~/.duckyai/vaults/{vault_id}/logs/{AGENT_ABBR}/{timestamp}-{agent}.log
+          <vault>/.duckyai/logs/{AGENT_ABBR}/{timestamp}-{agent}.log
 
         Args:
             agent: Agent definition

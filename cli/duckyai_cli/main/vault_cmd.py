@@ -113,10 +113,9 @@ def vault_remove(vault_id, force):
     \b
     This will:
       1. Stop the orchestrator if running
-      2. Delete the vault folder (e.g., ~/MyVault/)
+      2. Delete the vault folder (e.g., ~/MyVault/, including <vault>/.duckyai/)
       3. Delete the services folder (e.g., ~/MyVault-Services/)
-      4. Delete runtime data (~/.duckyai/vaults/{id}/)
-      5. Remove from vault registry
+      4. Remove from vault registry
 
     \b
     Examples:

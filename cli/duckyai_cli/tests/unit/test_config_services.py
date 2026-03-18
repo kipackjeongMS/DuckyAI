@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from duckyai_cli.config import Config
+from duckyai_cli.config import Config, get_global_runtime_dir
 
 
 class TestConfigServicesAccessors:
@@ -72,6 +72,11 @@ class TestConfigServicesAccessors:
         assert Path(result).resolve() == (tmp_path / "custom-services").resolve()
 
 
+def test_get_global_runtime_dir_requires_vault_path():
+    with pytest.raises(ValueError, match="vault_path is required"):
+        get_global_runtime_dir("v1")
+
+
 class TestWatermarkHelpers:
     """Tests for _read_watermark and _format_watermark_age from trigger_agent.py."""
 
@@ -82,7 +87,7 @@ class TestWatermarkHelpers:
         vault.mkdir()
         (vault / "duckyai.yml").write_text('id: wv_test\n', encoding="utf-8")
 
-        state_dir = tmp_path / ".duckyai" / "vaults" / "wv_test" / "state"
+        state_dir = vault / ".duckyai" / "state"
         state_dir.mkdir(parents=True)
         watermark = {
             "lastSynced": "2026-03-13T18:00:00Z",
@@ -134,8 +139,8 @@ class TestWatermarkHelpers:
         from duckyai_cli.main.trigger_agent import _read_watermark
 
         vault, state_dir = vault_with_watermark
-        # get_global_runtime_dir returns ~/.duckyai/vaults/{id}/, and _read_watermark appends "state/"
-        vault_runtime_dir = state_dir.parent  # state_dir is .../state, parent is .../wv_test
+        # get_global_runtime_dir returns <vault>/.duckyai/, and _read_watermark appends "state/"
+        vault_runtime_dir = state_dir.parent
         with patch("duckyai_cli.main.trigger_agent.get_global_runtime_dir") as mock_grd:
             mock_grd.return_value = vault_runtime_dir
             result = _read_watermark(vault, "TCS")

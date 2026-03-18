@@ -96,46 +96,20 @@ async function getUserTimezone() {
     return timezone;
 }
 // Helper: Resolve vault-local runtime state directory (<vault_root>/.duckyai/state/).
-// Legacy ~/.duckyai/vaults/{vault_id}/state/ migration is temporary and will be removed.
 async function getGlobalStateDir() {
     const { vaultId } = await readVaultConfig();
-    const newStateDir = path.join(VAULT_ROOT, ".duckyai", "state");
+    const stateDir = path.join(VAULT_ROOT, ".duckyai", "state");
     const oldStateDir = path.join(os.homedir(), ".duckyai", "vaults", vaultId, "state");
-    // Migrate from old location if needed
     try {
-        const migrationMarker = path.join(VAULT_ROOT, ".duckyai", ".migrated");
-        await fs.access(migrationMarker);
-        // Already migrated
+        await fs.access(oldStateDir);
+        await mcpLog(`STALE: legacy runtime state still exists at ${oldStateDir}. ` +
+            `MCP now uses vault-local state only under ${stateDir}.`);
     }
     catch {
-        // Check if old state dir exists and new doesn't
-        try {
-            await fs.access(oldStateDir);
-            await mcpLog(`DEPRECATION: legacy runtime state detected at ${oldStateDir}. ` +
-                `Active runtime should be vault-local under ${newStateDir}.`);
-            try {
-                await fs.access(newStateDir);
-                await mcpLog(`DEPRECATION: both legacy and vault-local runtime state exist for ${vaultId}. ` +
-                    `Legacy path should be removed after migration validation.`);
-            }
-            catch {
-                // Old exists, new doesn't — migrate
-                await fs.mkdir(newStateDir, { recursive: true });
-                const files = await fs.readdir(oldStateDir);
-                for (const file of files) {
-                    await fs.copyFile(path.join(oldStateDir, file), path.join(newStateDir, file));
-                }
-                await mcpLog(`DEPRECATION: migrated legacy runtime state from ${oldStateDir} to ${newStateDir}. ` +
-                    `Legacy fallback will be removed in a future release.`);
-                await fs.writeFile(path.join(VAULT_ROOT, ".duckyai", ".migrated"), `Migrated from ${oldStateDir}`, "utf-8");
-            }
-        }
-        catch {
-            // Old doesn't exist — nothing to migrate
-        }
+        // Legacy path absent — nothing to report.
     }
-    await fs.mkdir(newStateDir, { recursive: true });
-    return newStateDir;
+    await fs.mkdir(stateDir, { recursive: true });
+    return stateDir;
 }
 // Initialize MCP Server
 const server = new McpServer({
