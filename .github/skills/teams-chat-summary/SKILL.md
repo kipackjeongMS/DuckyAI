@@ -134,20 +134,19 @@ Use **different formats based on chat type**:
 ## Teams Chat Highlights
 
 ### [[Alice Smith]]
-#### Project Standup
-- Discussed sprint priorities and auth module ownership [🔗](https://teams.microsoft.com/l/message/...)
-- Agreed on JWT over session tokens [🔗](https://teams.microsoft.com/l/message/...)
-- [[Alice Smith]]: Handle auth module implementation
-- [[Alice Smith]]: Share design doc by Wednesday
-
-#### Code Review Follow-up
-- Reviewed PR #142 feedback [🔗](https://teams.microsoft.com/l/message/...)
-- [[Alice Smith]]: Address review comments and re-submit
+- [Project Standup](https://teams.microsoft.com/l/message/...)
+  - Discussed sprint priorities and auth module ownership
+  - Agreed on JWT over session tokens
+  - [[Alice Smith]]: Handle auth module implementation
+  - [[Alice Smith]]: Share design doc by Wednesday
+- [Code Review Follow-up](https://teams.microsoft.com/l/message/...)
+  - Reviewed PR #142 feedback
+  - [[Alice Smith]]: Address review comments and re-submit
 
 ### [[Bob Jones]]
-#### Sprint Demo Prep
-- Moved demo to Friday [🔗](https://teams.microsoft.com/l/message/...)
-- [[Bob Jones]]: Prepare demo environment by Thursday
+- [Sprint Demo Prep](https://teams.microsoft.com/l/message/...)
+  - Moved demo to Friday
+  - [[Bob Jones]]: Prepare demo environment by Thursday
 
 ### API Design Working Group
 - [[Alice Smith]] proposed switching to REST over gRPC [🔗](https://teams.microsoft.com/l/message/...)
@@ -161,11 +160,13 @@ Use **different formats based on chat type**:
 **Format rules:**
 - **1:1 chats**:
   - H3 (`###`) = Participant name as wiki link `[[Full Name]]` — exclude "Me"/the user
-  - H4 (`####`) = Chat context/thread topic
+  - Top-level bullet (`- `) = Chat context/thread topic as a markdown link `- [Topic](teams-url)`
+  - Indented bullets (`  - `) = Key points and action items under that topic
   - Action items prefixed with `[[Name]]:` indicating owner
+  - No H4 headings — use nested bullets only
 - **Group chats**:
   - H3 (`###`) = Group chat name (plain text — no wiki link, it's not a person)
-  - Flat bullet list — no H4 sub-headings
+  - Flat bullet list — no nested bullets needed
   - Each bullet prefixed with `[[Speaker Name]]` to show who said it
   - For directed remarks, use `[[Sender]] → [[Recipient]]:` format
   - Decisions prefixed with `✅`

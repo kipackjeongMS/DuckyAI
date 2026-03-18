@@ -1560,32 +1560,44 @@ server.tool(
         // Extract the H3 line for matching
         const h3Match = block.match(/^### .+/);
         if (h3Match) {
-          // Check H4 sub-headings within this block — only add those not already present
           const h3Line = h3Match[0];
-          const h4Sections = block.split(/(?=^#### )/m);
-          const h3Header = h4Sections.shift() || ""; // The H3 line + any content before first H4
-          const newH4s: string[] = [];
-          for (const h4 of h4Sections) {
-            const h4Title = h4.match(/^#### .+/)?.[0] || "";
-            // Strip markdown link for comparison: "#### [Topic](url)" → "Topic"
-            const h4Plain = h4Title.replace(/^####\s*\[([^\]]+)\].*/, "$1").replace(/^####\s*/, "").trim();
-            if (h4Plain && !existingLower.includes(h4Plain.toLowerCase())) {
-              newH4s.push(h4.trimEnd());
+          // Split into topic groups: top-level bullets (- [Topic](url) or - Topic)
+          // and their indented children (  - detail)
+          const lines = block.split("\n");
+          const h3HeaderLine = lines.shift() || "";
+          const topicGroups: string[][] = [];
+          let currentGroup: string[] = [];
+
+          for (const line of lines) {
+            if (line.match(/^- /) && !line.match(/^  /)) {
+              // New top-level bullet = new topic group
+              if (currentGroup.length > 0) topicGroups.push(currentGroup);
+              currentGroup = [line];
+            } else if (line.trim()) {
+              currentGroup.push(line);
             }
           }
-          if (newH4s.length > 0) {
-            // Check if H3 participant already exists (case-insensitive)
-            if (existingLower.includes(h3Line.trim().toLowerCase())) {
-              // Participant exists — just add the new H4 sections
-              newBlocks.push(newH4s.join("\n\n"));
-            } else {
-              // New participant — add full block with only new H4s
-              newBlocks.push(h3Header.trimEnd() + "\n" + newH4s.join("\n\n"));
+          if (currentGroup.length > 0) topicGroups.push(currentGroup);
+
+          // Filter out topic groups already in existing content
+          const newTopics: string[][] = [];
+          for (const group of topicGroups) {
+            const topicLine = group[0] || "";
+            // Extract plain text for comparison: "- [Topic](url)" → "Topic"
+            const topicPlain = topicLine.replace(/^-\s*\[([^\]]+)\].*/, "$1").replace(/^-\s*/, "").trim();
+            if (topicPlain && !existingLower.includes(topicPlain.toLowerCase())) {
+              newTopics.push(group);
             }
-          } else if (!h3Match && block.trim()) {
-            // No H4s, just raw content — check if it exists
-            if (!existingLower.includes(block.trim().toLowerCase())) {
-              newBlocks.push(block.trimEnd());
+          }
+
+          if (newTopics.length > 0) {
+            const newContent = newTopics.map(g => g.join("\n")).join("\n");
+            if (existingLower.includes(h3Line.trim().toLowerCase())) {
+              // Participant exists — just add the new topic groups
+              newBlocks.push(newContent);
+            } else {
+              // New participant — add full block
+              newBlocks.push(h3HeaderLine + "\n" + newContent);
             }
           }
         } else if (block.trim() && !existingLower.includes(block.trim().toLowerCase())) {

@@ -85,35 +85,35 @@ This helps diagnose if WorkIQ is returning incomplete data. Format:
 Call `appendTeamsChatHighlights` with:
 
 - `date`: The **local date** the chats occurred (YYYY-MM-DD), converted from UTC to `user_timezone`. Do NOT use UTC date or today's date.
-- `highlights`: Formatted markdown **organized by participant** (H3), with each chat context as a sub-heading (H4):
+- `highlights`: Formatted markdown **organized by participant** (H3), with each chat context as a nested bullet list:
 
 ```markdown
 ### [[Abraham Lincoln]]
-#### [Project Alpha Standup](https://teams.microsoft.com/l/message/...)
-- Discussed sprint priorities and timeline adjustments
-- Agreed to move demo to Friday
-- [[Abraham Lincoln]]: Review auth module PR by Thursday
-- [[Abraham Lincoln]]: Share updated timeline with stakeholders
-
-#### [Budget Review Follow-up](https://teams.microsoft.com/l/message/...)
-- Confirmed Q3 budget allocation for infrastructure
-- [[Abraham Lincoln]]: Send revised cost breakdown by EOD
+- [Project Alpha Standup](https://teams.microsoft.com/l/message/...)
+  - Discussed sprint priorities and timeline adjustments
+  - Agreed to move demo to Friday
+  - [[Abraham Lincoln]]: Review auth module PR by Thursday
+  - [[Abraham Lincoln]]: Share updated timeline with stakeholders
+- [Budget Review Follow-up](https://teams.microsoft.com/l/message/...)
+  - Confirmed Q3 budget allocation for infrastructure
+  - [[Abraham Lincoln]]: Send revised cost breakdown by EOD
 
 ### [[George Washington]]
-#### [Deployment Hotfix](https://teams.microsoft.com/l/message/...)
-- Urgent fix needed for login redirect issue
-- Rolled back to v2.3.1 as interim measure
-- [[George Washington]]: Deploy hotfix to staging by 3pm
-- [[George Washington]]: Update incident report in wiki
+- [Deployment Hotfix](https://teams.microsoft.com/l/message/...)
+  - Urgent fix needed for login redirect issue
+  - Rolled back to v2.3.1 as interim measure
+  - [[George Washington]]: Deploy hotfix to staging by 3pm
+  - [[George Washington]]: Update incident report in wiki
 ```
 
 **Format rules:**
 - H3 (`###`) = Participant name as wiki link `[[Full Name]]` — exclude "Me"/the user
-- H4 (`####`) = Chat context/thread topic **as a markdown link** to the Teams deep link URL: `#### [Topic](teams-url)`
+- Top-level bullet (`- `) = Chat context/thread topic **as a markdown link** to the Teams deep link URL: `- [Topic](teams-url)`
   - If WorkIQ returns a deep link URL for the message/thread, use it
-  - If no URL is available, fall back to plain text: `#### Topic`
-- Bullet points for key points and action items
+  - If no URL is available, fall back to plain text: `- Topic`
+- Indented bullets (`  - `) = Key points and action items under that topic
 - Action items prefixed with `[[Name]]:` indicating who owns the action
+- No H4 headings — use nested bullets only
 - No "Summary" or "Participants" labels — keep it clean
 
 - `people`: Array of all person names mentioned
