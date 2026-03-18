@@ -157,6 +157,21 @@ class ExecutionManager:
         Returns:
             ExecutionContext with execution results
         """
+        # Cross-process lock — prevents same agent running from multiple terminals
+        from .agent_lock import acquire_agent_lock, release_agent_lock
+        if not acquire_agent_lock(self.vault_path, agent.abbreviation):
+            ctx = ExecutionContext(
+                agent=agent,
+                trigger_data=trigger_data,
+                start_time=self.config.user_now(),
+                session_id=session_id,
+                resume_session=resume_session,
+            )
+            ctx.status = 'skipped'
+            ctx.error_message = f"Agent {agent.abbreviation} is already running in another process"
+            logger.warning(ctx.error_message, console=True)
+            return ctx
+
         ctx = ExecutionContext(
             agent=agent,
             trigger_data=trigger_data,
@@ -350,6 +365,9 @@ class ExecutionManager:
 
             with self._executions_lock:
                 del self._running_executions[ctx.execution_id]
+
+            # Release cross-process lock
+            release_agent_lock(self.vault_path, agent.abbreviation)
 
         return ctx
 
