@@ -26,6 +26,16 @@ def get_global_runtime_dir(vault_id: Optional[str] = None, vault_path: Optional[
         new_dir = Path(vault_path) / ".duckyai"
         _migrate_runtime_dir(vault_id or "default", new_dir)
         new_dir.mkdir(parents=True, exist_ok=True)
+
+        # Warn if stale legacy directory still exists after migration
+        old_dir = Path.home() / ".duckyai" / "vaults" / (vault_id or "default")
+        if old_dir.exists():
+            logger.warning(
+                f"Stale legacy runtime directory still exists: {old_dir}  "
+                f"Active runtime root is: {new_dir}  "
+                f"Delete the legacy directory manually if no other process uses it."
+            )
+
         return new_dir
 
     # Legacy fallback when only vault_id is available
@@ -48,18 +58,30 @@ def _migrate_runtime_dir(vault_id: str, new_dir: Path) -> None:
     if new_dir.exists() and (new_dir / ".migrated").exists():
         return  # Already migrated
 
+    logger.info(f"Migrating runtime data: {old_dir} → {new_dir}")
     new_dir.mkdir(parents=True, exist_ok=True)
+    migrated_count = 0
     for subdir in ("state", "tasks", "logs", "history"):
         old_sub = old_dir / subdir
         new_sub = new_dir / subdir
         if old_sub.exists() and not new_sub.exists():
             shutil.copytree(old_sub, new_sub)
+            migrated_count += 1
+            logger.info(f"  Migrated {subdir}/")
 
     # Mark as migrated so we don't repeat
     (new_dir / ".migrated").write_text(f"Migrated from {old_dir}", encoding="utf-8")
+    logger.info(f"Migration complete: {migrated_count} directories copied")
 
-    # Remove old directory
-    shutil.rmtree(old_dir, ignore_errors=True)
+    # Remove old directory with explicit error handling
+    try:
+        shutil.rmtree(old_dir)
+        logger.info(f"Removed legacy directory: {old_dir}")
+    except OSError as exc:
+        logger.warning(
+            f"Could not remove legacy runtime directory {old_dir}: {exc}  "
+            f"It may be locked by another process. Please remove it manually."
+        )
 
 
 class Config:

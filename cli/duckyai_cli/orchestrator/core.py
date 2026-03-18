@@ -86,6 +86,8 @@ class Orchestrator:
             mcp_config=mcp_config,
             claude_settings=claude_settings
         )
+        # Wire up slot-freed callback so queued tasks drain immediately
+        self.execution_manager._on_slot_freed = self._process_queued_tasks
         # Get file_extensions from orchestrator_settings (default to ['.md'] if not specified)
         file_extensions = self.agent_registry.orchestrator_settings.get('file_extensions', ['.md'])
         self.file_monitor = FileSystemMonitor(self.vault_path, self.agent_registry, file_extensions=file_extensions)
@@ -117,6 +119,10 @@ class Orchestrator:
         self._swap_in_progress = False
         self._reload_in_progress = False  # Flag to prevent concurrent reload starts
         self._reload_start_lock = threading.Lock()  # Lock for atomic reload start check
+
+        # Guard _process_queued_tasks against concurrent invocations
+        # (event loop + slot-freed callback can race)
+        self._queue_processing_lock = threading.Lock()
 
         logger.info(f"Orchestrator initialized for vault: {self.vault_path}")
         logger.info(f"Loaded {len(self.agent_registry.agents)} agents")
@@ -150,6 +156,12 @@ class Orchestrator:
         if self._running:
             logger.warning("Orchestrator already running")
             return
+
+        # Log the resolved runtime root for easier debugging
+        from ..config import get_global_runtime_dir
+        vault_id = self.config.get("id", "default")
+        runtime_root = get_global_runtime_dir(vault_id, vault_path=self.vault_path)
+        logger.info(f"Runtime root: {runtime_root}")
 
         logger.info("Starting orchestrator...")
 
@@ -629,7 +641,20 @@ class Orchestrator:
 
         Checks task files for QUEUED status and executes them when slots free up.
         Only processes one task per iteration to avoid thundering herd.
+
+        Thread-safe: guarded by _queue_processing_lock so concurrent calls
+        from the event loop and slot-freed callbacks don't race.
         """
+        if not self._queue_processing_lock.acquire(blocking=False):
+            return  # Another thread is already draining the queue
+
+        try:
+            self._process_queued_tasks_inner()
+        finally:
+            self._queue_processing_lock.release()
+
+    def _process_queued_tasks_inner(self):
+        """Inner implementation of queue processing (caller holds lock)."""
         import json
         from ..markdown_utils import read_frontmatter
 

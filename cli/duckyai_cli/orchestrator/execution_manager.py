@@ -69,6 +69,12 @@ class ExecutionManager:
         self._agent_counts: Dict[str, int] = {}
         self._agent_lock = threading.Lock()
 
+        # Callback invoked (in a daemon thread) after an execution slot is freed.
+        # Orchestrator registers _process_queued_tasks here so queued tasks
+        # are drained immediately when capacity becomes available — not only
+        # when the next file-system or cron event arrives.
+        self._on_slot_freed: Optional[callable] = None
+
         # Task file manager
         from .task_manager import TaskFileManager
         self.task_manager = TaskFileManager(vault_path, config=self.config, orchestrator_settings=orchestrator_settings)
@@ -368,6 +374,19 @@ class ExecutionManager:
 
             # Release cross-process lock
             release_agent_lock(self.vault_path, agent.abbreviation)
+
+            # Notify orchestrator that a slot freed up so queued tasks
+            # can be drained immediately (runs in a short-lived daemon
+            # thread to avoid blocking this execution thread).
+            if self._on_slot_freed:
+                try:
+                    threading.Thread(
+                        target=self._on_slot_freed,
+                        daemon=True,
+                        name=f"drain-queue-{agent.abbreviation}",
+                    ).start()
+                except Exception:
+                    pass  # Best-effort; event loop will also drain on next tick
 
         return ctx
 
