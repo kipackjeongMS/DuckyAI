@@ -86,6 +86,8 @@ Call `appendTeamsMeetingHighlights` with:
 
 Each meeting entry should be concise (summary only) with an Obsidian link to the full meeting note in `02-People/Meetings/`.
 
+⚠️ **Do NOT include attendees in the daily note highlights.** No `**Attendees**:` line. Attendee lists belong ONLY in the per-meeting note (Step 4a). The daily note is a lightweight summary — keep it short.
+
 - `people`: Array of all person names mentioned
 - `personNotes`: Array of `{ name, note }` for each person with a meaningful interaction
 

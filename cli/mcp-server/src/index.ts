@@ -212,13 +212,19 @@ tags:
 ## Carried from yesterday
 - (none)
 
-## Meetings
-- 
+## Tasks
+- [ ] 
 
 ## Tasks Completed
-- [x] 
+- [ ] 
 
 ## Notes
+
+
+## Teams Meeting Highlights
+
+
+## Teams Chat Highlights
 
 
 ## End of Day
@@ -242,8 +248,8 @@ async function extractCarryForward(filePath: string): Promise<string[]> {
     const content = await fs.readFile(filePath, "utf-8");
     const uncompleted: string[] = [];
 
-    // Extract from Focus Today section (includes Primary and Other Tasks subsections)
-    const focusMatch = content.match(/## Focus Today\n([\s\S]*?)(?=\n## Carried from yesterday|\n## Meetings)/);
+    // Extract from Focus Today section
+    const focusMatch = content.match(/## Focus Today\n([\s\S]*?)(?=\n## Carried from yesterday|\n## Tasks)/);
     if (focusMatch) {
       const lines = focusMatch[1].split("\n");
       for (const line of lines) {
@@ -477,11 +483,11 @@ server.tool(
     const carrySection =
       carryForward.length > 0 ? carryForward.join("\n") : "- (none)";
 
-    // Template matches Templates/Daily Note.md structure
+    // Template matches .playbook/templates/Daily Note Template.md structure
     const template = `---
-created: ${targetDate}
+created: "${targetDate}"
 type: daily
-date: ${targetDate}
+date: "${targetDate}"
 tags:
   - daily
 ---
@@ -489,29 +495,35 @@ tags:
 # ${dayHeading}
 
 ## Focus Today
-- [ ] 
+- [ ]
 
 ## Carried from yesterday
 ${carrySection}
 
-## Meetings
-- 
+## Tasks
+- [ ]
 
 ## Tasks Completed
-- [x] 
+- [ ]
 
 ## Notes
 
 
+## Teams Meeting Highlights
+
+
+## Teams Chat Highlights
+
+
 ## End of Day
 ### What went well?
-- 
+-
 
 ### What could improve?
-- 
+-
 
 ### Carry forward to tomorrow
-- [ ] 
+- [ ]
 `;
 
     await fs.writeFile(targetPath, template, "utf-8");
