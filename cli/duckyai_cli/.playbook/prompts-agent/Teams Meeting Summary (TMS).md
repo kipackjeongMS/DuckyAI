@@ -93,11 +93,18 @@ Each meeting entry should be concise (summary only) with an Obsidian link to the
 
 #### 4c. Create Tasks (if action items found)
 
-For each action item identified that are not trivial and assigned to the user, call `createTask` with:
-- `title`: Descriptive task title
-- `description`: Context from the meeting
-- `priority`: P2 (default) or P1 if urgent language is used
-- `project`: Related project if identifiable from context
+For each action item identified that are not trivial and assigned to the user, determine the type:
+
+**PR review tasks** (e.g., "review PR #1234", "check PR", "approve PR"):
+- Call `logPRReview` with `person` (PR author), `prNumber`, `prUrl`, `description`, and `action: "reviewed"` (or `"commented"`)
+- This creates a task file in `01-Work/PRReviews/` and logs to the daily note automatically
+
+**All other tasks**:
+- Call `createTask` with:
+  - `title`: Descriptive task title
+  - `description`: Context from the meeting
+  - `priority`: P2 (default) or P1 if urgent language is used
+  - `project`: Related project if identifiable from context
 
 #### 4c. Create Meeting Note (if substantial content)
 

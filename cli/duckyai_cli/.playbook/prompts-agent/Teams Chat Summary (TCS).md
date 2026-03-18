@@ -121,11 +121,18 @@ Call `appendTeamsChatHighlights` with:
 
 #### 4b. Create Tasks (if action items found)
 
-For each action item identified, call `createTask` with:
-- `title`: Descriptive task title
-- `description`: Context from the chat thread
-- `priority`: P2 (default) or P1 if urgent language is used
-- `project`: Related project if identifiable from context
+For each action item identified, determine the type:
+
+**PR review tasks** (e.g., "review PR #1234", "check PR", "approve PR"):
+- Call `logPRReview` with `person` (PR author), `prNumber`, `prUrl`, `description`, and `action: "reviewed"` (or `"commented"`)
+- This creates a task file in `01-Work/PRReviews/` and logs to the daily note automatically
+
+**All other tasks**:
+- Call `createTask` with:
+  - `title`: Descriptive task title
+  - `description`: Context from the chat thread
+  - `priority`: P2 (default) or P1 if urgent language is used
+  - `project`: Related project if identifiable from context
 
 ### Step 5: Update watermark
 
