@@ -687,21 +687,33 @@ class ExecutionManager:
 
     def _load_system_prompt(self) -> str:
         """
-        Load system prompt from playbook's prompts-agent/System Prompt.md.
+        Load system prompt from vault's .github/copilot-instructions.md.
         
-        Checks the package .playbook/ first, then falls back to vault-relative prompts_dir.
+        This is the single source of truth for global agent rules, consumed by both
+        interactive Copilot CLI and orchestrator agents.
+
+        Falls back to .playbook/prompts-agent/System Prompt.md if copilot-instructions.md
+        doesn't exist (legacy support).
 
         Returns:
             System prompt content or empty string if not found
         """
         from ..markdown_utils import extract_body
 
-        # Check playbook (system) path first
+        # Primary: vault's .github/copilot-instructions.md (consumed by both interactive + orchestrator)
+        copilot_instructions = self.vault_path / '.github' / 'copilot-instructions.md'
+        if copilot_instructions.exists():
+            try:
+                content = copilot_instructions.read_text(encoding='utf-8')
+                return extract_body(content)
+            except Exception as e:
+                logger.warning(f"Failed to load copilot-instructions.md: {e}")
+
+        # Legacy fallback: .playbook/prompts-agent/System Prompt.md
         playbook_dir = Path(__file__).parent.parent / '.playbook' / 'prompts-agent'
         system_prompt_path = playbook_dir / "System Prompt.md"
 
         if not system_prompt_path.exists():
-            # Fallback to vault-relative prompts_dir
             if self.orchestrator_settings and 'prompts_dir' in self.orchestrator_settings:
                 prompts_dir = self.orchestrator_settings['prompts_dir']
             else:

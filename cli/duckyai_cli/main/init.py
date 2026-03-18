@@ -54,10 +54,15 @@ def init_vault(force):
                 link.unlink()
             click.echo(f"    Removed legacy {subdir}/ junction")
 
-    # Clean up legacy copied file
+    # Ensure .github/copilot-instructions.md exists (global rules for both interactive + orchestrator)
     ci_file = github_dir / 'copilot-instructions.md'
-    if ci_file.is_symlink() or (ci_file.exists() and not ci_file.is_dir()):
-        ci_file.unlink()
+    playbook_ci = Path(__file__).parent.parent / '.playbook' / 'copilot-instructions.md'
+    if playbook_ci.exists() and not ci_file.exists():
+        import shutil
+        shutil.copy2(str(playbook_ci), str(ci_file))
+        click.echo("  .github/copilot-instructions.md (created from playbook)")
+    elif ci_file.exists():
+        click.echo("  .github/copilot-instructions.md (exists, user-owned)")
 
     # Ensure .github/skills/ exists (user-owned)
     skills_dir = github_dir / 'skills'

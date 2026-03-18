@@ -15,6 +15,11 @@ const MEETINGS_DIR = path.join(VAULT_ROOT, "02-People/Meetings");
 const ONE_ON_ONES_DIR = path.join(VAULT_ROOT, "02-People/1-on-1s");
 const ARCHIVE_DIR = path.join(VAULT_ROOT, "05-Archive");
 const TEMPLATES_DIR = path.join(VAULT_ROOT, "Templates");
+// Playbook templates — single source of truth for DuckyAI template files
+const PLAYBOOK_TEMPLATES_DIR = path.resolve(
+  path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')),
+  '..', '..', 'duckyai_cli', '.playbook', 'templates'
+);
 
 // Common timezone abbreviation → IANA name mapping
 const TIMEZONE_MAP: Record<string, string> = {
@@ -193,13 +198,36 @@ async function ensureDailyNote(targetDate: string): Promise<void> {
   try {
     await fs.access(dailyPath);
   } catch {
-    // Daily note doesn't exist — create a minimal one
+    // Daily note doesn't exist — create from template
     await fs.mkdir(DAILY_DIR, { recursive: true });
-    const dayHeading = await formatDateHeading(targetDate);
-    const template = `---
-created: ${targetDate}
+    const content = await buildDailyNoteFromTemplate(targetDate, "- (none)");
+    await fs.writeFile(dailyPath, content, "utf-8");
+  }
+}
+
+// Helper: Build daily note content from the playbook template file (single source of truth)
+async function buildDailyNoteFromTemplate(targetDate: string, carrySection: string): Promise<string> {
+  const dayHeading = await formatDateHeading(targetDate);
+  const templatePath = path.join(PLAYBOOK_TEMPLATES_DIR, "Daily Note Template.md");
+
+  try {
+    let template = await fs.readFile(templatePath, "utf-8");
+    template = normalizeLineEndings(template);
+
+    // Replace placeholders
+    template = template.replace(/\{\{date\}\}/g, targetDate);
+    template = template.replace(/\{\{dayHeading\}\}/g, dayHeading);
+
+    // Replace the default carry section with actual carry-forward items
+    template = template.replace(/## Carried from yesterday\n- \(none\)/, `## Carried from yesterday\n${carrySection}`);
+
+    return template;
+  } catch {
+    // Fallback: inline template if playbook template file is missing
+    return `---
+created: "${targetDate}"
 type: daily
-date: ${targetDate}
+date: "${targetDate}"
 tags:
   - daily
 ---
@@ -207,16 +235,16 @@ tags:
 # ${dayHeading}
 
 ## Focus Today
-- [ ] 
+- [ ]
 
 ## Carried from yesterday
-- (none)
+${carrySection}
 
 ## Tasks
-- [ ] 
+- [ ]
 
 ## Tasks Completed
-- [ ] 
+- [ ]
 
 ## Notes
 
@@ -229,15 +257,14 @@ tags:
 
 ## End of Day
 ### What went well?
-- 
+-
 
 ### What could improve?
-- 
+-
 
 ### Carry forward to tomorrow
-- [ ] 
+- [ ]
 `;
-    await fs.writeFile(dailyPath, template, "utf-8");
   }
 }
 
@@ -478,55 +505,12 @@ server.tool(
       carryForward = await extractCarryForward(path.join(DAILY_DIR, previousNote));
     }
 
-    // Generate the daily note
-    const dayHeading = await formatDateHeading(targetDate);
+    // Build daily note from template (single source of truth)
     const carrySection =
       carryForward.length > 0 ? carryForward.join("\n") : "- (none)";
+    const noteContent = await buildDailyNoteFromTemplate(targetDate, carrySection);
 
-    // Template matches .playbook/templates/Daily Note Template.md structure
-    const template = `---
-created: "${targetDate}"
-type: daily
-date: "${targetDate}"
-tags:
-  - daily
----
-
-# ${dayHeading}
-
-## Focus Today
-- [ ]
-
-## Carried from yesterday
-${carrySection}
-
-## Tasks
-- [ ]
-
-## Tasks Completed
-- [ ]
-
-## Notes
-
-
-## Teams Meeting Highlights
-
-
-## Teams Chat Highlights
-
-
-## End of Day
-### What went well?
--
-
-### What could improve?
--
-
-### Carry forward to tomorrow
-- [ ]
-`;
-
-    await fs.writeFile(targetPath, template, "utf-8");
+    await fs.writeFile(targetPath, noteContent, "utf-8");
 
     return {
       content: [
