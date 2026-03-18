@@ -612,6 +612,12 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 - When generating a new daily note, the `## Carried from yesterday` section should contain all **unchecked** items from the previous day's `## Focus Today`
 - These items keep their deep links: `- [ ] [[01-Work/Tasks/{Task Title}|{Task Title}]]`
 
+### Task deduplication
+- **No duplicate task files**: Before creating any task, check if a task with the same or very similar title already exists in `01-Work/Tasks/` or `01-Work/PRReviews/`
+- The `createTask` MCP tool enforces case-insensitive dedup automatically, but agents should also avoid calling it with semantically identical titles (e.g., "Review API changes" vs "Review api changes")
+- The `logPRReview` MCP tool deduplicates by PR number — if a file for the same PR already exists, it skips creation
+- When multiple agents (TCS, TMS) process the same action item, the first one creates the task; subsequent calls are safely skipped
+
 ## User Identity
 
 - The `user_name` in Agent Parameters is the vault owner

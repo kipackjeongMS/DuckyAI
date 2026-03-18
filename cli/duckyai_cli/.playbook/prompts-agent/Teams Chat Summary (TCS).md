@@ -129,10 +129,11 @@ For each action item identified, determine the type:
 
 **All other tasks**:
 - Call `createTask` with:
-  - `title`: Descriptive task title
+  - `title`: Descriptive task title (the tool will automatically skip if a similar task already exists)
   - `description`: Context from the chat thread
   - `priority`: P2 (default) or P1 if urgent language is used
   - `project`: Related project if identifiable from context
+- **Dedup**: Do NOT create a task if the same action item was already handled in a previous step or prior sync. The `createTask` tool prevents exact duplicates, but you should also avoid calling it with semantically identical titles (e.g., "Review API changes" and "Review api changes" are the same task).
 
 ### Step 5: Update watermark
 

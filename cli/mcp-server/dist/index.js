@@ -497,11 +497,26 @@ server.tool("logPRReview", "Log a PR review or comment to today's daily note", {
     const prTitle = `Review PR ${prNumber} - ${description}`;
     const prReviewPath = path.join(PR_REVIEWS_DIR, `${prTitle}.md`);
     await fs.mkdir(PR_REVIEWS_DIR, { recursive: true });
+    // Dedup: check if ANY file for this PR number already exists (ignore description differences)
+    let existingPrFile = null;
     try {
-        await fs.access(prReviewPath);
-        // Already exists, skip creation
+        const prFiles = await fs.readdir(PR_REVIEWS_DIR);
+        const prPrefix = `review pr ${prNumber}`;
+        for (const file of prFiles) {
+            if (file.toLowerCase().startsWith(prPrefix) && file.endsWith(".md")) {
+                existingPrFile = file.replace(/\.md$/, "");
+                break;
+            }
+        }
     }
     catch {
+        // Dir doesn't exist yet
+    }
+    const finalPrTitle = existingPrFile || prTitle;
+    const finalPrPath = existingPrFile
+        ? path.join(PR_REVIEWS_DIR, `${existingPrFile}.md`)
+        : prReviewPath;
+    if (!existingPrFile) {
         const prNote = `---
 created: ${today}
 type: task
@@ -523,15 +538,19 @@ tags:
     let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
     // Build the log entry with deep link to PRReviews file
     const actionText = action === "reviewed" ? "Reviewed" : "Commented on";
-    const logEntry = `- [x] ${actionText} [[${person}]]'s PR - [[01-Work/PRReviews/${prTitle}|PR ${prNumber}]] - ${description}`;
-    // Insert after existing completed tasks
-    const tasksMatch = content.match(/(## Tasks Completed\n)([\s\S]*?)(\n## )/);
-    if (tasksMatch) {
-        const existingTasks = tasksMatch[2].trim();
-        const newTasks = existingTasks === "- [x]"
-            ? logEntry
-            : `${existingTasks}\n${logEntry}`;
-        content = content.replace(tasksMatch[0], `${tasksMatch[1]}${newTasks}\n\n${tasksMatch[3]}`);
+    const logEntry = `- [x] ${actionText} [[${person}]]'s PR - [[01-Work/PRReviews/${finalPrTitle}|PR ${prNumber}]] - ${description}`;
+    // Dedup: skip daily note entry if this PR number is already logged
+    const contentLower = content.toLowerCase();
+    if (!contentLower.includes(`pr ${prNumber.toLowerCase()}`)) {
+        // Insert after existing completed tasks
+        const tasksMatch = content.match(/(## Tasks Completed\n)([\s\S]*?)(\n## )/);
+        if (tasksMatch) {
+            const existingTasks = tasksMatch[2].trim();
+            const newTasks = existingTasks === "- [x]"
+                ? logEntry
+                : `${existingTasks}\n${logEntry}`;
+            content = content.replace(tasksMatch[0], `${tasksMatch[1]}${newTasks}\n\n${tasksMatch[3]}`);
+        }
     }
     await fs.writeFile(dailyPath, content, "utf-8");
     // Ensure contact exists
@@ -621,15 +640,32 @@ server.tool("createTask", "Create a new task in 01-Work/Tasks/", {
     await mcpLog(`createTask called — title=${title}, priority=${priority}`);
     const today = await getTodayDate();
     const taskPath = path.join(TASKS_DIR, `${title}.md`);
-    // Check if already exists
+    // Dedup: scan existing task files for case-insensitive or fuzzy title match
     try {
-        await fs.access(taskPath);
-        return {
-            content: [{ type: "text", text: `Task "${title}" already exists.` }],
-        };
+        await fs.mkdir(TASKS_DIR, { recursive: true });
+        const existingFiles = await fs.readdir(TASKS_DIR);
+        const titleLower = title.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        for (const file of existingFiles) {
+            if (!file.endsWith(".md"))
+                continue;
+            const existingTitle = file.replace(/\.md$/, "");
+            // Exact case-insensitive match
+            if (existingTitle.toLowerCase() === title.toLowerCase()) {
+                return {
+                    content: [{ type: "text", text: `Task "${existingTitle}" already exists (case-insensitive match). Skipped.` }],
+                };
+            }
+            // Normalized fuzzy match (strip punctuation, collapse whitespace)
+            const existingNorm = existingTitle.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+            if (existingNorm === titleLower && existingNorm.length > 0) {
+                return {
+                    content: [{ type: "text", text: `Task "${existingTitle}" already exists (similar title). Skipped.` }],
+                };
+            }
+        }
     }
     catch {
-        // Doesn't exist, continue
+        // Tasks dir doesn't exist yet — will be created below
     }
     // Read and process template
     let template = await readTemplate("Task");
