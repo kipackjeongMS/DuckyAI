@@ -110,6 +110,7 @@ DuckyAI/
 ├── 00-Inbox/# Quick capture, unsorted items to triage
 ├── 01-Work/
 │   ├── Tasks/         # Active work items (P0-P3 priority)
+│   ├── PRReviews/     # PR review tasks (todo/completed reviews)
 │   ├── Investigations/# Technical deep-dives, research
 │   └── Projects/      # Multi-task initiatives with timelines
 ├── 02-People/
@@ -373,9 +374,11 @@ When an item is unblocked:
 ### Logging PR Reviews
 
 When logging code reviews:
+- **Create a task file** in `01-Work/PRReviews/{PR Title}.md` for each PR review todo
 - **Reviewed:** `- [x] Reviewed [[Person]]'s PR - [PR XXXXXX](url) - brief description`
 - **Commented:** `- [x] Commented on [[Person]]'s PR - [PR XXXXXX](url) - what you asked/suggested`
 - Always link to the person's contact file
+- In daily notes, link PR review tasks to files in `01-Work/PRReviews/`: `- [ ] [[01-Work/PRReviews/{PR Title}|{PR Title}]]`
 
 ### Scheduling Future Follow-ups
 
@@ -595,6 +598,11 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
   1. Have a corresponding file in `01-Work/Tasks/{Task Title}.md`
   2. Be written as a deep Obsidian link: `- [ ] [[01-Work/Tasks/{Task Title}|{Task Title}]]`
   3. Use `createTask` MCP tool to create the task file if it doesn't exist
+
+### PR review tasks go in PRReviews/
+- PR review todo items must have a file in `01-Work/PRReviews/{PR Title}.md` (not `01-Work/Tasks/`)
+- Daily note link format: `- [ ] [[01-Work/PRReviews/{PR Title}|{PR Title}]]`
+- Use `logPRReview` MCP tool when completing a PR review — it creates the file and logs to the daily note
 
 ### Completing tasks
 - When a task in `## Focus Today` or `## Carried from yesterday` is checked off (`- [x]`), move it to `## Tasks Completed`

@@ -11,6 +11,7 @@ const DAILY_DIR = path.join(VAULT_ROOT, "04-Periodic/Daily");
 const WEEKLY_DIR = path.join(VAULT_ROOT, "04-Periodic/Weekly");
 const CONTACTS_DIR = path.join(VAULT_ROOT, "02-People/Contacts");
 const TASKS_DIR = path.join(VAULT_ROOT, "01-Work/Tasks");
+const PR_REVIEWS_DIR = path.join(VAULT_ROOT, "01-Work/PRReviews");
 const MEETINGS_DIR = path.join(VAULT_ROOT, "02-People/Meetings");
 const ONE_ON_ONES_DIR = path.join(VAULT_ROOT, "02-People/1-on-1s");
 const ARCHIVE_DIR = path.join(VAULT_ROOT, "05-Archive");
@@ -556,11 +557,38 @@ server.tool(
       };
     }
 
+    // Create PR review task file in 01-Work/PRReviews/
+    const prTitle = `Review PR ${prNumber} - ${description}`;
+    const prReviewPath = path.join(PR_REVIEWS_DIR, `${prTitle}.md`);
+    await fs.mkdir(PR_REVIEWS_DIR, { recursive: true });
+    try {
+      await fs.access(prReviewPath);
+      // Already exists, skip creation
+    } catch {
+      const prNote = `---
+created: ${today}
+type: task
+status: ${action === "reviewed" ? "done" : "in-progress"}
+priority: P2
+tags:
+  - pr-review
+---
+
+## PR Details
+
+- **Author**: [[${person}]]
+- **PR**: [PR ${prNumber}](${prUrl})
+- **Description**: ${description}
+- **Action**: ${action === "reviewed" ? "Reviewed" : "Commented"}
+`;
+      await fs.writeFile(prReviewPath, prNote, "utf-8");
+    }
+
     let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
 
-    // Build the log entry
+    // Build the log entry with deep link to PRReviews file
     const actionText = action === "reviewed" ? "Reviewed" : "Commented on"
-    const logEntry = `- [x] ${actionText} [[${person}]]'s PR - [PR ${prNumber}](${prUrl}) - ${description}`;
+    const logEntry = `- [x] ${actionText} [[${person}]]'s PR - [[01-Work/PRReviews/${prTitle}|PR ${prNumber}]] - ${description}`;
 
     // Insert after existing completed tasks
     const tasksMatch = content.match(/(## Tasks Completed\n)([\s\S]*?)(\n## )/);
