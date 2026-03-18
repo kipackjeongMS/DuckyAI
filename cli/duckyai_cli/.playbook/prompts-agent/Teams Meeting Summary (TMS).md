@@ -101,11 +101,10 @@ For each action item identified that are not trivial and assigned to the user, d
 
 **All other tasks**:
 - Call `createTask` with:
-  - `title`: Descriptive task title (the tool will automatically skip if a similar task already exists)
+  - `title`: Descriptive task title
   - `description`: Context from the meeting
   - `priority`: P2 (default) or P1 if urgent language is used
   - `project`: Related project if identifiable from context
-- **Dedup**: Do NOT create a task if the same action item was already handled in a previous step or prior sync. The `createTask` tool prevents exact duplicates, but you should also avoid calling it with semantically identical titles (e.g., "Review API changes" and "Review api changes" are the same task).
 
 #### 4c. Create Meeting Note (if substantial content)
 
@@ -123,10 +122,10 @@ After all processing is complete, call `updateTeamsMeetingSyncState` with:
 
 ## Important Rules
 
-- **"Me" for the user**: The `user_name` in Agent Parameters is the vault owner. When writing notes, replace any reference to this person with **"Me"** — do NOT use their name or `[[wiki link]]` for the user. This applies to action items, summaries, attendee lists, and discussion points. Other people still get `[[Full Name]]` wiki links. For example, if `user_name` is "Kipack Jeong", write "Me: Follow up on deployment" not "[[Kipack Jeong]]: Follow up on deployment". In attendee lists, write "Me" instead of the user's name.
+- **Attendees in meeting note only**: Do NOT include `**Attendees**:` in daily note highlights. Attendee lists belong only in the per-meeting note (Step 4a).
+- **In attendee lists, write "Me"**: Replace the user's name with "Me" in meeting note attendee lists.
 - **Skip meetings without transcripts**: If a meeting has no transcript, recap, or notes available from WorkIQ, do NOT create a meeting note or daily note entry for it. Only process meetings with actual content.
 - **Never re-process**: Always check the watermark first. Only process new meetings.
-- **Wiki links for people**: Always use `[[Person Name]]` format when referencing people (except the user — use "Me").
 - **Idempotent**: If a meeting note already exists in `02-People/Meetings/`, skip creating it.
 - **Details in meeting note, summary in daily note**: Full discussion/decisions/action items go in the per-meeting note. The daily note gets only a 3-4 sentence summary with a link.
 - **Respect existing content**: When updating the daily note, preserve all existing sections.

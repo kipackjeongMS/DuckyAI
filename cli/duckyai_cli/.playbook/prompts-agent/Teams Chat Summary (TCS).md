@@ -129,11 +129,10 @@ For each action item identified, determine the type:
 
 **All other tasks**:
 - Call `createTask` with:
-  - `title`: Descriptive task title (the tool will automatically skip if a similar task already exists)
+  - `title`: Descriptive task title
   - `description`: Context from the chat thread
   - `priority`: P2 (default) or P1 if urgent language is used
   - `project`: Related project if identifiable from context
-- **Dedup**: Do NOT create a task if the same action item was already handled in a previous step or prior sync. The `createTask` tool prevents exact duplicates, but you should also avoid calling it with semantically identical titles (e.g., "Review API changes" and "Review api changes" are the same task).
 
 ### Step 5: Update watermark
 
@@ -143,10 +142,9 @@ After all processing is complete, call `updateTeamsChatSyncState` with:
 
 ## Important Rules
 
-- **"Me" for the user**: The `user_name` in Agent Parameters is the vault owner. When writing notes, replace any reference to this person with **"Me"** — do NOT use their name or `[[wiki link]]` for the user. This applies to action items, summaries, and participant lists. Other people still get `[[Full Name]]` wiki links. For example, if `user_name` is "Kipack Jeong", write "Me: Review the PR" not "[[Kipack Jeong]]: Review the PR". Also exclude the user from H3 participant headings — only create H3 sections for *other* people.
+- **Exclude user from H3 headings**: Only create `### [[Name]]` sections for *other* people — never for "Me"/the user.
 - **1:1 and group chats only**: Exclude all Teams channel messages. Only process person-to-person (1:1) chats and group chats. If a message originates from a Teams channel (e.g., a channel post or reply), skip it entirely.
 - **Never re-process**: Always check the watermark first. Only process new chats.
-- **Wiki links for people**: Always use `[[Person Name]]` format when referencing people (except the user — use "Me").
 - **Idempotent**: If a thread was already summarized (check daily note), skip it.
 - **Concise summaries**: Focus on decisions, action items, and key information. Skip pleasantries.
 - **Respect existing content**: When updating the daily note, preserve all existing sections.
