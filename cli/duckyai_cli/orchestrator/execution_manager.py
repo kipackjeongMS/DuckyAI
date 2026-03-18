@@ -722,6 +722,19 @@ class ExecutionManager:
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             return None
 
+    def _read_pending_highlight_dates(self, agent_abbr: str) -> list:
+        """Read pendingHighlightDates from watermark state for retry."""
+        import json
+        from ..config import get_global_runtime_dir
+        vault_id = self.config.get("id", "default")
+        filename = "tcs-last-sync.json" if agent_abbr == "TCS" else "tms-last-sync.json"
+        state_file = get_global_runtime_dir(vault_id, vault_path=self.vault_path) / "state" / filename
+        try:
+            data = json.loads(state_file.read_text(encoding="utf-8"))
+            return data.get("pendingHighlightDates", [])
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
+            return []
+
     def _resolve_teams_fetch_window(self, agent: AgentDefinition) -> Dict:
         """Pre-resolve the fetch window for Teams agents (TCS/TMS).
 
@@ -751,6 +764,11 @@ class ExecutionManager:
         else:
             # No watermark — first run, use lookback
             params['fetch_mode'] = 'lookback'
+
+        # Inject pending highlight dates from previous failed syncs
+        pending = self._read_pending_highlight_dates(agent.abbreviation)
+        if pending:
+            params['retry_highlight_dates'] = pending
 
         return params
 

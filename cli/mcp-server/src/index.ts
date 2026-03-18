@@ -1522,9 +1522,10 @@ server.tool(
   {
     lastSynced: z.string().describe("ISO timestamp of this sync (e.g., 2026-03-09T20:00:00Z)"),
     processedThreadIds: z.array(z.string()).optional().describe("Thread/conversation IDs processed in this sync"),
+    processedDates: z.array(z.string()).optional().describe("Dates (YYYY-MM-DD) that had chat highlights appended to daily notes"),
   },
-  async ({ lastSynced, processedThreadIds }) => {
-    await mcpLog(`updateTeamsChatSyncState called — lastSynced=${lastSynced}, threads=${processedThreadIds?.length ?? 0}`);
+  async ({ lastSynced, processedThreadIds, processedDates }) => {
+    await mcpLog(`updateTeamsChatSyncState called — lastSynced=${lastSynced}, threads=${processedThreadIds?.length ?? 0}, dates=${processedDates?.length ?? 0}`);
     const stateDir = await getGlobalStateDir();
     const stateFile = path.join(stateDir, "tcs-last-sync.json");
 
@@ -1542,7 +1543,7 @@ server.tool(
     ];
     const uniqueThreads = [...new Set(allThreads)].slice(0, 500);
 
-    const newState = {
+    const newState: any = {
       lastSynced,
       previousSynced: existing.lastSynced || null,
       processedThreads: uniqueThreads,
@@ -1550,12 +1551,39 @@ server.tool(
       updatedAt: new Date().toISOString(),
     };
 
+    // Verify highlights landed in daily notes — track pending dates for retry
+    const pendingDates: string[] = [...(existing.pendingHighlightDates || [])];
+    if (processedDates && processedDates.length > 0) {
+      for (const d of processedDates) {
+        const dailyPath = path.join(DAILY_DIR, `${d}.md`);
+        try {
+          const note = await fs.readFile(dailyPath, "utf-8");
+          const section = note.match(/## Teams Chat Highlights\n\n?([\s\S]*?)(?=\n## |$)/);
+          const content = section?.[1]?.trim() || "";
+          if (!content || !content.includes("###")) {
+            if (!pendingDates.includes(d)) pendingDates.push(d);
+          } else {
+            // Highlights exist — remove from pending if previously failed
+            const idx = pendingDates.indexOf(d);
+            if (idx >= 0) pendingDates.splice(idx, 1);
+          }
+        } catch {
+          if (!pendingDates.includes(d)) pendingDates.push(d);
+        }
+      }
+    }
+    // Keep only last 14 days of pending dates to avoid unbounded growth
+    newState.pendingHighlightDates = pendingDates.slice(-14);
+
     await fs.writeFile(stateFile, JSON.stringify(newState, null, 2), "utf-8");
 
+    const pendingMsg = pendingDates.length > 0
+      ? ` ⚠️ ${pendingDates.length} date(s) missing chat highlights: ${pendingDates.join(", ")}`
+      : "";
     return {
       content: [{
         type: "text",
-        text: `✅ Sync state updated. Last synced: ${lastSynced} (sync #${newState.syncCount})`,
+        text: `✅ Sync state updated. Last synced: ${lastSynced} (sync #${newState.syncCount})${pendingMsg}`,
       }],
     };
   }
@@ -1784,8 +1812,9 @@ server.tool(
   {
     lastSynced: z.string().describe("ISO timestamp of this sync (e.g., 2026-03-09T20:00:00Z)"),
     processedMeetingIds: z.array(z.string()).optional().describe("Meeting/event IDs processed in this sync"),
+    processedDates: z.array(z.string()).optional().describe("Dates (YYYY-MM-DD) that had meeting highlights appended to daily notes"),
   },
-  async ({ lastSynced, processedMeetingIds }) => {
+  async ({ lastSynced, processedMeetingIds, processedDates }) => {
     const stateDir = await getGlobalStateDir();
     const stateFile = path.join(stateDir, "tms-last-sync.json");
 
@@ -1801,7 +1830,7 @@ server.tool(
     ];
     const uniqueMeetings = [...new Set(allMeetings)].slice(0, 500);
 
-    const newState = {
+    const newState: any = {
       lastSynced,
       previousSynced: existing.lastSynced || null,
       processedMeetings: uniqueMeetings,
@@ -1809,12 +1838,37 @@ server.tool(
       updatedAt: new Date().toISOString(),
     };
 
+    // Verify highlights landed in daily notes — track pending dates for retry
+    const pendingDates: string[] = [...(existing.pendingHighlightDates || [])];
+    if (processedDates && processedDates.length > 0) {
+      for (const d of processedDates) {
+        const dailyPath = path.join(DAILY_DIR, `${d}.md`);
+        try {
+          const note = await fs.readFile(dailyPath, "utf-8");
+          const section = note.match(/## Teams Meeting Highlights\n\n?([\s\S]*?)(?=\n## |$)/);
+          const content = section?.[1]?.trim() || "";
+          if (!content || !content.includes("###")) {
+            if (!pendingDates.includes(d)) pendingDates.push(d);
+          } else {
+            const idx = pendingDates.indexOf(d);
+            if (idx >= 0) pendingDates.splice(idx, 1);
+          }
+        } catch {
+          if (!pendingDates.includes(d)) pendingDates.push(d);
+        }
+      }
+    }
+    newState.pendingHighlightDates = pendingDates.slice(-14);
+
     await fs.writeFile(stateFile, JSON.stringify(newState, null, 2), "utf-8");
 
+    const pendingMsg = pendingDates.length > 0
+      ? ` ⚠️ ${pendingDates.length} date(s) missing meeting highlights: ${pendingDates.join(", ")}`
+      : "";
     return {
       content: [{
         type: "text",
-        text: `✅ Meeting sync state updated. Last synced: ${lastSynced} (sync #${newState.syncCount})`,
+        text: `✅ Meeting sync state updated. Last synced: ${lastSynced} (sync #${newState.syncCount})${pendingMsg}`,
       }],
     };
   }
