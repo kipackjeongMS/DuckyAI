@@ -14,9 +14,9 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional
 
-from ..logger import get_logger
+from ..logger import Logger
 
-logger = get_logger(__name__)
+logger = Logger()
 
 # Stale lock threshold — if a lock's process is dead OR older than this, steal it
 LOCK_TTL_SECONDS = 30 * 60  # 30 minutes
