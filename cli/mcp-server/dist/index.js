@@ -1304,6 +1304,7 @@ server.tool("appendTeamsChatHighlights", "Append a Teams Chat Highlights section
     // Split incoming highlights into H3 blocks (### [[Person Name]])
     // Each block = one participant's chats. Dedup by checking if the H3 heading already exists.
     function deduplicateHighlights(existing, incoming) {
+        const existingLower = existing.toLowerCase();
         // Split incoming into blocks at H3 boundaries
         const incomingBlocks = incoming.split(/(?=^### )/m).filter(b => b.trim());
         const newBlocks = [];
@@ -1320,13 +1321,13 @@ server.tool("appendTeamsChatHighlights", "Append a Teams Chat Highlights section
                     const h4Title = h4.match(/^#### .+/)?.[0] || "";
                     // Strip markdown link for comparison: "#### [Topic](url)" → "Topic"
                     const h4Plain = h4Title.replace(/^####\s*\[([^\]]+)\].*/, "$1").replace(/^####\s*/, "").trim();
-                    if (h4Plain && !existing.includes(h4Plain)) {
+                    if (h4Plain && !existingLower.includes(h4Plain.toLowerCase())) {
                         newH4s.push(h4.trimEnd());
                     }
                 }
                 if (newH4s.length > 0) {
-                    // Check if H3 participant already exists
-                    if (existing.includes(h3Line.trim())) {
+                    // Check if H3 participant already exists (case-insensitive)
+                    if (existingLower.includes(h3Line.trim().toLowerCase())) {
                         // Participant exists — just add the new H4 sections
                         newBlocks.push(newH4s.join("\n\n"));
                     }
@@ -1337,12 +1338,12 @@ server.tool("appendTeamsChatHighlights", "Append a Teams Chat Highlights section
                 }
                 else if (!h3Match && block.trim()) {
                     // No H4s, just raw content — check if it exists
-                    if (!existing.includes(block.trim())) {
+                    if (!existingLower.includes(block.trim().toLowerCase())) {
                         newBlocks.push(block.trimEnd());
                     }
                 }
             }
-            else if (block.trim() && !existing.includes(block.trim())) {
+            else if (block.trim() && !existingLower.includes(block.trim().toLowerCase())) {
                 newBlocks.push(block.trimEnd());
             }
         }
