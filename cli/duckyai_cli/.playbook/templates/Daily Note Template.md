@@ -25,9 +25,7 @@ tags:
 
 ## Teams Meeting Highlights
 
-
 ## Teams Chat Highlights
-
 
 ## End of Day
 ### What went well?

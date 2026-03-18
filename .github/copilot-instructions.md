@@ -591,6 +591,8 @@ Every daily note follows this exact H2 section order. Do NOT add, remove, or ren
 
 There is **no `## Meetings` section**. Meeting highlights go under `## Teams Meeting Highlights`.
 
+**No blank lines between section headers and content**: `## Teams Meeting Highlights` and `## Teams Chat Highlights` must have their content (H3 entries) immediately on the next line — no blank line gap between the H2 header and the first `###`.
+
 ## Task Management in Daily Notes
 
 ### Task items must be linked

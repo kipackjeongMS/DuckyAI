@@ -1399,13 +1399,13 @@ server.tool("appendTeamsChatHighlights", "Append a Teams Chat Highlights section
     // Idempotent: merge into existing section or insert new
     if (/^## Teams Chat Highlights/m.test(content)) {
         // Extract existing section content
-        const sectionMatch = content.match(/## Teams Chat Highlights\n([\s\S]*?)(?=\n## )/) ||
-            content.match(/## Teams Chat Highlights\n([\s\S]*)$/);
+        const sectionMatch = content.match(/## Teams Chat Highlights\n\n?([\s\S]*?)(?=\n## )/) ||
+            content.match(/## Teams Chat Highlights\n\n?([\s\S]*)$/);
         if (sectionMatch && sectionMatch.index !== undefined) {
             const existingContent = sectionMatch[1].trimEnd();
             const newContent = deduplicateHighlights(existingContent, highlights);
             if (newContent) {
-                const mergedSection = `## Teams Chat Highlights\n\n${existingContent}\n\n${newContent}`;
+                const mergedSection = `## Teams Chat Highlights\n${existingContent}\n\n${newContent}`;
                 content = content.slice(0, sectionMatch.index) +
                     mergedSection + "\n\n" +
                     content.slice(sectionMatch.index + sectionMatch[0].length);
@@ -1415,7 +1415,7 @@ server.tool("appendTeamsChatHighlights", "Append a Teams Chat Highlights section
     }
     else {
         // Insert before "## End of Day" or append at the end
-        const newSection = `## Teams Chat Highlights\n\n${highlights}`;
+        const newSection = `## Teams Chat Highlights\n${highlights}`;
         const endOfDayMatch = content.match(/\n## End of Day/);
         if (endOfDayMatch && endOfDayMatch.index !== undefined) {
             content =
@@ -1564,7 +1564,7 @@ server.tool("appendTeamsMeetingHighlights", "Append a Teams Meeting Highlights s
     // Ensure daily note exists (auto-create if missing)
     await ensureDailyNote(targetDate);
     let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
-    const sectionContent = `## Teams Meeting Highlights\n\n${highlights}`;
+    const sectionContent = `## Teams Meeting Highlights\n${highlights}`;
     // Dedup: split incoming into H3 blocks, only append those not already present
     function deduplicateMeetingHighlights(existing, incoming) {
         const incomingBlocks = incoming.split(/(?=^### )/m).filter(b => b.trim());
@@ -1585,13 +1585,13 @@ server.tool("appendTeamsMeetingHighlights", "Append a Teams Meeting Highlights s
         return newBlocks.join("\n\n");
     }
     if (/^## Teams Meeting Highlights/m.test(content)) {
-        const sectionMatch = content.match(/## Teams Meeting Highlights\n([\s\S]*?)(?=\n## )/) ||
-            content.match(/## Teams Meeting Highlights\n([\s\S]*)$/);
+        const sectionMatch = content.match(/## Teams Meeting Highlights\n\n?([\s\S]*?)(?=\n## )/) ||
+            content.match(/## Teams Meeting Highlights\n\n?([\s\S]*)$/);
         if (sectionMatch && sectionMatch.index !== undefined) {
             const existingContent = sectionMatch[1].trimEnd();
             const newContent = deduplicateMeetingHighlights(existingContent, highlights);
             if (newContent) {
-                const mergedSection = `## Teams Meeting Highlights\n\n${existingContent}\n\n${newContent}`;
+                const mergedSection = `## Teams Meeting Highlights\n${existingContent}\n\n${newContent}`;
                 content = content.slice(0, sectionMatch.index) +
                     mergedSection + "\n\n" +
                     content.slice(sectionMatch.index + sectionMatch[0].length);
