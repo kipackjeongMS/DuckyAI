@@ -19,7 +19,9 @@ def get_global_runtime_dir(vault_id: Optional[str] = None, vault_path: Optional[
     """Return the runtime directory for a vault: ``<vault_path>/.duckyai/``.
 
     Falls back to legacy ``~/.duckyai/vaults/{vault_id}/`` if *vault_path* is
-    not supplied, and migrates data forward on first access.
+    not supplied. This fallback is deprecated and will be removed; callers
+    should always pass *vault_path* so runtime state remains vault-local.
+    When *vault_path* is supplied, legacy data is migrated forward on first access.
     Creates the directory tree on first access.
     """
     if vault_path:
@@ -38,7 +40,14 @@ def get_global_runtime_dir(vault_id: Optional[str] = None, vault_path: Optional[
 
         return new_dir
 
-    # Legacy fallback when only vault_id is available
+    # Legacy fallback when only vault_id is available.
+    # Deprecated: runtime state should live under <vault>/.duckyai.
+    logger.warning(
+        "Deprecated runtime path fallback used without vault_path for vault "
+        f"'{vault_id or 'default'}'. This currently resolves to ~/.duckyai/vaults/"
+        f"{vault_id or 'default'}, but future versions will require vault-local "
+        "runtime paths."
+    )
     base = Path.home() / ".duckyai" / "vaults" / (vault_id or "default")
     base.mkdir(parents=True, exist_ok=True)
     return base

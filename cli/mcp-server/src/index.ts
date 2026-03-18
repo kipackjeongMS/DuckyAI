@@ -100,8 +100,8 @@ async function getUserTimezone(): Promise<string> {
   return timezone;
 }
 
-// Helper: Resolve vault-local runtime state directory (<vault_root>/.duckyai/state/)
-// Falls back to legacy ~/.duckyai/vaults/{vault_id}/state/ and migrates data forward.
+// Helper: Resolve vault-local runtime state directory (<vault_root>/.duckyai/state/).
+// Legacy ~/.duckyai/vaults/{vault_id}/state/ migration is temporary and will be removed.
 async function getGlobalStateDir(): Promise<string> {
   const { vaultId } = await readVaultConfig();
   const newStateDir = path.join(VAULT_ROOT, ".duckyai", "state");
@@ -116,8 +116,16 @@ async function getGlobalStateDir(): Promise<string> {
     // Check if old state dir exists and new doesn't
     try {
       await fs.access(oldStateDir);
+      await mcpLog(
+        `DEPRECATION: legacy runtime state detected at ${oldStateDir}. ` +
+        `Active runtime should be vault-local under ${newStateDir}.`
+      );
       try {
         await fs.access(newStateDir);
+        await mcpLog(
+          `DEPRECATION: both legacy and vault-local runtime state exist for ${vaultId}. ` +
+          `Legacy path should be removed after migration validation.`
+        );
       } catch {
         // Old exists, new doesn't — migrate
         await fs.mkdir(newStateDir, { recursive: true });
@@ -125,6 +133,10 @@ async function getGlobalStateDir(): Promise<string> {
         for (const file of files) {
           await fs.copyFile(path.join(oldStateDir, file), path.join(newStateDir, file));
         }
+        await mcpLog(
+          `DEPRECATION: migrated legacy runtime state from ${oldStateDir} to ${newStateDir}. ` +
+          `Legacy fallback will be removed in a future release.`
+        );
         await fs.writeFile(
           path.join(VAULT_ROOT, ".duckyai", ".migrated"),
           `Migrated from ${oldStateDir}`,
