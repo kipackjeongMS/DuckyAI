@@ -1617,60 +1617,91 @@ server.tool(
 
     // Split incoming highlights into H3 blocks (### [[Person Name]])
     // Each block = one participant's chats. Dedup by checking if the H3 heading already exists.
+    /**
+     * Parse markdown content into a map of H3 headers -> bullet groups.
+     * Robustly merges existing and new content under correct headers.
+     * Returns the FULL reconstructed content string.
+     */
     function deduplicateHighlights(existing: string, incoming: string): string {
-      const existingLower = existing.toLowerCase();
-      // Split incoming into blocks at H3 boundaries
-      const incomingBlocks = incoming.split(/(?=^### )/m).filter(b => b.trim());
-      const newBlocks: string[] = [];
-      for (const block of incomingBlocks) {
-        // Extract the H3 line for matching
-        const h3Match = block.match(/^### .+/);
-        if (h3Match) {
-          const h3Line = h3Match[0];
-          // Split into topic groups: top-level bullets (- [Topic](url) or - Topic)
-          // and their indented children (  - detail)
-          const lines = block.split("\n");
-          const h3HeaderLine = lines.shift() || "";
-          const topicGroups: string[][] = [];
-          let currentGroup: string[] = [];
+      // Data structure: Map<NormalizedHeaderKey, { originalHeader: string, blocks: string[] }>
+      // blocks = array of bullet groups (each group is a string like "- Topic\n  - Detail")
+      const sections = new Map<string, { header: string, blocks: string[] }>();
+      const sectionOrder: string[] = []; // To preserve order of existing sections
 
-          for (const line of lines) {
-            if (line.match(/^- /) && !line.match(/^  /)) {
-              // New top-level bullet = new topic group
-              if (currentGroup.length > 0) topicGroups.push(currentGroup);
-              currentGroup = [line];
-            } else if (line.trim()) {
-              currentGroup.push(line);
+      // Helper to parse content into the map
+      const parse = (text: string) => {
+        // Split by H3 header boundaries, keeping the delimiter
+        const parts = text.split(/(?=^### )/m);
+        for (const part of parts) {
+          if (!part.trim()) continue;
+
+          // Check if this block starts with H3
+          const headerMatch = part.match(/^(### .+)(\n[\s\S]*|$)/);
+          if (headerMatch) {
+            const headerLine = headerMatch[1].trim();
+            const key = headerLine.toLowerCase();
+            const content = headerMatch[2] || ""; // Content after header
+
+            if (!sections.has(key)) {
+              sections.set(key, { header: headerLine, blocks: [] });
+              sectionOrder.push(key);
+            }
+
+            // Split content into bullet groups
+            const lines = content.split("\n");
+            let currentBlock: string[] = [];
+
+            for (const line of lines) {
+              if (line.match(/^- /) && !line.match(/^  /)) {
+                // New top-level bullet = start of new group
+                if (currentBlock.length > 0) {
+                  const blockText = currentBlock.join("\n").trim();
+                  if (blockText) sections.get(key)!.blocks.push(blockText);
+                }
+                currentBlock = [line];
+              } else if (line.trim()) {
+                // Continuation or child bullet
+                currentBlock.push(line);
+              }
+            }
+            // Push final block
+            if (currentBlock.length > 0) {
+              const blockText = currentBlock.join("\n").trim();
+              if (blockText) sections.get(key)!.blocks.push(blockText);
             }
           }
-          if (currentGroup.length > 0) topicGroups.push(currentGroup);
-
-          // Filter out topic groups already in existing content
-          const newTopics: string[][] = [];
-          for (const group of topicGroups) {
-            const topicLine = group[0] || "";
-            // Extract plain text for comparison: "- [Topic](url)" → "Topic"
-            const topicPlain = topicLine.replace(/^-\s*\[([^\]]+)\].*/, "$1").replace(/^-\s*/, "").trim();
-            if (topicPlain && !existingLower.includes(topicPlain.toLowerCase())) {
-              newTopics.push(group);
-            }
-          }
-
-          if (newTopics.length > 0) {
-            const newContent = newTopics.map(g => g.join("\n")).join("\n");
-            if (existingLower.includes(h3Line.trim().toLowerCase())) {
-              // Participant exists — just add the new topic groups
-              newBlocks.push(newContent);
-            } else {
-              // New participant — add full block
-              newBlocks.push(h3HeaderLine + "\n" + newContent);
-            }
-          }
-        } else if (block.trim() && !existingLower.includes(block.trim().toLowerCase())) {
-          newBlocks.push(block.trimEnd());
         }
-      }
-      return newBlocks.join("\n\n");
+      };
+
+      parse(existing);
+      parse(incoming); // Merge new content into the same map structure
+
+      // Reconstruct content string
+      return sectionOrder.map(key => {
+        const sec = sections.get(key)!;
+        
+        // Deduplicate bullet blocks within this section
+        const uniqueBlocks: string[] = [];
+        const seenTopics = new Set<string>();
+
+        for (const block of sec.blocks) {
+          // Extract plain topic text for dedup key: "- [Topic](url)" -> "topic"
+          const firstLine = block.split("\n")[0] || "";
+          const topic = firstLine
+            .replace(/^-\s*\[([^\]]+)\].*/, "$1") // Extract link text
+            .replace(/^-\s*/, "")                  // Remove bullet
+            .trim()
+            .toLowerCase();
+          
+          if (topic && !seenTopics.has(topic)) {
+            uniqueBlocks.push(block);
+            seenTopics.add(topic);
+          }
+        }
+
+        if (uniqueBlocks.length === 0) return "";
+        return `${sec.header}\n${uniqueBlocks.join("\n")}`;
+      }).filter(s => s).join("\n\n");
     }
 
     // Idempotent: merge into existing section or insert new
@@ -1680,14 +1711,16 @@ server.tool(
                            content.match(/## Teams Chat Highlights\n\n?([\s\S]*)$/);
       if (sectionMatch && sectionMatch.index !== undefined) {
         const existingContent = sectionMatch[1].trimEnd();
-        const newContent = deduplicateHighlights(existingContent, highlights);
-        if (newContent) {
-          const mergedSection = `## Teams Chat Highlights\n${existingContent}\n\n${newContent}`;
+        // deduplicateHighlights now returns the FULL merged content
+        const mergedContent = deduplicateHighlights(existingContent, highlights);
+        
+        if (mergedContent !== existingContent) {
+          const mergedSection = `## Teams Chat Highlights\n${mergedContent}`;
           content = content.slice(0, sectionMatch.index) +
             mergedSection + "\n\n" +
             content.slice(sectionMatch.index + sectionMatch[0].length);
         }
-        // If newContent is empty, everything was duplicate — no change needed
+        // If content is identical, no change needed
       }
     } else {
       // Insert before "## End of Day" or append at the end
