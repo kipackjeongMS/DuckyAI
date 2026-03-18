@@ -18,7 +18,7 @@ If `retry_highlight_dates` is present in Agent Parameters, previous syncs failed
 
 1. For each date in `retry_highlight_dates`, read the existing meeting/contact notes from that date
 2. Reconstruct the chat highlights from available context
-3. Call `appendTeamsChatHighlights` for each pending date
+3. Call `updateDailyNoteSection` for each pending date (using the read-merge-write pattern)
 4. Continue to Step 2 for normal processing
 
 ### Step 2: Read fetch window (pre-resolved)
@@ -89,31 +89,24 @@ This helps diagnose if WorkIQ is returning incomplete data. Format:
 
 #### 4a. Daily Notes — Teams Chat Highlights
 
-**Call `appendTeamsChatHighlights` once per date** — not once for all data. For each date that has chat messages:
+**Call `updateDailyNoteSection` once per date.**
 
-Call `appendTeamsChatHighlights` with:
+1. **Read existing highlights**:
+   - First, check if the daily note for that date exists.
+   - If it does, read the `## Teams Chat Highlights` section to see what's already there.
+   
+2. **Merge intelligently**:
+   - If the section is empty, just format your new highlights.
+   - If the section already has content (e.g., existing `### [[Jeff Zhang]]` blocks), **merge your new findings into it**.
+   - Do NOT duplicate people. If [[Jeff Zhang]] already has a section, append your new bullet points under his existing header.
+   - Do NOT duplicate topics. If a specific chat thread is already summarized, skip it or add only new information.
+   - Maintain the structure: `### [[Person]]` → `- [Topic](url)` → `  - Details`.
 
-- `date`: The **local date** the chats occurred (YYYY-MM-DD), converted from UTC to `user_timezone`. Do NOT use UTC date or today's date.
-- `highlights`: Formatted markdown **organized by participant** (H3), with each chat context as a nested bullet list:
-
-```markdown
-### [[Abraham Lincoln]]
-- [Project Alpha Standup](https://teams.microsoft.com/l/message/...)
-  - Discussed sprint priorities and timeline adjustments
-  - Agreed to move demo to Friday
-  - [[Abraham Lincoln]]: Review auth module PR by Thursday
-  - [[Abraham Lincoln]]: Share updated timeline with stakeholders
-- [Budget Review Follow-up](https://teams.microsoft.com/l/message/...)
-  - Confirmed Q3 budget allocation for infrastructure
-  - [[Abraham Lincoln]]: Send revised cost breakdown by EOD
-
-### [[George Washington]]
-- [Deployment Hotfix](https://teams.microsoft.com/l/message/...)
-  - Urgent fix needed for login redirect issue
-  - Rolled back to v2.3.1 as interim measure
-  - [[George Washington]]: Deploy hotfix to staging by 3pm
-  - [[George Washington]]: Update incident report in wiki
-```
+3. **Update the note**:
+   - Call `updateDailyNoteSection` with:
+     - `date`: The local date (YYYY-MM-DD)
+     - `sectionHeader`: "Teams Chat Highlights"
+     - `content`: The **fully merged, complete markdown** for that section (including both old and new content).
 
 **Format rules:**
 - H3 (`###`) = Participant name as wiki link `[[Full Name]]` — exclude "Me"/the user
@@ -123,10 +116,12 @@ Call `appendTeamsChatHighlights` with:
 - Indented bullets (`  - `) = Key points and action items under that topic
 - Action items prefixed with `[[Name]]:` indicating who owns the action
 - No H4 headings — use nested bullets only
-- No "Summary" or "Participants" labels — keep it clean
 
-- `people`: Array of all person names mentioned
-- `personNotes`: Array of `{ name, note }` for each person with a meaningful interaction (skip trivial)
+**Important**: You are responsible for the final markdown structure. The tool will simply replace the section with whatever you send.
+
+**Also update contacts**:
+- If you mention new people, call `ensureContactExists` for them.
+- If you have specific notes about a person, call `appendPersonNote`.
 
 #### 4b. Create Tasks (if action items found)
 
@@ -148,7 +143,7 @@ For each action item identified, determine the type:
 After all processing is complete, call `updateTeamsChatSyncState` with:
 - `lastSynced`: Current ISO timestamp (the time of THIS sync, not the chat timestamps)
 - `processedThreadIds`: Array of thread/conversation IDs processed (if available from WorkIQ response)
-- `processedDates`: Array of all dates (YYYY-MM-DD) that had `appendTeamsChatHighlights` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
+- `processedDates`: Array of all dates (YYYY-MM-DD) that had `updateDailyNoteSection` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
 
 ## Important Rules
 

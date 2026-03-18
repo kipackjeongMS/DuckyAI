@@ -20,7 +20,7 @@ If `retry_highlight_dates` is present in Agent Parameters, previous syncs failed
 
 1. For each date in `retry_highlight_dates`, read the existing meeting notes from `02-People/Meetings/` for that date
 2. Reconstruct the meeting highlights from those notes
-3. Call `appendTeamsMeetingHighlights` for each pending date
+3. Call `updateDailyNoteSection` for each pending date (using the read-merge-write pattern)
 4. Continue to Step 2 for normal processing
 
 ### Step 2: Read fetch window (pre-resolved)
@@ -80,13 +80,25 @@ This is the **primary detailed record** — put everything here.
 
 #### 4b. Daily Notes — Teams Meeting Highlights
 
-**Call `appendTeamsMeetingHighlights` once per date** — not once for all data. For each date that has meetings:
+**Call `updateDailyNoteSection` once per date.**
 
-Call `appendTeamsMeetingHighlights` with:
+1. **Read existing highlights**:
+   - First, check if the daily note for that date exists.
+   - If it does, read the `## Teams Meeting Highlights` section to see what's already there.
 
-- `date`: The **local date** the meeting occurred (YYYY-MM-DD), converted from UTC to `user_timezone`. Do NOT use UTC date or today's date.
-- `highlights`: Formatted markdown — a **lightweight reference** per meeting:
+2. **Merge intelligently**:
+   - If the section is empty, just format your new highlights.
+   - If the section already has content, **merge your new findings into it**.
+   - Do NOT duplicate meetings. If a meeting with the same title/time is already listed, skip it or add only new information.
+   - Maintain the structure: `### Title (Time)` → `**Summary**` → `**Full notes**`.
 
+3. **Update the note**:
+   - Call `updateDailyNoteSection` with:
+     - `date`: The local date (YYYY-MM-DD)
+     - `sectionHeader`: "Teams Meeting Highlights"
+     - `content`: The **fully merged, complete markdown** for that section (including both old and new content).
+
+**Format rules:**
 ```markdown
 ### {Meeting Title} ({HH:MM - HH:MM})   
 **Summary**: 3-4 sentence summary of key discussion points and outcomes.   
@@ -97,8 +109,9 @@ Each meeting entry should be concise (summary only) with an Obsidian link to the
 
 ⚠️ **Do NOT include attendees in the daily note highlights.** No `**Attendees**:` line. Attendee lists belong ONLY in the per-meeting note (Step 4a). The daily note is a lightweight summary — keep it short.
 
-- `people`: Array of all person names mentioned
-- `personNotes`: Array of `{ name, note }` for each person with a meaningful interaction
+**Also update contacts**:
+- If you mention new people, call `ensureContactExists` for them.
+- If you have specific notes about a person, call `appendPersonNote`.
 
 #### 4c. Create Tasks (if action items found)
 
@@ -128,7 +141,7 @@ If a meeting has significant content (decisions, action items, or detailed discu
 After all processing is complete, call `updateTeamsMeetingSyncState` with:
 - `lastSynced`: Current ISO timestamp (the time of THIS sync, not the meeting timestamps)
 - `processedMeetingIds`: Array of meeting/event IDs processed (if available from WorkIQ response)
-- `processedDates`: Array of all dates (YYYY-MM-DD) that had `appendTeamsMeetingHighlights` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
+- `processedDates`: Array of all dates (YYYY-MM-DD) that had `updateDailyNoteSection` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
 
 ## Important Rules
 

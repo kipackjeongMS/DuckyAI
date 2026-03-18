@@ -1590,11 +1590,162 @@ server.tool(
 );
 
 // =============================================================================
-// SKILL: appendTeamsChatHighlights
+// SKILL: updateDailyNoteSection
+// =============================================================================
+server.tool(
+  "updateDailyNoteSection",
+  "Update a specific H2 section in a daily note. Replaces the entire content of that section. Use this for precise updates (e.g. Teams Chat Highlights) where you want full control over merging.",
+  {
+    date: z.string().describe("Date in YYYY-MM-DD format"),
+    sectionHeader: z.string().describe("The H2 header name (e.g. 'Teams Chat Highlights' or 'Focus Today'). Do not include ##."),
+    content: z.string().describe("The new markdown content for this section. Do NOT include the H2 header itself."),
+  },
+  async ({ date, sectionHeader, content }) => {
+    await mcpLog(`updateDailyNoteSection called — date=${date}, section=${sectionHeader}, content=${content.length} chars`);
+    
+    // Ensure daily note exists
+    await ensureDailyNote(date);
+    const dailyPath = path.join(DAILY_DIR, `${date}.md`);
+    let fileContent = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
+    
+    // Normalize header for matching (handle potential case mismatch)
+    const headerRegex = new RegExp(`^## ${escapeRegExp(sectionHeader)}\\s*$`, "m");
+    const headerMatch = fileContent.match(headerRegex);
+    
+    if (headerMatch && headerMatch.index !== undefined) {
+      // Find the start of the next section (## Something) or EOF
+      const sectionStartIndex = headerMatch.index + headerMatch[0].length;
+      const remainingContent = fileContent.slice(sectionStartIndex);
+      const nextSectionMatch = remainingContent.match(/\n## /);
+      
+      const sectionEndIndex = nextSectionMatch 
+        ? sectionStartIndex + nextSectionMatch.index! 
+        : fileContent.length;
+        
+      // Replace content
+      const newSectionContent = `\n${content.trim()}\n`;
+      fileContent = 
+        fileContent.slice(0, sectionStartIndex) + 
+        newSectionContent + 
+        fileContent.slice(sectionEndIndex);
+        
+    } else {
+      // Section missing — append it before End of Day or at end
+      const endOfDayMatch = fileContent.match(/\n## End of Day/);
+      const fullSection = `\n\n## ${sectionHeader}\n${content.trim()}\n`;
+      
+      if (endOfDayMatch && endOfDayMatch.index !== undefined) {
+        fileContent = 
+          fileContent.slice(0, endOfDayMatch.index) + 
+          fullSection + 
+          fileContent.slice(endOfDayMatch.index);
+      } else {
+        fileContent = fileContent.trimEnd() + fullSection;
+      }
+    }
+    
+    await fs.writeFile(dailyPath, fileContent, "utf-8");
+    return {
+      content: [{ type: "text", text: `✅ Updated section '## ${sectionHeader}' in ${date}.md` }],
+    };
+  }
+);
+
+// Helper for regex escaping
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// =============================================================================
+// Helper: Intelligent Merge Logic
+// =============================================================================
+function deduplicateHighlights(existing: string, incoming: string): string {
+  // Data structure: Map<NormalizedHeaderKey, { originalHeader: string, blocks: string[] }>
+  const sections = new Map<string, { header: string, blocks: string[] }>();
+  const sectionOrder: string[] = []; // To preserve order of existing sections
+
+  // Helper to parse content into the map
+  const parse = (text: string) => {
+    // Split by H3 header boundaries, keeping the delimiter
+    const parts = text.split(/(?=^### )/m);
+    for (const part of parts) {
+      if (!part.trim()) continue;
+
+      // Check if this block starts with H3
+      const headerMatch = part.match(/^(### .+)(\n[\s\S]*|$)/);
+      if (headerMatch) {
+        const headerLine = headerMatch[1].trim();
+        const key = headerLine.toLowerCase();
+        const content = headerMatch[2] || ""; // Content after header
+
+        if (!sections.has(key)) {
+          sections.set(key, { header: headerLine, blocks: [] });
+          sectionOrder.push(key);
+        }
+
+        // Split content into bullet groups
+        const lines = content.split("\n");
+        let currentBlock: string[] = [];
+
+        for (const line of lines) {
+          if (line.match(/^- /) && !line.match(/^  /)) {
+            // New top-level bullet = start of new group
+            if (currentBlock.length > 0) {
+              const blockText = currentBlock.join("\n").trim();
+              if (blockText) sections.get(key)!.blocks.push(blockText);
+            }
+            currentBlock = [line];
+          } else if (line.trim()) {
+            // Continuation or child bullet
+            currentBlock.push(line);
+          }
+        }
+        // Push final block
+        if (currentBlock.length > 0) {
+          const blockText = currentBlock.join("\n").trim();
+          if (blockText) sections.get(key)!.blocks.push(blockText);
+        }
+      }
+    }
+  };
+
+  parse(existing);
+  parse(incoming); // Merge new content into the same map structure
+
+  // Reconstruct content string
+  return sectionOrder.map(key => {
+    const sec = sections.get(key)!;
+    
+    // Deduplicate bullet blocks within this section
+    const uniqueBlocks: string[] = [];
+    const seenTopics = new Set<string>();
+
+    for (const block of sec.blocks) {
+      // Extract plain topic text for dedup key: "- [Topic](url)" -> "topic"
+      const firstLine = block.split("\n")[0] || "";
+      const topic = firstLine
+        .replace(/^-\s*\[([^\]]+)\].*/, "$1") // Extract link text
+        .replace(/^-\s*/, "")                  // Remove bullet
+        .trim()
+        .toLowerCase();
+      
+      if (topic && !seenTopics.has(topic)) {
+        uniqueBlocks.push(block);
+        seenTopics.add(topic);
+      }
+    }
+
+    if (uniqueBlocks.length === 0) return "";
+    return `${sec.header}\n${uniqueBlocks.join("\n")}`;
+  }).filter(s => s).join("\n\n");
+}
+
+// =============================================================================
+// SKILL: appendTeamsChatHighlights (LEGACY - kept for backward compatibility but internal logic simplified)
 // =============================================================================
 server.tool(
   "appendTeamsChatHighlights",
-  "Append a Teams Chat Highlights section to today's daily note. Idempotent: updates existing section if present.",
+  "Append a Teams Chat Highlights section to today's daily note. (Legacy wrapper around updateDailyNoteSection)",
   {
     date: z.string().optional().describe("Date in YYYY-MM-DD format (defaults to today)"),
     highlights: z.string().describe("Markdown content for the Teams Chat Highlights section"),
@@ -1605,103 +1756,16 @@ server.tool(
     })).optional().describe("Per-person notes to append to their contact files"),
   },
   async ({ date, highlights, people, personNotes }) => {
-    await mcpLog(`appendTeamsChatHighlights called — date=${date}, highlights=${highlights?.length ?? 0} chars, people=${people?.length ?? 0}, personNotes=${personNotes?.length ?? 0}`);
+    await mcpLog(`appendTeamsChatHighlights (LEGACY) called — date=${date}`);
     const targetDate = date || await getTodayDate();
     const dailyPath = path.join(DAILY_DIR, `${targetDate}.md`);
-    await mcpLog(`  resolved targetDate=${targetDate}, dailyPath=${dailyPath}`);
 
-    // Ensure daily note exists (auto-create if missing)
-    await ensureDailyNote(targetDate);
-
-    let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
-
-    // Split incoming highlights into H3 blocks (### [[Person Name]])
-    // Each block = one participant's chats. Dedup by checking if the H3 heading already exists.
-    /**
-     * Parse markdown content into a map of H3 headers -> bullet groups.
-     * Robustly merges existing and new content under correct headers.
-     * Returns the FULL reconstructed content string.
-     */
-    function deduplicateHighlights(existing: string, incoming: string): string {
-      // Data structure: Map<NormalizedHeaderKey, { originalHeader: string, blocks: string[] }>
-      // blocks = array of bullet groups (each group is a string like "- Topic\n  - Detail")
-      const sections = new Map<string, { header: string, blocks: string[] }>();
-      const sectionOrder: string[] = []; // To preserve order of existing sections
-
-      // Helper to parse content into the map
-      const parse = (text: string) => {
-        // Split by H3 header boundaries, keeping the delimiter
-        const parts = text.split(/(?=^### )/m);
-        for (const part of parts) {
-          if (!part.trim()) continue;
-
-          // Check if this block starts with H3
-          const headerMatch = part.match(/^(### .+)(\n[\s\S]*|$)/);
-          if (headerMatch) {
-            const headerLine = headerMatch[1].trim();
-            const key = headerLine.toLowerCase();
-            const content = headerMatch[2] || ""; // Content after header
-
-            if (!sections.has(key)) {
-              sections.set(key, { header: headerLine, blocks: [] });
-              sectionOrder.push(key);
-            }
-
-            // Split content into bullet groups
-            const lines = content.split("\n");
-            let currentBlock: string[] = [];
-
-            for (const line of lines) {
-              if (line.match(/^- /) && !line.match(/^  /)) {
-                // New top-level bullet = start of new group
-                if (currentBlock.length > 0) {
-                  const blockText = currentBlock.join("\n").trim();
-                  if (blockText) sections.get(key)!.blocks.push(blockText);
-                }
-                currentBlock = [line];
-              } else if (line.trim()) {
-                // Continuation or child bullet
-                currentBlock.push(line);
-              }
-            }
-            // Push final block
-            if (currentBlock.length > 0) {
-              const blockText = currentBlock.join("\n").trim();
-              if (blockText) sections.get(key)!.blocks.push(blockText);
-            }
-          }
-        }
-      };
-
-      parse(existing);
-      parse(incoming); // Merge new content into the same map structure
-
-      // Reconstruct content string
-      return sectionOrder.map(key => {
-        const sec = sections.get(key)!;
-        
-        // Deduplicate bullet blocks within this section
-        const uniqueBlocks: string[] = [];
-        const seenTopics = new Set<string>();
-
-        for (const block of sec.blocks) {
-          // Extract plain topic text for dedup key: "- [Topic](url)" -> "topic"
-          const firstLine = block.split("\n")[0] || "";
-          const topic = firstLine
-            .replace(/^-\s*\[([^\]]+)\].*/, "$1") // Extract link text
-            .replace(/^-\s*/, "")                  // Remove bullet
-            .trim()
-            .toLowerCase();
-          
-          if (topic && !seenTopics.has(topic)) {
-            uniqueBlocks.push(block);
-            seenTopics.add(topic);
-          }
-        }
-
-        if (uniqueBlocks.length === 0) return "";
-        return `${sec.header}\n${uniqueBlocks.join("\n")}`;
-      }).filter(s => s).join("\n\n");
+    let content = "";
+    try {
+      content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
+    } catch {
+      await ensureDailyNote(targetDate);
+      content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
     }
 
     // Idempotent: merge into existing section or insert new
@@ -1720,7 +1784,6 @@ server.tool(
             mergedSection + "\n\n" +
             content.slice(sectionMatch.index + sectionMatch[0].length);
         }
-        // If content is identical, no change needed
       }
     } else {
       // Insert before "## End of Day" or append at the end
