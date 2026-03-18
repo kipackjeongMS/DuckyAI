@@ -595,6 +595,12 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 
 ## Task Management in Daily Notes
 
+### Section purposes
+- `## Focus Today` — **User-curated**: planned work for the day. Only the user (or carry-forward logic) adds items here.
+- `## Carried from yesterday` — **System-generated**: auto-populated with unchecked Focus Today items from the previous day.
+- `## Tasks` — **Agent-populated**: when TCS, TMS, or other agents discover action items during the day, they go here (not Focus Today).
+- `## Tasks Completed` — **Completion log**: checked-off items from any of the above sections move here.
+
 ### Task items must be linked
 - Every task item in `## Focus Today`, `## Carried from yesterday`, `## Tasks`, or `## Tasks Completed` must:
   1. Have a corresponding file in `01-Work/Tasks/{Task Title}.md`
@@ -607,7 +613,7 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 - Use `logPRReview` MCP tool when completing a PR review — it creates the file and logs to the daily note
 
 ### Completing tasks
-- When a task in `## Focus Today` or `## Carried from yesterday` is checked off (`- [x]`), move it to `## Tasks Completed`
+- When a task in `## Focus Today`, `## Carried from yesterday`, **or `## Tasks`** is checked off (`- [x]`), move it to `## Tasks Completed`
 - Update the task file status to `done` via `updateTaskStatus`
 
 ### Carry-forward logic
