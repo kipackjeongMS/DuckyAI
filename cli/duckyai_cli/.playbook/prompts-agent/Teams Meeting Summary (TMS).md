@@ -92,7 +92,7 @@ This is the **primary detailed record** — put everything here.
    - If the section is empty, just format your new highlights.
    - If the section already has content, **merge your new findings into it**.
    - Do NOT duplicate meetings. If a meeting with the same title/time is already listed, skip it or add only new information.
-   - Maintain the structure: `### Title (Time)` → `**Summary**` → `**Full notes**`.
+   - Maintain the structure: `### [[Link|Title]] (Time)` → `**Summary**`.
 
 3. **Update the note**:
    - Call `updateDailyNoteSection` with:
@@ -102,12 +102,11 @@ This is the **primary detailed record** — put everything here.
 
 **Format rules:**
 ```markdown
-### {Meeting Title} ({HH:MM - HH:MM})   
-**Summary**: 3-4 sentence summary of key discussion points and outcomes.   
-→ **Full notes**: [[YYYY-MM-DD Meeting Title]]
+### [[YYYY-MM-DD Meeting Title|Meeting Title]] ({HH:MM - HH:MM})   
+**Summary**: 3-4 sentence summary of key discussion points and outcomes.
 ```
 
-Each meeting entry should be concise (summary only) with an Obsidian link to the full meeting note in `02-People/Meetings/`.
+Embed the wiki link directly in the H3 title using `[[YYYY-MM-DD Meeting Title|Meeting Title]]` (aliased link showing just the title). Do NOT add a separate "Full notes" line. Each entry should be concise — summary only, with the link in the heading.
 
 ⚠️ **Do NOT include attendees in the daily note highlights.** No `**Attendees**:` line. Attendee lists belong ONLY in the per-meeting note (Step 4a). The daily note is a lightweight summary — keep it short.
 
@@ -131,7 +130,7 @@ After all processing is complete, call `updateTeamsMeetingSyncState` with:
 - **Skip meetings without transcripts**: If a meeting has no transcript, recap, or notes available from WorkIQ, do NOT create a meeting note or daily note entry for it. Only process meetings with actual content.
 - **Never re-process**: Always check the watermark first. Only process new meetings.
 - **Idempotent**: If a meeting note already exists in `02-People/Meetings/`, skip creating it.
-- **Details in meeting note, summary in daily note**: Full discussion/decisions/action items go in the per-meeting note. The daily note gets only a 3-4 sentence summary with a link.
+- **Details in meeting note, summary in daily note**: Full discussion/decisions/action items go in the per-meeting note. The daily note gets only a 3-4 sentence summary with the meeting title linked to the full note.
 - **Respect existing content**: When updating the daily note, preserve all existing sections.
 - **Separate from chats**: Do NOT include chat messages. Only process calendar meetings with Teams links.
 - **If no new meetings**: Simply update the watermark and report "No new Teams meetings since last sync."
