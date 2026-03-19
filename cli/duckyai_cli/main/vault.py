@@ -73,10 +73,10 @@ def _interactive_select(items: List[dict], default_index: int = 0) -> Optional[i
     def _render(first: bool = False):
         if not first:
             # Move cursor back to the first menu line.
-            # After rendering, the cursor sits on the last item (no trailing \n),
-            # so we only need to go up (count - 1) lines.
+            # Use \033[nA (CUU) + \r instead of \033[nF (CPL) for
+            # reliable behaviour across Windows Terminal / ConHost.
             if count > 1:
-                sys.stdout.write(f'\033[{count - 1}F')
+                sys.stdout.write(f'\033[{count - 1}A\r')
             else:
                 sys.stdout.write('\r')
         for i, v in enumerate(items):
@@ -84,10 +84,10 @@ def _interactive_select(items: List[dict], default_index: int = 0) -> Optional[i
                 line = f'  \033[36;1m❯ {v["name"]}\033[0m \033[2m— {v["path"]}\033[0m'
             else:
                 line = f'    {v["name"]} \033[2m— {v["path"]}\033[0m'
-            # Move to column 0, clear line, print, move to next line
-            sys.stdout.write(f'\r\033[2K{line}')
+            # Clear line, print content, move to next line
+            sys.stdout.write(f'\033[2K{line}')
             if i < count - 1:
-                sys.stdout.write('\n')
+                sys.stdout.write('\n\r')
         # Clear any leftover lines below
         sys.stdout.write('\033[J')
         sys.stdout.flush()
