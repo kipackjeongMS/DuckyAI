@@ -66,15 +66,29 @@ def _interactive_select(items: List[dict], default_index: int = 0) -> Optional[i
     cursor = default_index
     count = len(items)
 
+    # Get terminal width to prevent line wrapping (which breaks cursor math)
+    try:
+        term_width = os.get_terminal_size().columns
+    except OSError:
+        term_width = 80
+
+    def _truncate(text: str) -> str:
+        """Truncate visible text to terminal width, ignoring ANSI escapes."""
+        import re
+        visible_len = len(re.sub(r'\033\[[0-9;]*m', '', text))
+        if visible_len <= term_width:
+            return text
+        # Over budget — trim from the raw string end, preserving reset code
+        overshoot = visible_len - term_width + 1  # +1 for safety
+        stripped = text.rstrip('\033[0m')
+        return stripped[:-overshoot] + '\033[0m'
+
     # Hide cursor
     sys.stdout.write('\033[?25l')
     sys.stdout.flush()
 
     def _render(first: bool = False):
         if not first:
-            # Move cursor back to the first menu line.
-            # Use \033[nA (CUU) + \r instead of \033[nF (CPL) for
-            # reliable behaviour across Windows Terminal / ConHost.
             if count > 1:
                 sys.stdout.write(f'\033[{count - 1}A\r')
             else:
@@ -84,11 +98,9 @@ def _interactive_select(items: List[dict], default_index: int = 0) -> Optional[i
                 line = f'  \033[36;1m❯ {v["name"]}\033[0m \033[2m— {v["path"]}\033[0m'
             else:
                 line = f'    {v["name"]} \033[2m— {v["path"]}\033[0m'
-            # Clear line, print content, move to next line
-            sys.stdout.write(f'\033[2K{line}')
+            sys.stdout.write(f'\033[2K{_truncate(line)}')
             if i < count - 1:
                 sys.stdout.write('\n\r')
-        # Clear any leftover lines below
         sys.stdout.write('\033[J')
         sys.stdout.flush()
 
