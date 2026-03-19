@@ -786,6 +786,9 @@ class ExecutionManager:
         # Inject user timezone so the LLM can convert UTC timestamps to local dates
         params['user_timezone'] = self.config.get_user_timezone()
 
+        # Inject today's date in user timezone so the LLM has an explicit anchor
+        params['today_date'] = self.config.user_now().strftime('%Y-%m-%d')
+
         # Mode A: Explicit ignore_watermark
         if params.get('ignore_watermark'):
             params['fetch_mode'] = 'lookback'

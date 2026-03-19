@@ -14,17 +14,20 @@ tags:
 ## Carried from yesterday
 - (none)
 
-## PRs & Code Reviews
-- 
+## Tasks
+- [ ] 
 
-## Meetings
-- 
+## PRs & Code Reviews
+- [ ] 
 
 ## Tasks Completed
 - [x] 
 
-## Technical Notes
-- 
+## Notes
+
+## Teams Meeting Highlights
+
+## Teams Chat Highlights
 
 ## End of Day
 ### What shipped?

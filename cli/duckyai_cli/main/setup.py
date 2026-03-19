@@ -232,7 +232,24 @@ tags:
     daily_path = vault_path / "04-Periodic" / "Daily" / f"{today_str}.md"
     if not daily_path.exists():
         day_name = datetime.now().strftime("%A, %B %d, %Y")
-        daily_content = f"""---
+        # Load template from vault source, falling back to packaged playbook template
+        _template_candidates = []
+        if vault_root:
+            _template_candidates.append(Path(vault_root) / "Templates" / "Daily Note.md")
+        _template_candidates.append(
+            Path(__file__).parent.parent / ".playbook" / "templates" / "Daily Note Template.md"
+        )
+        _template_source = next((p for p in _template_candidates if p.exists()), None)
+        if _template_source:
+            import re as _re
+            _raw = _template_source.read_text(encoding="utf-8")
+            # Replace Obsidian template variables with actual values
+            _raw = _re.sub(r"\{\{date:[^}]*YYYY-MM-DD[^}]*\}\}", today_str, _raw)
+            _raw = _re.sub(r"\{\{date:[^}]*dddd[^}]*\}\}", day_name, _raw)
+            _raw = _raw.replace("{{date}}", today_str).replace("{{dayHeading}}", day_name)
+            daily_content = _raw
+        else:
+            daily_content = f"""---
 created: {today_str}
 type: daily
 date: {today_str}
@@ -248,25 +265,22 @@ tags:
 ## Carried from yesterday
 - (none)
 
-## PRs & Code Reviews
-- 
+## Tasks
+- [ ] 
 
-## Meetings
-- 
+## PRs & Code Reviews
+- [ ] 
 
 ## Tasks Completed
 - [x] 
 
-## Technical Notes
-- 
+## Notes
+
+## Teams Meeting Highlights
+
+## Teams Chat Highlights
 
 ## End of Day
-### What shipped?
-- 
-
-### Blockers / Risks
-- 
-
 ### Carry forward to tomorrow
 - [ ] 
 """
@@ -498,10 +512,10 @@ tags:
         services_path=str(services_dir),
     )
 
-    # Initialize .github/skills symlinks so built-in skills are available immediately
+    # Initialize .github/ structure, skills symlinks, and copilot-instructions
     from .cli import ensure_init
     ensure_init(vault_path)
-    click.echo(f"  ✓ Skills symlinked into .github/skills/")
+    click.echo(f"  ✓ .github/ initialized")
 
     # Open vault in IDE if detected
     if selected_ide:

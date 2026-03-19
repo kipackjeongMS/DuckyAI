@@ -62,11 +62,13 @@ Skip meetings that are:
 
 ### Step 4: Update vault
 
+⚠️ **Use `today_date` from Agent Parameters as your reference for "today".** All date conversions must use `user_timezone`, not UTC. **Call `convertUtcToLocalDate`** for every UTC timestamp from WorkIQ — do NOT attempt manual timezone conversion.
+
 #### 4a. Create Per-Meeting Note
 
 For each meeting with meaningful content, call `createMeeting` with:
 - `title`: Meeting title
-- `date`: Meeting **local date** (YYYY-MM-DD), converted from UTC to `user_timezone` from Agent Parameters
+- `date`: Meeting **local date** (YYYY-MM-DD) — call `convertUtcToLocalDate` with the meeting's UTC start time to get the correct local date. Verify against `today_date`.
 - `time`: Meeting start time (HH:MM) in `user_timezone`
 - `attendees`: List of attendee names
 - `project`: Related project if identifiable
@@ -113,28 +115,7 @@ Each meeting entry should be concise (summary only) with an Obsidian link to the
 - If you mention new people, call `ensureContactExists` for them.
 - If you have specific notes about a person, call `appendPersonNote`.
 
-#### 4c. Create Tasks (if action items found)
-
-For each action item identified that are not trivial and assigned to the user, determine the type:
-
-**PR review tasks** (e.g., "review PR #1234", "check PR", "approve PR"):
-- Call `logPRReview` with `person` (PR author), `prNumber`, `prUrl`, `description`, and `action: "reviewed"` (or `"commented"`)
-- This creates a task file in `01-Work/PRReviews/` and logs to the daily note automatically
-
-**All other tasks**:
-- Call `createTask` with:
-  - `title`: Descriptive task title
-  - `description`: Context from the meeting
-  - `priority`: P2 (default) or P1 if urgent language is used
-  - `project`: Related project if identifiable from context
-
-#### 4c. Create Meeting Note (if substantial content)
-
-If a meeting has significant content (decisions, action items, or detailed discussion), call `createMeeting` with:
-- `title`: Meeting title
-- `attendees`: List of attendee names
-- `date`: Meeting date
-- `time`: Meeting start time
+> **Note**: Do NOT create tasks or PR reviews here. The Task Manager (TM) agent runs automatically after you finish and handles all task/PR review creation from your highlights.
 
 ### Step 6: Update watermark
 

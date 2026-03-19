@@ -276,6 +276,33 @@ def ensure_init(vault_root: Path):
             else:
                 link.unlink()
 
+    # Sync CLI-managed copilot-instructions.md from playbook (always kept up to date)
+    playbook_ci = Path(__file__).resolve().parent.parent / '.playbook' / 'copilot-instructions.md'
+    ci_file = github_dir / 'copilot-instructions.md'
+    if playbook_ci.exists():
+        import shutil as _shutil
+        _shutil.copy2(str(playbook_ci), str(ci_file))
+
+    # Create user customizations stub if it doesn't exist (never overwritten)
+    user_ci_file = github_dir / 'copilot-instructions-user.md'
+    if not user_ci_file.exists():
+        user_ci_file.write_text(
+            "# My Customizations\n\n"
+            "This file is yours — the DuckyAI CLI will never overwrite it.\n"
+            "Add your personal context here: role, team, technologies, aliases, domain knowledge.\n\n"
+            "## About Me\n\n"
+            "- **Role:** \n"
+            "- **Team:** \n"
+            "- **Technologies:** \n\n"
+            "## Person Aliases\n\n"
+            "| Alias | Links To |\n"
+            "|-------|----------|\n"
+            "| | |\n\n"
+            "## Domain Knowledge\n\n"
+            "<!-- Add any domain-specific context here -->\n",
+            encoding="utf-8"
+        )
+
     # Ensure .github/skills/ exists (user-owned)
     skills_dir = github_dir / 'skills'
     skills_dir.mkdir(parents=True, exist_ok=True)

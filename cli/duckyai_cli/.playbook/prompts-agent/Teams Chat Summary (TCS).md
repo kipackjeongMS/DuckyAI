@@ -30,17 +30,17 @@ The fetch window has been **pre-resolved** for you in the Agent Parameters secti
 
 ⚠️ **Use ONLY the values provided in Agent Parameters.** Do not override `fetch_since` with `lookback_hours` or vice versa.
 
-### Step 2: Fetch Teams chats
+### Step 3: Fetch Teams chats
 
 Call `workiq-ask_work_iq` with a query based on `fetch_mode`:
 
 **fetch_mode: watermark:**
 
-> "What Teams 1:1 and group chat messages was I involved in since {fetch_since}? Only include person-to-person and group chats — do NOT include messages from Teams channels. Please provide the FULL complete message content — not truncated or summarized. I need every word of each message. Include: sender name, chat/thread topic, full message body, timestamp, and the deep link URL for each message. List ALL messages."
+> "What Teams chat messages was I involved in since {fetch_since}? IMPORTANT: Only return messages from 1:1 direct chats and group chats (chatType: oneOnOne or group). EXCLUDE all Teams channel messages (chatType: channel) — these are posts from Teams channels like 'General', 'Announcements', or any channel within a Team. Please provide the FULL complete message content — not truncated or summarized. I need every word of each message. Include: sender name, chat type (1:1 or group), chat/thread topic, full message body, timestamp, and the deep link URL for each message. List ALL messages."
 
 **fetch_mode: lookback:**
 
-> "What Teams 1:1 and group chat messages was I involved in during the last {lookback_hours} hours? Only include person-to-person and group chats — do NOT include messages from Teams channels. Please provide the FULL complete message content — not truncated or summarized. I need every word of each message. Include: sender name, chat/thread topic, full message body, timestamp, and the deep link URL for each message. List ALL messages."
+> "What Teams chat messages was I involved in during the last {lookback_hours} hours? IMPORTANT: Only return messages from 1:1 direct chats and group chats (chatType: oneOnOne or group). EXCLUDE all Teams channel messages (chatType: channel) — these are posts from Teams channels like 'General', 'Announcements', or any channel within a Team. Please provide the FULL complete message content — not truncated or summarized. I need every word of each message. Include: sender name, chat type (1:1 or group), chat/thread topic, full message body, timestamp, and the deep link URL for each message. List ALL messages."
 
 **If WorkIQ response mentions more messages than it listed** (e.g., "showing 5 of 11"), immediately follow up with:
 
@@ -58,34 +58,43 @@ For lookback_hours > 6:
 
 Merge all results before proceeding to Step 3.
 
-### Step 2.5: Log raw results (diagnostic)
+### Step 3.5: Log raw results and filter (diagnostic)
 
-**IMPORTANT**: Before processing, print a diagnostic summary of what WorkIQ returned:
+**IMPORTANT**: Before processing, print a diagnostic summary of what WorkIQ returned AND filter out any channel messages that slipped through:
 - Total number of messages/threads received
-- For each message: sender name, timestamp, thread topic (one line each)
-- Whether it appears to be a 1:1 chat, group chat, or channel message
+- For each message: sender name, timestamp, thread topic, chat type (one line each)
+- Mark channel messages as `(SKIP)` — drop them before proceeding
 
-This helps diagnose if WorkIQ is returning incomplete data. Format:
+**How to identify channel messages to exclude:**
+- `chatType` is "channel" (if WorkIQ provides this field)
+- Topic/thread name matches a Teams channel pattern (e.g., "General", "Announcements", team-scoped names)
+- Large participant count (>15 members is likely a channel, not a group chat)
+- Message originates from a Team rather than a direct chat
+
+Format:
 
 ```
 [TCS Diagnostic] WorkIQ returned N messages:
   1. [1:1] John Smith - 2026-03-13 10:30 - "Project sync" 
-  2. [channel] #General - 2026-03-13 11:00 - "Sprint update" (SKIP)
+  2. [channel] #General - 2026-03-13 11:00 - "Sprint update" (SKIP - channel)
   3. [group] Team Chat - 2026-03-13 11:45 - "Deployment plan"
+Processing M messages after filtering.
 ```
 
-### Step 3: Process and summarize
+### Step 4: Process and summarize
 
 **Group by date first, then by participant within each date.**
 
-1. For each message/thread, determine which **calendar date** it belongs to by converting the message timestamp to the **`user_timezone`** from Agent Parameters (e.g., `America/Los_Angeles`). For example, a message at `2026-03-17T00:30:00Z` in `America/Los_Angeles` is **March 16**, not March 17.
+⚠️ **Use `today_date` from Agent Parameters as your reference for "today".** Do NOT use UTC — always convert timestamps to `user_timezone`.
+
+1. For each message/thread, **call `convertUtcToLocalDate`** with the message's UTC timestamp to get the correct local date. Do NOT attempt manual timezone math — always use the tool. For example, `2026-03-17T00:30:00Z` in `America/Los_Angeles` converts to `2026-03-16 16:30` — note the date is March **16**, not 17.
 2. Group all messages by their local date (e.g., 2026-03-12, 2026-03-13, etc.).
 3. Within each date group, organize by participant (excluding "Me"/the user):
    - Collect all conversation threads involving that person on that date
    - For each thread, extract key points and action items as bullet points
    - Skip threads that are trivial (e.g., single emoji reactions, "thanks", "ok")
 
-### Step 4: Update vault
+### Step 5: Update vault
 
 #### 4a. Daily Notes — Teams Chat Highlights
 
@@ -123,22 +132,9 @@ This helps diagnose if WorkIQ is returning incomplete data. Format:
 - If you mention new people, call `ensureContactExists` for them.
 - If you have specific notes about a person, call `appendPersonNote`.
 
-#### 4b. Create Tasks (if action items found)
+> **Note**: Do NOT create tasks or PR reviews here. The Task Manager (TM) agent runs automatically after you finish and handles all task/PR review creation from your highlights.
 
-For each action item identified, determine the type:
-
-**PR review tasks** (e.g., "review PR #1234", "check PR", "approve PR"):
-- Call `logPRReview` with `person` (PR author), `prNumber`, `prUrl`, `description`, and `action: "reviewed"` (or `"commented"`)
-- This creates a task file in `01-Work/PRReviews/` and logs to the daily note automatically
-
-**All other tasks**:
-- Call `createTask` with:
-  - `title`: Descriptive task title
-  - `description`: Context from the chat thread
-  - `priority`: P2 (default) or P1 if urgent language is used
-  - `project`: Related project if identifiable from context
-
-### Step 6: Update watermark
+### Step 7: Update watermark
 
 After all processing is complete, call `updateTeamsChatSyncState` with:
 - `lastSynced`: Current ISO timestamp (the time of THIS sync, not the chat timestamps)

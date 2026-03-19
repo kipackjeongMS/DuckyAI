@@ -124,6 +124,12 @@ class Orchestrator:
         # (event loop + slot-freed callback can race)
         self._queue_processing_lock = threading.Lock()
 
+        # Track which parent agents have completed for each dependent (AND semantics).
+        # Maps dep_abbr → set of completed parent abbreviations.
+        self._dependent_parents_completed: Dict[str, set] = {}
+        self._dependent_cooldown: Dict[str, float] = {}  # agent_abbr → last_dispatch_timestamp
+        self._dependent_cooldown_lock = threading.Lock()
+
         logger.info(f"Orchestrator initialized for vault: {self.vault_path}")
         logger.info(f"Loaded {len(self.agent_registry.agents)} agents")
         logger.info(f"Loaded {len(self.poller_manager.pollers)} poller(s)")
@@ -622,6 +628,8 @@ class Orchestrator:
 
             if ctx.success:
                 logger.info(f"{agent.abbreviation} completed ({ctx.duration:.1f}s)")
+                # Dispatch dependent agents (trigger_wait_for)
+                self._dispatch_dependents(agent, ctx)
             else:
                 duration_str = f"{ctx.duration:.1f}s" if ctx.duration else "unknown"
                 error_msg = f"{agent.abbreviation} failed: {ctx.status} ({duration_str})"
@@ -634,6 +642,112 @@ class Orchestrator:
         except Exception as e:
             logger.error(f"{agent.abbreviation} error: {e}", exc_info=True)
             return None
+
+    def _dispatch_dependents(self, completed_agent: AgentDefinition, ctx: ExecutionContext,
+                              _chain_depth: int = 0):
+        """
+        After a successful execution, dispatch any agents that depend on the completed agent
+        via `trigger_wait_for`.
+
+        Uses AND semantics: if trigger_wait_for lists multiple parents (e.g., [TCS, TMS]),
+        the dependent is dispatched only after ALL listed parents have completed.
+
+        A small grace period (3s) is applied before dispatch to ensure file writes
+        from parent agents are fully flushed to disk.
+
+        Args:
+            completed_agent: The agent that just completed successfully
+            ctx: The execution context of the completed agent
+            _chain_depth: Internal counter to prevent infinite circular chains
+        """
+        if _chain_depth > 10:
+            logger.warning(
+                f"Dependency chain depth exceeded (>{10}) after {completed_agent.abbreviation}, "
+                "possible circular dependency — aborting"
+            )
+            return
+
+        completed_abbr = completed_agent.abbreviation
+        now = time.time()
+
+        for dep_agent in list(self.agent_registry.agents.values()):
+            # Skip if this agent doesn't depend on the completed one
+            if completed_abbr not in dep_agent.trigger_wait_for:
+                continue
+
+            # Guard: skip self-referential dependencies
+            if dep_agent.abbreviation == completed_abbr:
+                logger.warning(
+                    f"Self-referential trigger_wait_for in {dep_agent.abbreviation}, skipping"
+                )
+                continue
+
+            dep_key = dep_agent.abbreviation
+
+            with self._dependent_cooldown_lock:
+                # Cooldown: prevent duplicate dispatch
+                last_dispatch = self._dependent_cooldown.get(dep_key, 0.0)
+                if now - last_dispatch < 60:
+                    logger.info(
+                        f"⛓️ {completed_abbr} → {dep_key} skipped (cooldown, "
+                        f"dispatched {now - last_dispatch:.0f}s ago)"
+                    )
+                    continue
+
+                # AND semantics: track which parents have completed
+                if dep_key not in self._dependent_parents_completed:
+                    self._dependent_parents_completed[dep_key] = set()
+                self._dependent_parents_completed[dep_key].add(completed_abbr)
+
+                required = set(dep_agent.trigger_wait_for)
+                satisfied = self._dependent_parents_completed[dep_key]
+                pending = required - satisfied
+
+                if pending:
+                    logger.info(
+                        f"⛓️ {completed_abbr} ✓ for {dep_key}, "
+                        f"waiting on: {', '.join(sorted(pending))}",
+                        console=True
+                    )
+                    continue
+
+                # All parents satisfied — clear tracking and set cooldown
+                self._dependent_parents_completed.pop(dep_key, None)
+                self._dependent_cooldown[dep_key] = now
+
+            try:
+                logger.info(
+                    f"⛓️ All parents complete → dispatching {dep_agent.abbreviation}",
+                    console=True
+                )
+
+                # Grace period: let file writes from parent agents flush to disk
+                time.sleep(3)
+
+                # Build a synthetic trigger event carrying the parent's context
+                dep_event_data = {
+                    'path': '',
+                    'event_type': 'dependent',
+                    'is_directory': False,
+                    'timestamp': ctx.end_time or ctx.start_time,
+                    'frontmatter': {},
+                    'triggered_by': completed_abbr,
+                }
+
+                # Dispatch via normal path (respects concurrency limits, queuing)
+                self._dispatch_single_worker(dep_agent, dep_event_data, TriggerEvent(
+                    path='',
+                    event_type='dependent',
+                    is_directory=False,
+                    timestamp=ctx.end_time or ctx.start_time,
+                    frontmatter={},
+                ))
+            except Exception as e:
+                logger.error(
+                    f"Failed to dispatch dependent {dep_agent.abbreviation} "
+                    f"after {completed_abbr}: {e}",
+                    exc_info=True
+                )
 
     def _process_queued_tasks(self):
         """

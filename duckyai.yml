@@ -82,3 +82,12 @@ nodes:
   agent_params:
     model: claude-haiku-4.5
     lookback_hours: 24
+- type: agent
+  name: Task Manager (TM)
+  trigger_wait_for: [TCS, TMS]
+  output_path: 04-Periodic/Daily
+  output_type: update_file
+  requires_input_file: false
+  enabled: true
+  agent_params:
+    model: claude-haiku-4.5

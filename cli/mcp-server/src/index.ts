@@ -449,6 +449,74 @@ LIMIT 5
 }
 
 // =============================================================================
+// SKILL: getCurrentDate
+// =============================================================================
+server.tool(
+  "getCurrentDate",
+  "Get the current date and time in the user's configured timezone. Use this to verify date calculations.",
+  {},
+  async () => {
+    const tz = await getUserTimezone();
+    const now = new Date();
+    const localDate = toLocalDateString(now, tz);
+    const localTime = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(now);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Date: ${localDate}\nTime: ${localTime}\nTimezone: ${tz}`,
+        },
+      ],
+    };
+  }
+);
+
+// =============================================================================
+// SKILL: convertUtcToLocalDate
+// =============================================================================
+server.tool(
+  "convertUtcToLocalDate",
+  "Convert a UTC timestamp to the user's local date (YYYY-MM-DD) and time (HH:MM). Use this for EVERY timestamp from WorkIQ or Teams data before grouping by date.",
+  {
+    utcTimestamp: z.string().describe("UTC timestamp string (e.g., '2026-03-19T01:30:00Z' or '2026-03-19T01:30:00.000Z')"),
+  },
+  async ({ utcTimestamp }) => {
+    const tz = await getUserTimezone();
+    const date = new Date(utcTimestamp);
+
+    if (isNaN(date.getTime())) {
+      return {
+        content: [{ type: "text", text: `Invalid timestamp: ${utcTimestamp}` }],
+      };
+    }
+
+    const localDate = toLocalDateString(date, tz);
+    const localTime = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `${localDate} ${localTime}`,
+        },
+      ],
+    };
+  }
+);
+
+// =============================================================================
 // SKILL: prepareDailyNote
 // =============================================================================
 server.tool(
@@ -516,8 +584,8 @@ server.tool(
     prUrl: z.string().describe("Full PR URL"),
     description: z.string().describe("Brief description of what the PR does"),
     action: z
-      .enum(["reviewed", "commented"])
-      .describe("Whether you reviewed or commented on the PR"),
+      .enum(["todo", "reviewed", "commented"])
+      .describe("'todo' = pending review (adds to ## PRs & Code Reviews); 'reviewed'/'commented' = completed (adds to ## Tasks Completed)"),
   },
   async ({ person, prNumber, prUrl, description, action }) => {
     const today = await getTodayDate();
@@ -566,7 +634,7 @@ server.tool(
       const prNote = `---
 created: ${today}
 type: task
-status: ${action === "reviewed" ? "done" : "in-progress"}
+status: ${action === "reviewed" ? "done" : action === "commented" ? "in-progress" : "todo"}
 priority: P2
 tags:
   - pr-review
@@ -577,31 +645,47 @@ tags:
 - **Author**: [[${person}]]
 - **PR**: [PR ${prNumber}](${prUrl})
 - **Description**: ${description}
-- **Action**: ${action === "reviewed" ? "Reviewed" : "Commented"}
+- **Action**: ${action === "reviewed" ? "Reviewed" : action === "commented" ? "Commented" : "Pending Review"}
 `;
       await fs.writeFile(prReviewPath, prNote, "utf-8");
     }
 
     let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
 
-    // Build the log entry with deep link to PRReviews file
-    const actionText = action === "reviewed" ? "Reviewed" : "Commented on"
-    const logEntry = `- [x] ${actionText} [[${person}]]'s PR - [[01-Work/PRReviews/${finalPrTitle}|PR ${prNumber}]] - ${description}`;
-
-    // Dedup: skip daily note entry if this PR number is already logged
-    const contentLower = content.toLowerCase();
-    if (!contentLower.includes(`pr ${prNumber.toLowerCase()}`)) {
-      // Insert after existing completed tasks
-      const tasksMatch = content.match(/(## Tasks Completed\n)([\s\S]*?)(\n## )/);
-      if (tasksMatch) {
-        const existingTasks = tasksMatch[2].trim();
-        const newTasks = existingTasks === "- [x]" 
-          ? logEntry 
-          : `${existingTasks}\n${logEntry}`;
-        content = content.replace(
-          tasksMatch[0],
-          `${tasksMatch[1]}${newTasks}\n\n${tasksMatch[3]}`
-        );
+    if (action === "todo") {
+      // Pending review → add to ## PRs & Code Reviews
+      const pendingEntry = `- [ ] [[01-Work/PRReviews/${finalPrTitle}|PR ${prNumber}]] - ${description}`;
+      const contentLower = content.toLowerCase();
+      if (!contentLower.includes(`pr ${prNumber.toLowerCase()}`)) {
+        const prSectionMatch = content.match(/(## PRs & Code Reviews\n)([\s\S]*?)(\n## |\n?$)/);
+        if (prSectionMatch) {
+          const existing = prSectionMatch[2].trim();
+          const newContent = existing === "- [ ]" || existing === "-" || existing === ""
+            ? pendingEntry
+            : `${existing}\n${pendingEntry}`;
+          content = content.replace(
+            prSectionMatch[0],
+            `${prSectionMatch[1]}${newContent}\n\n${prSectionMatch[3]}`
+          );
+        }
+      }
+    } else {
+      // Completed review → add to ## Tasks Completed
+      const actionText = action === "reviewed" ? "Reviewed" : "Commented on";
+      const logEntry = `- [x] ${actionText} [[${person}]]'s PR - [[01-Work/PRReviews/${finalPrTitle}|PR ${prNumber}]] - ${description}`;
+      const contentLower = content.toLowerCase();
+      if (!contentLower.includes(`pr ${prNumber.toLowerCase()}`)) {
+        const tasksMatch = content.match(/(## Tasks Completed\n)([\s\S]*?)(\n## |\n?$)/);
+        if (tasksMatch) {
+          const existingTasks = tasksMatch[2].trim();
+          const newTasks = existingTasks === "- [x]"
+            ? logEntry
+            : `${existingTasks}\n${logEntry}`;
+          content = content.replace(
+            tasksMatch[0],
+            `${tasksMatch[1]}${newTasks}\n\n${tasksMatch[3]}`
+          );
+        }
       }
     }
 
@@ -617,11 +701,12 @@ tags:
       ? ` (created contact for ${person})`
       : "";
 
+    const actionLabel = action === "todo" ? "queued for review" : action;
     return {
       content: [
         {
           type: "text",
-          text: `Logged ${action} on ${person}'s PR ${prNumber}${contactMsg}`,
+          text: `Logged ${actionLabel} on ${person}'s PR ${prNumber}${contactMsg}`,
         },
       ],
     };
@@ -662,7 +747,7 @@ server.tool(
 
     // Add to Tasks Completed
     const logEntry = `- [x] ${action}`;
-    const tasksMatch = content.match(/(## Tasks Completed\n)([\s\S]*?)(\n## )/);
+    const tasksMatch = content.match(/(## Tasks Completed\n)([\s\S]*?)(\n## |\n?$)/);
     if (tasksMatch) {
       const existingTasks = tasksMatch[2].trim();
       const newTasks = existingTasks === "- [x]"
@@ -777,6 +862,68 @@ server.tool(
       content: [
         { type: "text", text: `Created task: ${title} (${priority})` },
       ],
+    };
+  }
+);
+
+// =============================================================================
+// SKILL: logTask
+// =============================================================================
+server.tool(
+  "logTask",
+  "Add a pending task to the ## Tasks section of today's daily note as a linked item",
+  {
+    title: z.string().describe("Task title — must match the file in 01-Work/Tasks/ (used to build the wiki link)"),
+  },
+  async ({ title }) => {
+    const today = await getTodayDate();
+    const dailyPath = path.join(DAILY_DIR, `${today}.md`);
+
+    try {
+      await fs.access(dailyPath);
+    } catch {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Daily note for ${today} doesn't exist. Run prepareDailyNote first.`,
+          },
+        ],
+      };
+    }
+
+    let content = normalizeLineEndings(await fs.readFile(dailyPath, "utf-8"));
+
+    const logEntry = `- [ ] [[01-Work/Tasks/${title}|${title}]]`;
+
+    // Dedup: skip if already present (case-insensitive)
+    const contentLower = content.toLowerCase();
+    if (contentLower.includes(`[[01-work/tasks/${title.toLowerCase()}`)) {
+      return {
+        content: [{ type: "text", text: `Task "${title}" already in daily note. Skipped.` }],
+      };
+    }
+
+    // Use negative lookahead to avoid matching "## Tasks Completed"
+    const tasksMatch = content.match(/(## Tasks\n)([\s\S]*?)(\n## (?!Tasks)|\n?$)/);
+    if (tasksMatch) {
+      const existing = tasksMatch[2].trim();
+      const newContent = existing === "- [ ]" || existing === ""
+        ? logEntry
+        : `${existing}\n${logEntry}`;
+      content = content.replace(
+        tasksMatch[0],
+        `${tasksMatch[1]}${newContent}\n\n${tasksMatch[3]}`
+      );
+      await fs.writeFile(dailyPath, content, "utf-8");
+    } else {
+      return {
+        content: [{ type: "text", text: `"## Tasks" section not found in daily note. Cannot add task.` }],
+      };
+    }
+
+    return {
+      content: [{ type: "text", text: `Added to ## Tasks: ${title}` }],
     };
   }
 );

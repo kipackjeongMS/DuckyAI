@@ -26,10 +26,10 @@ AGENT_SCHEMA = {
     "required": ["title", "abbreviation", "category", "trigger_pattern", "trigger_event"],
     "properties": {
         "title": {"type": "string"},
-        "abbreviation": {"type": "string", "pattern": "^[A-Z]{3}$"},
+        "abbreviation": {"type": "string", "pattern": "^[A-Z]{2,4}$"},
         "category": {"enum": ["ingestion", "publish", "research"]},
         "trigger_pattern": {"type": "string"},
-        "trigger_event": {"enum": ["created", "modified", "deleted", "scheduled", "manual"]},
+        "trigger_event": {"enum": ["created", "modified", "deleted", "scheduled", "manual", "dependent"]},
         "executor": {"enum": ["copilot_cli", "claude_code"]},
         "max_parallel": {"type": "integer", "minimum": 1},
         "timeout_minutes": {"type": "integer", "minimum": 1}
@@ -160,7 +160,7 @@ class AgentRegistry:
         Returns:
             Abbreviation string, or None if not found
         """
-        match = re.search(r'\(([A-Z]{3,4})\)$', name)
+        match = re.search(r'\(([A-Z]{2,4})\)$', name)
         return match.group(1) if match else None
 
     def _derive_agent_id(self, name: str, prompt: str) -> str:
