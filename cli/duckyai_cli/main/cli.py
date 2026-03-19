@@ -692,13 +692,7 @@ def main(
     elif show_config:
         show_config_handler()
     elif prompt_text or interactive_prompt or not any([orchestrator, orchestrator_status, list_agents, show_config]):
-        # Check if onboarding is needed (first-time user)
-        from .setup import needs_onboarding, run_onboarding
-        if needs_onboarding(vault_root):
-            run_onboarding(vault_root=vault_root)
-            return
-
-        # Auto-init .github symlink
+        # Auto-init .github symlink, skills, services junction, etc.
         ensure_init(vault_root)
 
         # Check for WorkIQ auth expired flag
