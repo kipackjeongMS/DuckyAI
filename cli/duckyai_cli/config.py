@@ -248,14 +248,35 @@ class Config:
     def get_user_primary_language(self) -> str:
         return self.get("user.primaryLanguage", "en")
 
+    # Common Windows → IANA timezone mappings
+    _WINDOWS_TZ_MAP = {
+        "Pacific Standard Time": "America/Los_Angeles",
+        "Mountain Standard Time": "America/Denver",
+        "Central Standard Time": "America/Chicago",
+        "Eastern Standard Time": "America/New_York",
+        "UTC": "UTC",
+        "GMT Standard Time": "Europe/London",
+        "Central European Standard Time": "Europe/Berlin",
+        "China Standard Time": "Asia/Shanghai",
+        "Tokyo Standard Time": "Asia/Tokyo",
+        "Korea Standard Time": "Asia/Seoul",
+        "AUS Eastern Standard Time": "Australia/Sydney",
+        "India Standard Time": "Asia/Kolkata",
+        "Hawaiian Standard Time": "Pacific/Honolulu",
+        "Alaskan Standard Time": "America/Anchorage",
+        "Atlantic Standard Time": "America/Halifax",
+    }
+
     def get_user_timezone(self) -> str:
         """Return the user's timezone as an IANA name.
 
         Priority: duckyai.yml ``user.timezone`` → OS local timezone via tzlocal → ``"UTC"``.
+        Automatically converts Windows timezone names to IANA equivalents.
         """
         configured = self.get("user.timezone")
         if configured:
-            return configured
+            # Map Windows timezone name to IANA if needed
+            return self._WINDOWS_TZ_MAP.get(configured, configured)
         try:
             from tzlocal import get_localzone
             return str(get_localzone())
@@ -278,7 +299,12 @@ class Config:
         try:
             tz = ZoneInfo(tz_name)
         except (KeyError, Exception):
-            tz = timezone.utc
+            # Configured name invalid — try OS local timezone
+            try:
+                from tzlocal import get_localzone
+                tz = ZoneInfo(str(get_localzone()))
+            except Exception:
+                tz = timezone.utc
         return datetime.now(tz)
 
     # --------------------------------------------------------------------- #
