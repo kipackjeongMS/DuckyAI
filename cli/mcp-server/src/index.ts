@@ -62,15 +62,19 @@ function resolveTimezone(tz: string): string {
 let _cachedVaultId: string | null = null;
 let _cachedTimezone: string | null = null;
 
-// Diagnostic file logger for MCP tool calls
-const MCP_LOG_PATH = path.join(os.homedir(), ".duckyai", "mcp-server.log");
+// Diagnostic file logger for MCP tool calls — daily log files in UTC
+const MCP_LOG_DIR = path.join(os.homedir(), ".duckyai", "logs", "mcp");
+function getLogPath(): string {
+  const utcDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  return path.join(MCP_LOG_DIR, `${utcDate}.log`);
+}
 async function mcpLog(message: string): Promise<void> {
   const timestamp = new Date().toISOString();
   const line = `[${timestamp}] ${message}\n`;
   try {
-    await fs.appendFile(MCP_LOG_PATH, line, "utf-8");
+    await fs.mkdir(MCP_LOG_DIR, { recursive: true });
+    await fs.appendFile(getLogPath(), line, "utf-8");
   } catch {
-    // If we can't write the log, write to stderr as fallback
     console.error(line.trim());
   }
 }
@@ -125,6 +129,34 @@ const server = new McpServer({
   name: "duckyai-vault",
   version: "1.0.0",
 });
+
+// Wrap server.tool to auto-log every call with args and result summary
+const _originalTool = server.tool.bind(server);
+server.tool = function (...args: Parameters<typeof _originalTool>) {
+  const toolName = args[0] as string;
+  // The callback is always the last argument
+  const callback = args[args.length - 1] as (...a: any[]) => Promise<any>;
+  args[args.length - 1] = async (...callbackArgs: any[]) => {
+    const argsJson = callbackArgs.length > 0 ? JSON.stringify(callbackArgs[0]) : "{}";
+    const truncatedArgs = argsJson.length > 200 ? argsJson.slice(0, 200) + "…" : argsJson;
+    await mcpLog(`CALL ${toolName} — args: ${truncatedArgs}`);
+    const start = Date.now();
+    try {
+      const result = await callback(...callbackArgs);
+      const elapsed = Date.now() - start;
+      const resultText = result?.content?.[0]?.text ?? "";
+      const truncatedResult = resultText.length > 150 ? resultText.slice(0, 150) + "…" : resultText;
+      await mcpLog(`OK   ${toolName} — ${elapsed}ms — ${truncatedResult}`);
+      return result;
+    } catch (err) {
+      const elapsed = Date.now() - start;
+      const msg = err instanceof Error ? err.message : String(err);
+      await mcpLog(`FAIL ${toolName} — ${elapsed}ms — ${msg}`);
+      throw err;
+    }
+  };
+  return (_originalTool as Function)(...args);
+} as typeof _originalTool;
 
 // Helper: Format a Date to YYYY-MM-DD in the user's timezone
 function toLocalDateString(date: Date, timezone: string): string {

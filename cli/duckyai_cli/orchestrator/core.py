@@ -513,6 +513,13 @@ class Orchestrator:
             logger.info(f"Queued {agent.abbreviation}: concurrency limit reached")
             return
 
+        # Persist a QUEUED task file BEFORE starting the thread so that if the
+        # process crashes between now and the point where execute() creates
+        # the task, the work is recoverable on next startup.
+        queued_task_path = self._create_queued_task(agent, event_data)
+        if queued_task_path:
+            event_data = {**event_data, '_existing_task_file': str(queued_task_path)}
+
         # Log agent trigger at INFO level for visibility
         input_filename = Path(trigger_event.path).name if trigger_event.path else "scheduled"
         logger.info(f"🚀 Triggering {trigger_event.event_type} agent: {agent.abbreviation} ({input_filename})", console=True)
@@ -566,6 +573,9 @@ class Orchestrator:
         Args:
             agent: Agent definition (may be a worker variant)
             event_data: Event data dictionary
+
+        Returns:
+            Path to the created task file, or None on failure
         """
         import json
         from datetime import datetime, date
@@ -595,11 +605,12 @@ class Orchestrator:
         )
 
         # Create QUEUED task
-        self.execution_manager.task_manager.create_task_file(
+        task_path = self.execution_manager.task_manager.create_task_file(
             ctx, agent,
             initial_status="QUEUED",
             trigger_data_json=trigger_data_json
         )
+        return task_path
 
     def _execute_agent(self, agent, event_data, slot_reserved=False):
         """
@@ -734,14 +745,29 @@ class Orchestrator:
                     'triggered_by': completed_abbr,
                 }
 
-                # Dispatch via normal path (respects concurrency limits, queuing)
-                self._dispatch_single_worker(dep_agent, dep_event_data, TriggerEvent(
-                    path='',
-                    event_type='dependent',
-                    is_directory=False,
-                    timestamp=ctx.end_time or ctx.start_time,
-                    frontmatter={},
-                ))
+                if self._running:
+                    # Daemon mode: dispatch via normal path (background thread,
+                    # respects concurrency limits, queuing)
+                    self._dispatch_single_worker(dep_agent, dep_event_data, TriggerEvent(
+                        path='',
+                        event_type='dependent',
+                        is_directory=False,
+                        timestamp=ctx.end_time or ctx.start_time,
+                        frontmatter={},
+                    ))
+                else:
+                    # Synchronous mode (trigger_agent_once / onboarding):
+                    # no event loop running, so execute inline to prevent
+                    # orphaned daemon threads that die with the process.
+                    logger.info(
+                        f"🚀 Running dependent {dep_agent.abbreviation} synchronously",
+                        console=True,
+                    )
+                    dep_ctx = self._execute_agent(dep_agent, dep_event_data, slot_reserved=False)
+                    if dep_ctx and dep_ctx.success:
+                        logger.info(
+                            f"{dep_agent.abbreviation} completed ({dep_ctx.duration:.1f}s)"
+                        )
             except Exception as e:
                 logger.error(
                     f"Failed to dispatch dependent {dep_agent.abbreviation} "

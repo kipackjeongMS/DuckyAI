@@ -417,13 +417,8 @@ class TaskFileManager:
             event_desc = f"{event_type.capitalize()} event triggered {agent.name} processing"
             input_section = f"{event_desc}."
 
-        # Remove frontmatter from prompt body if present
-        prompt_body = agent.prompt_body
-        if prompt_body.startswith('---'):
-            # Skip frontmatter in agent definition
-            parts = prompt_body.split('---', 2)
-            if len(parts) >= 3:
-                prompt_body = parts[2].strip()
+        # Reference the prompt file instead of embedding the full prompt body
+        prompt_ref = f"`{agent.file_path.name}`" if agent.file_path else agent.abbreviation
 
         body = f"""
 ## Input
@@ -436,7 +431,7 @@ class TaskFileManager:
 
 ## Instructions
 
-{prompt_body}
+See agent prompt: {prompt_ref}
 
 ## Process Log
 

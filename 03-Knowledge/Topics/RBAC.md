@@ -8,6 +8,7 @@ tags:
 related:
   - "[[OBO Flow]]"
   - "[[Admin Consent]]"
+  - "[[Managed Identity]]"
 ---
 
 ## Summary

@@ -36,15 +36,15 @@ Call `workiq-ask_work_iq` with a query based on `fetch_mode`:
 
 **fetch_mode: watermark:**
 
-> "What Teams chat messages was I involved in since {fetch_since}? IMPORTANT: Only return messages from 1:1 direct chats and group chats (chatType: oneOnOne or group). EXCLUDE all Teams channel messages (chatType: channel) — these are posts from Teams channels like 'General', 'Announcements', or any channel within a Team. Please provide the FULL complete message content — not truncated or summarized. I need every word of each message. Include: sender name, chat type (1:1 or group), chat/thread topic, full message body, timestamp, and the deep link URL for each message. List ALL messages."
+> "What Teams chat messages was I involved in since {fetch_since}? Only return messages from 1:1 direct chats and group chats — exclude Teams channel messages. For each message, include if available: sender name, chat type (1:1 or group), chat/thread topic, message content, timestamp, and deep link URL."
 
 **fetch_mode: lookback:**
 
-> "What Teams chat messages was I involved in during the last {lookback_hours} hours? IMPORTANT: Only return messages from 1:1 direct chats and group chats (chatType: oneOnOne or group). EXCLUDE all Teams channel messages (chatType: channel) — these are posts from Teams channels like 'General', 'Announcements', or any channel within a Team. Please provide the FULL complete message content — not truncated or summarized. I need every word of each message. Include: sender name, chat type (1:1 or group), chat/thread topic, full message body, timestamp, and the deep link URL for each message. List ALL messages."
+> "What Teams chat messages was I involved in during the last {lookback_hours} hours? Only return messages from 1:1 direct chats and group chats — exclude Teams channel messages. For each message, include if available: sender name, chat type (1:1 or group), chat/thread topic, message content, timestamp, and deep link URL."
 
 **If WorkIQ response mentions more messages than it listed** (e.g., "showing 5 of 11"), immediately follow up with:
 
-> "You mentioned there are more messages. Please provide the FULL complete content of ALL remaining messages I was involved in — not truncated or summarized. Include: sender name, chat/thread topic, full message body, timestamp, and the deep link URL."
+> "You mentioned there are more messages. Please provide the remaining messages I was involved in, with the same details if available."
 
 Repeat until all messages are retrieved.
 
@@ -85,10 +85,14 @@ Processing M messages after filtering.
 
 **Group by date first, then by participant within each date.**
 
-⚠️ **Use `today_date` from Agent Parameters as your reference for "today".** Do NOT use UTC — always convert timestamps to `user_timezone`.
+⚠️ **CRITICAL — Timezone conversion is MANDATORY:**
+- `today_date` in Agent Parameters is the correct local date. Use it as your anchor.
+- **You MUST call `convertUtcToLocalDate` for EVERY UTC timestamp** before grouping by date. Do NOT do manual timezone math — it will be wrong.
+- Example: `2026-03-21T01:30:00Z` in `America/Los_Angeles` = **2026-03-20** 18:30 (still the 20th locally, NOT the 21st).
+- If you skip this tool call and use UTC dates directly, messages will be assigned to the wrong day.
 
-1. For each message/thread, **call `convertUtcToLocalDate`** with the message's UTC timestamp to get the correct local date. Do NOT attempt manual timezone math — always use the tool. For example, `2026-03-17T00:30:00Z` in `America/Los_Angeles` converts to `2026-03-16 16:30` — note the date is March **16**, not 17.
-2. Group all messages by their local date (e.g., 2026-03-12, 2026-03-13, etc.).
+1. For each message, **call `convertUtcToLocalDate`** with the UTC timestamp. Use the returned local date for grouping.
+2. Group all messages by their **local date** (e.g., 2026-03-20, not the UTC date).
 3. Within each date group, organize by participant (excluding "Me"/the user):
    - Collect all conversation threads involving that person on that date
    - For each thread, extract key points and action items as bullet points

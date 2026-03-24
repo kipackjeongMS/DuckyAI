@@ -38,11 +38,11 @@ Call `workiq-ask_work_iq` with a query based on `fetch_mode`:
 
 **fetch_mode: watermark:**
 
-> "What Teams meetings did I attend since {fetch_since}? For each meeting, include: meeting title, start/end time, organizer, attendees, and any available meeting notes, recap, or transcript summary."
+> "What Teams meetings was I the organizer or attendee of since {fetch_since}? For each meeting, include if available: meeting title, start/end time, organizer, attendees, and any available meeting notes, recap, or transcript summary."
 
 **fetch_mode: lookback:**
 
-> "What Teams meetings did I attend in the last {lookback_hours} hours? For each meeting, include: meeting title, start/end time, organizer, attendees, and any available meeting notes, recap, or transcript summary."
+> "What Teams meetings was I the organizer or attendee of in the last {lookback_hours} hours? For each meeting, include if available: meeting title, start/end time, organizer, attendees, and any available meeting notes, recap, or transcript summary."
 
 ### Step 3: Process and summarize
 
@@ -62,7 +62,11 @@ Skip meetings that are:
 
 ### Step 4: Update vault
 
-⚠️ **Use `today_date` from Agent Parameters as your reference for "today".** All date conversions must use `user_timezone`, not UTC. **Call `convertUtcToLocalDate`** for every UTC timestamp from WorkIQ — do NOT attempt manual timezone conversion.
+⚠️ **CRITICAL — Timezone conversion is MANDATORY:**
+- `today_date` in Agent Parameters is the correct local date. Use it as your anchor.
+- **You MUST call `convertUtcToLocalDate` for EVERY UTC timestamp** before using any date. Do NOT do manual timezone math — it will be wrong.
+- Example: `2026-03-21T01:30:00Z` in `America/Los_Angeles` = **2026-03-20** 18:30 (still the 20th locally, NOT the 21st).
+- If you skip this tool call and use UTC dates directly, meetings will be assigned to the wrong day.
 
 #### 4a. Create Per-Meeting Note
 

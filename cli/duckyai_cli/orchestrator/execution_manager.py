@@ -78,9 +78,6 @@ class ExecutionManager:
         # Task file manager
         from .task_manager import TaskFileManager
         self.task_manager = TaskFileManager(vault_path, config=self.config, orchestrator_settings=orchestrator_settings)
-        
-        # Load system prompt if it exists
-        self.system_prompt = self._load_system_prompt()
 
     def _auto_discover_mcp_config(self) -> Optional[tuple]:
         """Auto-discover MCP config from CLI's get_mcp_config and vault's .github/copilot/mcp.json."""
@@ -357,7 +354,18 @@ class ExecutionManager:
                     f.write(_json.dumps(metadata, indent=2, default=str))
                     f.write("\n---\n\n")
                     f.write(f"# Execution Log: {agent.abbreviation}\n\n")
-                    f.write(f"## Prompt\n\n```\n{ctx.prompt}\n```\n\n")
+                    # Write only the unique per-execution context, not the full prompt
+                    # (system prompt + agent body are static and already in their source files)
+                    f.write("## Prompt Context\n\n")
+                    f.write(f"- Agent prompt: `{agent.file_path.name if agent.file_path else agent.abbreviation}`\n")
+                    # Extract trigger context + agent params (everything after the agent body)
+                    prompt_text = ctx.prompt or ''
+                    trigger_marker = '\n# Trigger Context\n'
+                    trigger_idx = prompt_text.find(trigger_marker)
+                    if trigger_idx >= 0:
+                        f.write(f"\n```\n{prompt_text[trigger_idx:]}\n```\n\n")
+                    else:
+                        f.write("\n(no trigger context)\n\n")
                     f.write(f"## Response\n\n{ctx.response or '(no output)'}\n\n")
                     if ctx.error_message:
                         f.write(f"## Error\n\n```\n{ctx.error_message}\n```\n")
@@ -722,27 +730,6 @@ class ExecutionManager:
             ctx.response = "\n".join(logs)
 
 
-    def _load_system_prompt(self) -> str:
-        """
-        Load system prompt from vault's .github/copilot-instructions.md.
-        
-        This is the single source of truth for global agent rules, consumed by both
-        interactive Copilot CLI and orchestrator agents.
-
-        Returns:
-            System prompt content or empty string if not found
-        """
-        from ..markdown_utils import extract_body
-
-        copilot_instructions = self.vault_path / '.github' / 'copilot-instructions.md'
-        if copilot_instructions.exists():
-            try:
-                content = copilot_instructions.read_text(encoding='utf-8')
-                return extract_body(content)
-            except Exception as e:
-                logger.warning(f"Failed to load copilot-instructions.md: {e}")
-        return ""
-
     def _read_teams_watermark(self, agent_abbr: str) -> Optional[str]:
         """Read the lastSynced timestamp from the Teams agent's watermark file.
 
@@ -824,10 +811,10 @@ class ExecutionManager:
         Returns:
             Formatted prompt string
         """
-        # Start with system prompt if available
+        # System prompt (copilot-instructions.md) is NOT prepended here —
+        # the Copilot SDK/CLI auto-loads it from .github/copilot-instructions.md
+        # in the working directory, so injecting it would duplicate tokens.
         prompt = ""
-        if self.system_prompt:
-            prompt = self.system_prompt + "\n\n"
         
         # Add agent prompt body with template variable substitution
         prompt_body = agent.prompt_body

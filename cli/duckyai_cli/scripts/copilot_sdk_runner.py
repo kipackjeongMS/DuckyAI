@@ -61,7 +61,10 @@ async def run_agent(prompt: str, model: str = None, mcp_config: str = None, cwd:
         if event_type == "assistant.message":
             if hasattr(event.data, 'content') and event.data.content:
                 final_content.append(event.data.content)
-                print(event.data.content, flush=True)
+                try:
+                    print(event.data.content, flush=True)
+                except UnicodeEncodeError:
+                    print(event.data.content.encode('utf-8', errors='replace').decode('ascii', errors='replace'), flush=True)
         elif event_type == "error":
             err_msg = str(event.data) if hasattr(event, 'data') else str(event)
             errors.append(err_msg)

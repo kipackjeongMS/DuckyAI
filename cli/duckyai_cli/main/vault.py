@@ -183,12 +183,27 @@ def resolve_vault(working_dir: Optional[str] = None) -> Path:
         # No vaults registered — return CWD (onboarding will handle it)
         return Path.cwd()
 
+    # Build selector list: "Create new vault" on top + all vaults
+    create_item = {"name": "➕ Create new vault", "path": "Run onboarding wizard"}
+    selector_items = [create_item] + list(vaults)
+
+    # Single vault — still show selector so user can choose to create a new one
     if len(vaults) == 1:
         vault = vaults[0]
         vault_path = Path(vault["path"])
         if vault_path.exists():
+            click.echo("\n🗂️  Select a vault: (↑↓ to move, Enter to select)\n")
+            choice = _interactive_select(selector_items, default_index=1)
+
+            if choice is None:
+                raise SystemExit(0)
+
+            # "Create new vault" is always the first item
+            if choice == 0:
+                _run_create_new_vault()
+                raise SystemExit(0)
+
             touch_vault(vault["id"])
-            # Show action menu for the single vault
             action = _vault_action_menu(vault["name"])
             if action is None:
                 raise SystemExit(0)
@@ -204,13 +219,18 @@ def resolve_vault(working_dir: Optional[str] = None) -> Path:
 
     # Multiple vaults — interactive arrow-key selection
     click.echo("\n🗂️  Select a vault: (↑↓ to move, Enter to select)\n")
-    choice = _interactive_select(vaults, default_index=0)
+    choice = _interactive_select(selector_items, default_index=1)
 
     if choice is None:
         click.echo("\nAborted.")
         raise SystemExit(1)
 
-    selected = vaults[choice]
+    # "Create new vault" is always the first item
+    if choice == 0:
+        _run_create_new_vault()
+        raise SystemExit(0)
+
+    selected = vaults[choice - 1]
     vault_path = Path(selected["path"])
     if not vault_path.exists():
         click.echo(f"⚠️  Vault path does not exist: {vault_path}", err=True)
@@ -234,6 +254,13 @@ def resolve_vault(working_dir: Optional[str] = None) -> Path:
         raise SystemExit(0)
 
     return vault_path
+
+
+def _run_create_new_vault():
+    """Launch the onboarding wizard to create a new vault."""
+    from .setup import run_onboarding
+    click.echo("")
+    run_onboarding()
 
 
 def _vault_action_menu(vault_name: str) -> Optional[str]:
