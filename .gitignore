@@ -1,4 +1,7 @@
-# Personal content (never committed)
+# This repo is NOT a vault — prevent vault marker files from being created
+duckyai.yml
+Home.md
+
 # Vault-local runtime data (tasks, logs, state, watermarks)
 .duckyai/
 04-Periodic/**/*.md
