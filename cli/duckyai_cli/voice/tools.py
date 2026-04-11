@@ -47,7 +47,7 @@ def _find_vault_root() -> Path:
     """Find the vault root directory."""
     cwd = Path.cwd()
     for p in [cwd] + list(cwd.parents):
-        if (p / "duckyai.yml").exists():
+        if (p / ".duckyai" / "duckyai.yml").exists() or (p / "duckyai.yml").exists():
             return p
     return cwd
 

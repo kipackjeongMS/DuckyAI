@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Settings, X, Menu, Minus, Square } from "lucide-react";
 import { VoiceOrb } from "./components/voice-orb";
@@ -8,6 +8,7 @@ import { TypewriterOverlay, type TypewriterEntry } from "./components/typewriter
 import { Sidebar } from "./components/sidebar";
 import { LoginScreen } from "./components/login-screen";
 import { useOrchestrator } from "./hooks/use-orchestrator";
+import { ToastContainer, useToasts } from "./components/toast";
 
 type AppStatus = "idle" | "listening" | "processing" | "speaking";
 
@@ -34,6 +35,16 @@ export default function App() {
   const chatRequestIdRef = useRef(0);
 
   const orch = useOrchestrator();
+  const { toasts, addToast, dismissToast } = useToasts();
+
+  // Listen for background notifications from Electron main process
+  useEffect(() => {
+    if (!hasBridge()) return;
+    const unsubscribe = window.duckyai.onNotification((data) => {
+      addToast(data);
+    });
+    return unsubscribe;
+  }, [addToast]);
 
   const dismissOverlay = useCallback(() => {
     chatRequestIdRef.current++; // invalidate any in-flight chat response
@@ -107,8 +118,8 @@ export default function App() {
 
   const handleDuckyPress = useCallback(() => {
     if (status !== "idle") return;
-    sendChat("Hey DuckAI, what can you help me with today?");
-  }, [status, sendChat]);
+    setShowOverlay(true);
+  }, [status]);
 
   const handleQuickAction = useCallback(
     (id: string) => {
@@ -129,6 +140,8 @@ export default function App() {
           <LoginScreen onLogin={() => setIsAuthenticated(true)} />
         </motion.div>
       ) : (
+        <>
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
         <motion.div
           key="app"
           className="h-screen w-screen flex bg-background overflow-hidden"
@@ -423,6 +436,7 @@ export default function App() {
             </div>
           </div>
         </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

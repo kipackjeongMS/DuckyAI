@@ -350,8 +350,12 @@ tags:
     # ─── Generate Config Files ──────────────────────────
     click.echo("\n⚙️  Generating configuration...")
 
-    # duckyai.yml (single unified config)
-    duckyai_yml_path = vault_path / "duckyai.yml"
+    # Ensure .duckyai/ directory exists
+    duckyai_dir = vault_path / ".duckyai"
+    duckyai_dir.mkdir(parents=True, exist_ok=True)
+
+    # duckyai.yml (single unified config) — lives in .duckyai/
+    duckyai_yml_path = duckyai_dir / "duckyai.yml"
     if duckyai_yml_path.exists():
         content = duckyai_yml_path.read_text(encoding="utf-8")
 
@@ -460,8 +464,8 @@ tags:
 
     # Derive vault_id from duckyai.yml if present, otherwise from vault name
     _vault_id = None
-    from duckyai_cli.config import CONFIG_FILENAME
-    _config_path = vault_path / CONFIG_FILENAME
+    from duckyai_cli.config import CONFIG_FILENAME, get_config_path
+    _config_path = get_config_path(vault_path)
     if _config_path.exists():
         try:
             with _config_path.open("r", encoding="utf-8") as _fh:
@@ -584,8 +588,8 @@ def new_command(vault_path):
 
 def needs_onboarding(vault_root: Path) -> bool:
     """Check if onboarding is needed (no duckyai.yml or missing user config)."""
-    from duckyai_cli.config import CONFIG_FILENAME
-    duckyai_yml = vault_root / CONFIG_FILENAME
+    from duckyai_cli.config import get_config_path
+    duckyai_yml = get_config_path(vault_root)
     if not duckyai_yml.exists():
         return True
 

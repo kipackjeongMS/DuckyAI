@@ -105,7 +105,7 @@ def _write_services_meta(services_dir: Path, meta: Dict[str, Any]) -> None:
 
 def _update_duckyai_yml(vault_path: Path, services: List[Dict]) -> None:
     """Update the services.entries list in duckyai.yml."""
-    config_path = Path(vault_path) / "duckyai.yml"
+    config_path = Path(vault_path) / ".duckyai" / "duckyai.yml"
     if not config_path.exists():
         return
 

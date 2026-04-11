@@ -126,11 +126,11 @@ def init_existing_vault(vault_path: Path) -> Dict[str, object]:
     """Configure an existing DuckyAI vault as the single home vault."""
     resolved_input = Path(vault_path).resolve()
     resolved_vault = find_vault_root(resolved_input)
-    config_path = resolved_vault / "duckyai.yml"
+    config_path = resolved_vault / ".duckyai" / "duckyai.yml"
 
     if not config_path.exists():
         raise click.ClickException(
-            f"No duckyai.yml found in {resolved_vault}. Use 'duckyai setup' for a new vault."
+            f"No duckyai.yml found in {resolved_vault}/.duckyai/. Use 'duckyai setup' for a new vault."
         )
 
     config = Config(vault_path=resolved_vault)
@@ -326,7 +326,7 @@ def vault_remove(vault_id, force):
                 os.kill(pid, signal.SIGTERM)
             except OSError:
                 pass
-            pid_file = vault_path / ".orchestrator.pid"
+            pid_file = vault_path / ".duckyai" / ".orchestrator.pid"
             pid_file.unlink(missing_ok=True)
 
     # 2. Delete vault folder (includes .duckyai/ runtime data)

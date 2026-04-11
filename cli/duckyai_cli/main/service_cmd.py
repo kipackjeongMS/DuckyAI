@@ -28,7 +28,7 @@ def _resolve_vault_root(ctx) -> Path:
 
     from .vault import resolve_vault
     resolved = resolve_vault(obj.get("working_dir"))
-    if (resolved / "duckyai.yml").exists():
+    if (resolved / ".duckyai" / "duckyai.yml").exists() or (resolved / "duckyai.yml").exists():
         return resolved
 
     click.echo("Could not determine the home vault. Run 'duckyai init' or 'duckyai setup'.", err=True)

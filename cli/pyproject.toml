@@ -32,10 +32,19 @@ dependencies = [
     "tzlocal>=5.3.0",
     "pyyaml>=6.0",
     "ruamel.yaml>=0.18.0",
+    "mcp[cli]>=1.0.0",
+    "github-copilot-sdk==0.2.0",
+    "psutil>=7.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
 ]
 
 [project.scripts]
 duckyai = "duckyai_cli.main.cli:main"
+duckyai-vault-mcp = "duckyai_cli.mcp_server:main"
 
 [project.urls]
 Homepage = "https://github.com/rbx-labs/duckyai-cli"
@@ -46,3 +55,6 @@ where = ["."]
 include = ["duckyai_cli*"]
 
 [tool.setuptools.package-data]
+
+[tool.pytest.ini_options]
+testpaths = ["duckyai_cli/tests"]

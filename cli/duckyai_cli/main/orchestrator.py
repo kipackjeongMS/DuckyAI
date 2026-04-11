@@ -32,7 +32,8 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
         config_file=str(config_file) if config_file else None,
         vault_path=vault_path,
     )
-    pid_file = vault_path / ".orchestrator.pid"
+    from ..config import get_pid_path
+    pid_file = get_pid_path(vault_path)
 
     cleanup = _cleanup_orchestrator_processes(vault_path, fresh_start=True)
     replaced_pids = cleanup["terminated_pids"] + cleanup["killed_pids"]

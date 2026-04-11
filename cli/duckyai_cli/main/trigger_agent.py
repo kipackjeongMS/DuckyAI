@@ -184,7 +184,7 @@ def _prompt_teams_sync_lookback(vault_root: Path, console: Console, default_hour
         console.print(f"[dim]Using lookback: {hours} hours[/dim]\n")
         return {'lookback_hours': hours}
 
-def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=None, mcp_config=None, claude_settings=None, input_file=None, vault_path=None, lookback_hours=None):
+def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=None, mcp_config=None, claude_settings=None, input_file=None, vault_path=None, lookback_hours=None, agent_params_json=None):
     """Trigger an orchestrator agent or poller interactively.
 
     Args:
@@ -196,6 +196,7 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
         input_file: Optional input file path to pass to the agent
         vault_path: Optional vault root path (defaults to CWD)
         lookback_hours: Optional lookback hours override for Teams agents (TCS/TMS)
+        agent_params_json: Optional JSON string of agent_params to override
     """
     try:
         vault_root = Path(vault_path) if vault_path else Path.cwd()
@@ -320,6 +321,20 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
                     selected_agent.abbreviation, default_hours, last_synced, console
                 )
 
+        # Merge --agent-params JSON override (applies to any agent)
+        if agent_params_json:
+            try:
+                extra_params = json.loads(agent_params_json)
+                if not isinstance(extra_params, dict):
+                    raise ValueError("--agent-params must be a JSON object")
+                if agent_params_override is None:
+                    agent_params_override = extra_params
+                else:
+                    agent_params_override.update(extra_params)
+            except (json.JSONDecodeError, ValueError) as e:
+                logger.error(f"Invalid --agent-params JSON: {e}", console=True)
+                return
+
         try:
             if selected_agent:
                 # Trigger agent
@@ -338,7 +353,8 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
                         f"[dim]Execution time: {execution_time:.2f}s[/dim]"
                     )
                     if ctx.task_file:
-                        logger.info(f"[dim]Task file: {ctx.task_file.name}[/dim]")
+                        task_name = ctx.task_file.name if hasattr(ctx.task_file, 'name') else str(ctx.task_file)
+                        logger.info(f"[dim]Task file: {task_name}[/dim]")
                 else:
                     error_msg = ctx.error_message if ctx else "Unknown error"
                     logger.error(f"✗ Agent failed: {error_msg}")

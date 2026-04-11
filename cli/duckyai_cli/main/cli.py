@@ -70,7 +70,8 @@ def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
     if cleanup.get("healthy_pid"):
         return False  # already running
 
-    pid_file = vault_root / ".orchestrator.pid"
+    from ..config import get_pid_path
+    pid_file = get_pid_path(vault_root)
     if pid_file.exists():
         pid_file.unlink(missing_ok=True)
 
@@ -386,11 +387,11 @@ def ensure_init(vault_root: Path):
                 pass  # non-critical — skill just won't be auto-discovered
 
     # Create global ~/.duckyai runtime dirs (logs, tasks, history)
-    from duckyai_cli.config import get_global_runtime_dir, CONFIG_FILENAME
+    from duckyai_cli.config import get_global_runtime_dir, CONFIG_FILENAME, get_config_path
     try:
         # Read vault_id from duckyai.yml
         import yaml
-        config_path = vault_root / CONFIG_FILENAME
+        config_path = get_config_path(vault_root)
         vault_id = "default"
         if config_path.exists():
             with config_path.open("r", encoding="utf-8") as fh:

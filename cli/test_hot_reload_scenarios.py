@@ -20,8 +20,8 @@ import re
 
 # Test configuration
 VAULT_PATH = Path("/Users/minsukkang/GitHub/temp/DuckyAI/duckyai_vault")
-ORCHESTRATOR_YAML = VAULT_PATH / "duckyai.yml"
-BACKUP_YAML = VAULT_PATH / "duckyai.yml.backup"
+ORCHESTRATOR_YAML = VAULT_PATH / ".duckyai" / "duckyai.yml"
+BACKUP_YAML = VAULT_PATH / ".duckyai" / "duckyai.yml.backup"
 LOG_FILE = VAULT_PATH / "_Settings_/Logs" / f"duckyai_{datetime.now().strftime('%Y-%m-%d')}.log"
 TEST_TIMEOUT = 300  # 5 minutes per test
 
@@ -378,10 +378,10 @@ class HotReloadTestSuite:
         # Create a QUEUED task file
         tasks_dir = self.vault_path / "_Settings_/Tasks"
         tasks_dir.mkdir(parents=True, exist_ok=True)
-        task_file = tasks_dir / f"{datetime.now().strftime('%Y-%m-%d')} EIC - test.md"
+        task_file = tasks_dir / f"{datetime.now().strftime('%Y-%m-%d')} CEA - test.md"
         task_file.write_text("""---
 status: "QUEUED"
-task_type: "EIC"
+task_type: "CEA"
 trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\": \\"created\\"}"
 ---""")
         
@@ -415,9 +415,9 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
         with open(self.orchestrator_yaml, 'r') as f:
             config = yaml.safe_load(f)
         
-        # Find EIC agent and modify it
+        # Find CEA agent and modify it
         for node in config.get('nodes', []):
-            if node.get('name', '').startswith('Enrich Ingested Content'):
+            if node.get('name', '').startswith('Content Enrichment Agent'):
                 node['output_path'] = 'AI/TestArticles'
                 break
         
@@ -1145,11 +1145,11 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
         
         time.sleep(2)
         
-        # Create a file to trigger EIC agent (this will start an execution)
+        # Create a file to trigger CEA agent (this will start an execution)
         clippings_dir = self.vault_path / "Ingest" / "Clippings"
         clippings_dir.mkdir(parents=True, exist_ok=True)
         test_file = clippings_dir / f"test_reload_running_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        test_file.write_text("# Test Content\n\nThis file triggers EIC agent.")
+        test_file.write_text("# Test Content\n\nThis file triggers CEA agent.")
         
         # Wait a moment for agent to start
         time.sleep(1)
@@ -1222,7 +1222,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
         clippings_dir = self.vault_path / "Ingest" / "Clippings"
         clippings_dir.mkdir(parents=True, exist_ok=True)
         test_file = clippings_dir / f"test_nested_reload_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        test_file.write_text("# Test Content\n\nThis triggers EIC.")
+        test_file.write_text("# Test Content\n\nThis triggers CEA.")
         
         # Wait for agent to start
         time.sleep(2)
@@ -1316,11 +1316,11 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
         if not ctp_exists:
             return True, None  # Skip if CTP doesn't exist
         
-        # Create a file to trigger EIC (so we have a running execution)
+        # Create a file to trigger CEA (so we have a running execution)
         clippings_dir = self.vault_path / "Ingest" / "Clippings"
         clippings_dir.mkdir(parents=True, exist_ok=True)
         test_file = clippings_dir / f"test_remove_agent_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        test_file.write_text("# Test Content\n\nThis triggers EIC.")
+        test_file.write_text("# Test Content\n\nThis triggers CEA.")
         
         # Wait for execution to start
         time.sleep(2)
@@ -1489,21 +1489,21 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
         
         time.sleep(2)
         
-        # Create a file to trigger EIC agent
+        # Create a file to trigger CEA agent
         clippings_dir = self.vault_path / "Ingest" / "Clippings"
         clippings_dir.mkdir(parents=True, exist_ok=True)
         test_file = clippings_dir / f"test_change_config_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        test_file.write_text("# Test Content\n\nThis triggers EIC.")
+        test_file.write_text("# Test Content\n\nThis triggers CEA.")
         
         # Wait for execution to start
         time.sleep(2)
         
-        # Change EIC agent's output_path while it's running
+        # Change CEA agent's output_path while it's running
         with open(self.orchestrator_yaml, 'r') as f:
             config = yaml.safe_load(f)
         
         for node in config.get('nodes', []):
-            if node.get('name', '').startswith('Enrich Ingested Content'):
+            if node.get('name', '').startswith('Content Enrichment Agent'):
                 old_output = node.get('output_path', '')
                 node['output_path'] = 'AI/ChangedOutput'
                 break
@@ -1565,7 +1565,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
         clippings_dir = self.vault_path / "Ingest" / "Clippings"
         clippings_dir.mkdir(parents=True, exist_ok=True)
         test_file = clippings_dir / f"test_timeout_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        test_file.write_text("# Test Content\n\nThis triggers EIC.")
+        test_file.write_text("# Test Content\n\nThis triggers CEA.")
         
         # Wait for execution to start
         time.sleep(2)
@@ -1858,7 +1858,7 @@ trigger_data_json: "{\\"path\\": \\"Ingest/Clippings/test.md\\", \\"event_type\\
             
             if agent_count_match:
                 agent_count = int(agent_count_match.group(1))
-                # If CTP was removed, we should see 1 agent (EIC only)
+                # If CTP was removed, we should see 1 agent (CEA only)
                 if agent_count == 1 and not ctp_loaded:
                     ctp_removed_in_reload = True
                     break

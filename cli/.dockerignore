@@ -1,0 +1,17 @@
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+dist
+build
+.git
+.venv
+venv
+*.env
+.pytest_cache
+.mypy_cache
+node_modules
+mcp-server/release-dashboard/.venv
+docs/
+*.log

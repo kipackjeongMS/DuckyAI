@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import click
 
-VAULT_MARKERS = ['duckyai.yml', 'Home.md']
+VAULT_MARKERS = ['.duckyai/duckyai.yml', 'duckyai.yml', 'Home.md']
 
 
 def _read_key() -> str:

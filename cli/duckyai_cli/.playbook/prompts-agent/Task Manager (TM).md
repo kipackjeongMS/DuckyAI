@@ -72,28 +72,25 @@ Call `logPRReview` with:
 - `prUrl`: Full PR URL if provided in the highlight text. If not available, use an empty string `""`. Do NOT construct or guess URLs.
 - `description`: Brief PR description
 - `action`: `"todo"`
+- `subsection`: `"requested"`
 
 This will:
 1. Create a file in `01-Work/PRReviews/` (named with PR number if available, otherwise description only)
-2. Add a `- [ ]` entry to `## PRs & Code Reviews` in the daily note
+2. Add a `- [ ]` entry to `### Requested` under `## PRs & Code Reviews` in the daily note
+3. If this PR already exists under `### Discovered` (from PRS scan), it will be **moved** to `### Requested`
 
 ### For General Tasks
 
-**Both calls are required** — `createTask` creates the file, `logTask` adds the daily note entry:
+Call `logTask` with `title` to append a plain `- [ ] {title}` entry to `## Tasks` in today's daily note.
 
-1. Call `createTask` with `title`, `description`, `priority`, and `project`
-2. Then call `logTask` with the same `title`
-
-This will:
-1. Create a file in `01-Work/Tasks/{title}.md`
-2. Add `- [ ] [{title}](../../01-Work/Tasks/{title}.md)` to `## Tasks` in the daily note
+Do **not** call `createTask` — no file is created in `01-Work/Tasks/`.
 
 ## Step 5: Report results
 
-Print a summary of what was created:
+Print a summary of what was done:
 ```
 TM Summary:
-- Created X task(s): [list titles]
+- Added X task(s) to daily note: [list titles]
 - Created Y PR review(s): [list PR numbers]
 - Skipped Z item(s) (already existed): [list]
 ```
@@ -102,7 +99,8 @@ If no action items were found, print: "No new action items found in today's high
 
 ## Important Rules
 
-- **Idempotent**: Both `createTask` and `logPRReview` have built-in deduplication. If a task or PR review file already exists, the tool will skip creation. Always call the tools — don't try to manually check for duplicates.
+- **Idempotent**: `logPRReview` has built-in deduplication. If a PR review file already exists, the tool will skip creation. Always call the tools — don't try to manually check for duplicates.
+- **Tasks are plain text**: General tasks are added as `- [ ] {title}` via `logTask` only — no file is created in `01-Work/Tasks/`.
 - **Only process today's note**: Do not scan older daily notes. TM runs after each TCS/TMS sync — it only needs today's content.
 - **Do not modify highlights**: Never edit `## Teams Meeting Highlights` or `## Teams Chat Highlights` content. Those sections belong to TMS/TCS.
 - **User identity**: The vault owner is the "user". When highlights mention them by name, treat those as user-assigned tasks. References to "I" or "me" in highlights also mean the user.

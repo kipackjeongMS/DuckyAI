@@ -18,7 +18,9 @@ class TestConfigServicesAccessors:
     def vault_with_services(self, tmp_path):
         vault = tmp_path / "V1"
         vault.mkdir()
-        (vault / "duckyai.yml").write_text(
+        duckyai_dir = vault / ".duckyai"
+        duckyai_dir.mkdir()
+        (duckyai_dir / "duckyai.yml").write_text(
             'id: v1\n'
             'services:\n'
             '  path: "../V1-Services"\n'
@@ -33,7 +35,9 @@ class TestConfigServicesAccessors:
     def vault_no_services(self, tmp_path):
         vault = tmp_path / "V2"
         vault.mkdir()
-        (vault / "duckyai.yml").write_text('id: v2\n', encoding="utf-8")
+        duckyai_dir = vault / ".duckyai"
+        duckyai_dir.mkdir()
+        (duckyai_dir / "duckyai.yml").write_text('id: v2\n', encoding="utf-8")
         return vault
 
     def test_get_services_path_configured(self, vault_with_services):
@@ -63,7 +67,9 @@ class TestConfigServicesAccessors:
         vault = tmp_path / "V3"
         vault.mkdir()
         abs_path = str(tmp_path / "custom-services").replace("\\", "/")
-        (vault / "duckyai.yml").write_text(
+        duckyai_dir = vault / ".duckyai"
+        duckyai_dir.mkdir()
+        (duckyai_dir / "duckyai.yml").write_text(
             f'id: v3\nservices:\n  path: "{abs_path}"\n  entries: []\n',
             encoding="utf-8",
         )
@@ -85,7 +91,9 @@ class TestWatermarkHelpers:
         """Create a vault + state dir with a watermark file."""
         vault = tmp_path / "WV"
         vault.mkdir()
-        (vault / "duckyai.yml").write_text('id: wv_test\n', encoding="utf-8")
+        duckyai_dir = vault / ".duckyai"
+        duckyai_dir.mkdir()
+        (duckyai_dir / "duckyai.yml").write_text('id: wv_test\n', encoding="utf-8")
 
         state_dir = vault / ".duckyai" / "state"
         state_dir.mkdir(parents=True)
@@ -151,7 +159,9 @@ class TestWatermarkHelpers:
 
         vault = tmp_path / "NW"
         vault.mkdir()
-        (vault / "duckyai.yml").write_text('id: nw\n', encoding="utf-8")
+        duckyai_dir = vault / ".duckyai"
+        duckyai_dir.mkdir()
+        (duckyai_dir / "duckyai.yml").write_text('id: nw\n', encoding="utf-8")
         result = _read_watermark(vault, "TCS")
         assert result is None
 

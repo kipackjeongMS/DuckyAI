@@ -2,10 +2,8 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
-import { OrchestratorBridge } from "./bridge/orchestrator.js";
-import { McpClient } from "./bridge/mcp-client.js";
+import { DuckyAIClient } from "./bridge/duckyai-client.js";
 import { resolveVaultPath } from "./bridge/config.js";
-import { ensureAzLogin } from "./bridge/auth.js";
 // ChatEngine is lazy-imported to avoid crashing if @github/copilot-sdk
 // is incompatible with Electron's bundled Node.js version
 type ChatEngineType = import("./bridge/chat-engine.js").ChatEngine;
@@ -14,17 +12,172 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
-let orchestrator: OrchestratorBridge | null = null;
-let mcpClient: McpClient | null = null;
+let apiClient: DuckyAIClient | null = null;
 let chatEngine: ChatEngineType | null = null;
+let lastRecoveryAttemptAt = 0;
+let userStoppedDaemon = false;
 
 const isDev = process.env.ELECTRON_IS_DEV === "1";
+const DAEMON_RECOVERY_COOLDOWN_MS = 15_000;
+const DAEMON_RECOVERY_POLL_MS = 750;
+const DAEMON_RECOVERY_ATTEMPTS = 8;
+
+interface TriggerOptions {
+  file?: string;
+  lookback?: number;
+  sinceLastSync?: boolean;
+}
+
+interface CliCandidate {
+  command: string;
+  baseArgs: string[];
+  cwd: string;
+}
+
+function notify(
+  msg: { type: "success" | "error" | "info"; title: string; body?: string },
+): void {
+  mainWindow?.webContents.send("duckyai:notification", msg);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function spawnDaemon(vaultPath: string): Promise<void> {
+  const { spawn } = await import("node:child_process");
+
+  for (const candidate of getCliCandidates(vaultPath)) {
+    try {
+      const args = [...candidate.baseArgs, "-o"];
+      const spawnOpts: Record<string, unknown> = {
+        cwd: candidate.cwd,
+        stdio: "ignore",
+        detached: true,
+      };
+
+      if (process.platform === "win32") {
+        const CREATE_NEW_PROCESS_GROUP = 0x00000200;
+        const CREATE_NO_WINDOW = 0x08000000;
+        spawnOpts.windowsHide = true;
+        (spawnOpts as any).creationflags = CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW;
+      }
+
+      const child = spawn(candidate.command, args, spawnOpts as any);
+      child.unref();
+      console.log(`[main] Spawned daemon: ${candidate.command} ${args.join(" ")} (cwd: ${candidate.cwd})`);
+      return;
+    } catch (err) {
+      console.warn(`[main] Failed to spawn daemon with ${candidate.command}:`, err);
+    }
+  }
+
+  throw new Error("Could not spawn DuckyAI daemon — no working Python found");
+}
+
+function getCliCandidates(vaultPath: string): CliCandidate[] {
+  const candidates: CliCandidate[] = [];
+  const repoCliDir = path.join(vaultPath, "cli");
+  const hasRepoCli = fs.existsSync(path.join(repoCliDir, "pyproject.toml"))
+    && fs.existsSync(path.join(repoCliDir, "duckyai_cli"));
+
+  const addCandidates = (cwd: string) => {
+    if (process.platform === "win32") {
+      candidates.push({ command: "py", baseArgs: ["-m", "duckyai_cli"], cwd });
+    }
+    candidates.push({ command: "python", baseArgs: ["-m", "duckyai_cli"], cwd });
+    candidates.push({ command: "python3", baseArgs: ["-m", "duckyai_cli"], cwd });
+  };
+
+  if (hasRepoCli) {
+    addCandidates(repoCliDir);
+  }
+  addCandidates(vaultPath);
+  return candidates;
+}
+
+async function ensureDaemonReachable(api: DuckyAIClient, vaultPath: string): Promise<boolean> {
+  // Quick probe — 3s timeout instead of 30s to avoid hanging on dead daemons
+  if (await api.quickHealth()) {
+    return true;
+  }
+
+  api.refreshDiscovery();
+  if (await api.quickHealth()) {
+    return true;
+  }
+
+  // Skip auto-recovery if user explicitly stopped the daemon
+  if (userStoppedDaemon) {
+    return false;
+  }
+
+  const now = Date.now();
+  if (now - lastRecoveryAttemptAt < DAEMON_RECOVERY_COOLDOWN_MS) {
+    return false;
+  }
+  lastRecoveryAttemptAt = now;
+
+  // Clear stale discovery before spawning so new daemon's file is picked up
+  api.clearDiscovery();
+
+  try {
+    await spawnDaemon(vaultPath);
+    console.log("[main] Auto-started DuckyAI daemon");
+    notify({
+      type: "info",
+      title: "DuckyAI Daemon Started",
+      body: "Desktop reconnected to the local orchestrator daemon.",
+    });
+  } catch (err) {
+    console.warn("[main] Failed to auto-start DuckyAI daemon:", err);
+    return false;
+  }
+
+  for (let attempt = 0; attempt < DAEMON_RECOVERY_ATTEMPTS; attempt += 1) {
+    await sleep(DAEMON_RECOVERY_POLL_MS);
+    api.refreshDiscovery();
+    if (await api.quickHealth()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function getOrchestratorStatus(api: DuckyAIClient, vaultPath: string) {
+  if (await ensureDaemonReachable(api, vaultPath)) {
+    return api.status();
+  }
+  return { running: false, agents_loaded: 0 };
+}
+
+async function listOrchestratorAgents(api: DuckyAIClient, vaultPath: string): Promise<unknown[]> {
+  if (!(await ensureDaemonReachable(api, vaultPath))) {
+    return [];
+  }
+  return api.listAgents();
+}
+
+async function triggerOrchestratorAgent(
+  api: DuckyAIClient,
+  vaultPath: string,
+  abbr: string,
+  opts?: TriggerOptions,
+) {
+  if (!(await ensureDaemonReachable(api, vaultPath))) {
+    throw new Error("DuckyAI daemon is not running. Start it first.");
+  }
+  return api.triggerAgent(abbr, opts);
+}
 
 function createWindow(): void {
   const preloadPath = path.join(__dirname, "..", "electron", "preload.cjs");
   const preloadExists = fs.existsSync(preloadPath);
   console.log(`[main] preload path: ${preloadPath}`);
   console.log(`[main] preload exists: ${preloadExists}`);
+
+  const iconPath = path.join(__dirname, "..", "electron", "icon.png");
 
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -34,6 +187,7 @@ function createWindow(): void {
     frame: false,
     titleBarStyle: "hiddenInset",
     backgroundColor: "#0a0e1a",
+    icon: iconPath,
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
@@ -52,22 +206,106 @@ function createWindow(): void {
   });
 }
 
-function registerIpcHandlers(
-  orch: OrchestratorBridge,
-  mcp: McpClient,
-): void {
-  // --- Orchestrator ---
-  ipcMain.handle("orch:start", () => orch.start());
-  ipcMain.handle("orch:stop", () => orch.stop());
-  ipcMain.handle("orch:status", () => orch.status());
-  ipcMain.handle("orch:list-agents", () => orch.listAgents());
-  ipcMain.handle("orch:trigger", (_, abbr: string, opts?: Record<string, unknown>) =>
-    orch.triggerAgent(abbr, opts),
-  );
+function registerIpcHandlers(api: DuckyAIClient, vaultPath: string): void {
+  // --- Vault filesystem ---
+  ipcMain.handle("vault:list-dir", async (_, relativePath: string) => {
+    const dirPath = path.join(vaultPath, relativePath);
+    // Prevent directory traversal outside vault
+    const resolved = path.resolve(dirPath);
+    if (!resolved.startsWith(path.resolve(vaultPath))) {
+      throw new Error("Path outside vault");
+    }
+    const entries = await fs.promises.readdir(resolved, { withFileTypes: true });
+    return entries
+      .filter((e) => !e.name.startsWith("."))
+      .sort((a, b) => {
+        // Directories first, then alphabetical
+        if (a.isDirectory() && !b.isDirectory()) return -1;
+        if (!a.isDirectory() && b.isDirectory()) return 1;
+        return a.name.localeCompare(b.name);
+      })
+      .map((e) => ({
+        name: e.name,
+        type: e.isDirectory() ? "directory" : "file",
+        relativePath: path.join(relativePath, e.name).replace(/\\/g, "/"),
+      }));
+  });
 
-  // --- Vault (MCP tools) ---
+  ipcMain.handle("vault:read-file", async (_, relativePath: string) => {
+    const filePath = path.join(vaultPath, relativePath);
+    const resolved = path.resolve(filePath);
+    if (!resolved.startsWith(path.resolve(vaultPath))) {
+      throw new Error("Path outside vault");
+    }
+    return fs.promises.readFile(resolved, "utf-8");
+  });
+
+  // --- Orchestrator (HTTP API) ---
+  ipcMain.handle("orch:status", () => getOrchestratorStatus(api, vaultPath));
+  ipcMain.handle("orch:list-agents", () => listOrchestratorAgents(api, vaultPath));
+  ipcMain.handle("orch:trigger", (_, abbr: string, opts?: Record<string, unknown>) =>
+    triggerOrchestratorAgent(api, vaultPath, abbr, opts as TriggerOptions),
+  );
+  ipcMain.handle("orch:start", async () => {
+    userStoppedDaemon = false;
+
+    // Quick health check to see if the daemon is alive before trying to resume
+    const alive = await api.quickHealth();
+    if (alive) {
+      // Daemon is running — just resume the event loop
+      try {
+        await api.post("/api/orchestrator/start", {}, 10_000);
+        return { status: "started" };
+      } catch (err) {
+        console.warn("[main] POST /api/orchestrator/start failed on alive daemon:", err);
+      }
+    }
+
+    // Daemon not reachable — clear stale discovery and spawn fresh
+    api.clearDiscovery();
+    await spawnDaemon(vaultPath);
+
+    // Wait for daemon to become reachable
+    for (let attempt = 0; attempt < DAEMON_RECOVERY_ATTEMPTS; attempt += 1) {
+      await sleep(DAEMON_RECOVERY_POLL_MS);
+      api.refreshDiscovery();
+      try {
+        await api.health();
+        return { status: "started" };
+      } catch {
+        // Retry
+      }
+    }
+
+    throw new Error("Failed to start daemon — it did not become reachable");
+  });
+  ipcMain.handle("orch:stop", async () => {
+    userStoppedDaemon = true;
+    try {
+      // Pause event loop — daemon stays alive for quick resume
+      await api.post("/api/orchestrator/stop");
+      return { status: "stopped" };
+    } catch (err) {
+      userStoppedDaemon = false;
+      throw err;
+    }
+  });
+  ipcMain.handle("orch:shutdown", async () => {
+    userStoppedDaemon = true;
+    try {
+      // Kill daemon process entirely
+      await api.post("/api/orchestrator/shutdown");
+      api.refreshDiscovery();
+      return { status: "shutdown" };
+    } catch {
+      api.refreshDiscovery();
+      return { status: "shutdown" };
+    }
+  });
+
+  // --- Vault tools (via HTTP API) ---
   ipcMain.handle("vault:call-tool", (_, name: string, args: Record<string, unknown>) =>
-    mcp.callTool(name, args),
+    api.callTool(name, args),
   );
 
   // --- Chat (Copilot SDK) ---
@@ -96,28 +334,33 @@ function registerIpcHandlers(
 }
 
 app.whenReady().then(async () => {
-  try {
-    await ensureAzLogin();
-  } catch (err) {
-    console.error("Azure CLI login failed:", err);
-    app.quit();
-    return;
-  }
-
   const vaultPath = resolveVaultPath();
   console.log(`[main] vault path: ${vaultPath}`);
-  orchestrator = new OrchestratorBridge(vaultPath);
-  mcpClient = new McpClient(vaultPath);
+  apiClient = new DuckyAIClient(vaultPath);
+
+  // Verify the daemon is running, or recover it when possible.
+  try {
+    const reachable = await ensureDaemonReachable(apiClient, vaultPath);
+    if (!reachable) {
+      throw new Error("daemon unavailable");
+    }
+    const h = await apiClient.health();
+    console.log(`[main] DuckyAI daemon healthy (pid ${h.pid})`);
+  } catch (err) {
+    console.warn("[main] DuckyAI daemon not reachable after recovery attempt:", err);
+  }
 
   // Lazy-import ChatEngine to avoid crash if Copilot SDK is incompatible
   try {
     const { ChatEngine } = await import("./bridge/chat-engine.js");
-    chatEngine = new ChatEngine(mcpClient, orchestrator, vaultPath);
+    chatEngine = new ChatEngine(apiClient, vaultPath, (msg) => {
+      mainWindow?.webContents.send("duckyai:notification", msg);
+    });
   } catch (err) {
     console.error("[main] ChatEngine import failed (Copilot SDK may need Node 22+):", err);
   }
 
-  registerIpcHandlers(orchestrator, mcpClient);
+  registerIpcHandlers(apiClient, vaultPath);
   createWindow();
 
   // Start chat engine in background (non-blocking)
@@ -128,6 +371,6 @@ app.whenReady().then(async () => {
 
 app.on("window-all-closed", () => {
   chatEngine?.stop();
-  mcpClient?.close();
+  apiClient?.close();
   app.quit();
 });

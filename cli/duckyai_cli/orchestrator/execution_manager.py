@@ -954,11 +954,12 @@ class ExecutionManager:
     def _build_scan_services(self) -> List[Dict]:
         """Build scan_services list for the PRS agent.
 
-        Reads services.entries from duckyai.yml, filters by pr_scan: true,
-        and resolves repo remote URLs from the services directory.
+        Reads services.entries from duckyai.yml, filters by pr_scan: true.
+        Uses metadata (org/project/repositories) when available.
+        Falls back to scanning git remotes from disk if no metadata.
 
         Returns:
-            List of dicts: [{"name": "DEPA", "repos": [{"name": "repo", "remote_url": "...", "org": "...", "project": "...", "repo": "..."}]}]
+            List of dicts: [{"name": "DEPA", "repos": [{"name": "repo", "org": "...", "project": "...", "repo": "..."}]}]
         """
         import re
 
@@ -972,19 +973,41 @@ class ExecutionManager:
             from ..services import get_services_path
             services_path = get_services_path(self.vault_path)
         except Exception:
-            return []
+            services_path = None
 
         result = []
-        azdo_pattern = re.compile(
-            r'https://(?:dev\.azure\.com/([^/]+)/([^/]+)|([^.]+)\.visualstudio\.com/([^/]+))/_git/([^/\s]+)'
-        )
 
         for entry in opted_in:
             svc_name = entry.get("name", "")
+            metadata = entry.get("metadata", {})
+
+            # Metadata-first: use org/project/repositories from config
+            if metadata.get("type") == "ado" and metadata.get("organization") and metadata.get("project"):
+                org = metadata["organization"]
+                project = metadata["project"]
+                repo_patterns = metadata.get("repositories", ["*"])
+                repos = []
+                for pattern in repo_patterns:
+                    repos.append({
+                        "name": pattern,
+                        "org": org,
+                        "project": project,
+                        "repo": pattern,
+                    })
+                if repos:
+                    result.append({"name": svc_name, "repos": repos})
+                continue
+
+            # Fallback: scan git remotes from disk
+            if not services_path:
+                continue
             svc_dir = services_path / svc_name
             if not svc_dir.is_dir():
                 continue
 
+            azdo_pattern = re.compile(
+                r'https://(?:dev\.azure\.com/([^/]+)/([^/]+)|([^.]+)\.visualstudio\.com/([^/]+))/_git/([^/\s]+)'
+            )
             repos = []
             for repo_dir in sorted(svc_dir.iterdir()):
                 if not repo_dir.is_dir() or not (repo_dir / '.git').exists():
@@ -1265,13 +1288,37 @@ class ExecutionManager:
         try:
             from ..services import list_services, get_services_path
             services_path = get_services_path(self.vault_path)
+            services_config = self.config.get("services", {})
+            service_entries = services_config.get("entries", [])
             services = list_services(self.vault_path)
-            if services:
+
+            if service_entries or services:
                 prompt += f"\n# Services (Code Repos)\n"
                 prompt += f"- Services directory: {services_path}\n"
-                for svc in services:
-                    repos_str = ", ".join(r["name"] for r in svc.get("repos", []))
-                    prompt += f"- {svc['name']}/: {repos_str or '(no repos)'}\n"
+
+                # Include metadata from duckyai.yml entries
+                for entry in service_entries:
+                    name = entry.get("name", "")
+                    metadata = entry.get("metadata", {})
+                    if metadata.get("type") == "ado":
+                        org = metadata.get("organization", "")
+                        project = metadata.get("project", "")
+                        repo_patterns = metadata.get("repositories", [])
+                        repos_str = ", ".join(repo_patterns) if repo_patterns else "*"
+                        prompt += f"- {name}/: ado:{org}/{project} repos=[{repos_str}]"
+                        if entry.get("pr_scan"):
+                            prompt += " (pr_scan: on)"
+                        prompt += "\n"
+                    elif services:
+                        # Fall back to disk-discovered repos
+                        svc = next((s for s in services if s.get("name") == name), None)
+                        if svc:
+                            repos_str = ", ".join(r["name"] for r in svc.get("repos", []))
+                            prompt += f"- {name}/: {repos_str or '(no repos)'}\n"
+                        else:
+                            prompt += f"- {name}/: (not synced)\n"
+                    else:
+                        prompt += f"- {name}/: (no metadata)\n"
         except Exception:
             pass  # Services not configured — skip
 

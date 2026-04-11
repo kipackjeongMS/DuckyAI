@@ -20,8 +20,8 @@ import re
 
 # Test configuration
 VAULT_PATH = Path("/Users/minsukkang/GitHub/temp/DuckyAI/duckyai_vault")
-ORCHESTRATOR_YAML = VAULT_PATH / "duckyai.yml"
-BACKUP_YAML = VAULT_PATH / "duckyai.yml.backup"
+ORCHESTRATOR_YAML = VAULT_PATH / ".duckyai" / "duckyai.yml"
+BACKUP_YAML = VAULT_PATH / ".duckyai" / "duckyai.yml.backup"
 LOG_FILE = VAULT_PATH / "_Settings_/Logs" / f"duckyai_{datetime.now().strftime('%Y-%m-%d')}.log"
 TEST_TIMEOUT = 300  # 5 minutes per test
 

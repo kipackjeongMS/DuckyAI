@@ -1,15 +1,16 @@
 import { CopilotClient, approveAll, defineTool } from "@github/copilot-sdk";
 import { exec } from "node:child_process";
 import { z } from "zod";
-import type { McpClient } from "./mcp-client.js";
-import type { OrchestratorBridge } from "./orchestrator.js";
+import type { DuckyAIClient } from "./duckyai-client.js";
+
+const COPILOT_LOOKUP_TIMEOUT_MS = 5_000;
 
 /** Resolve the copilot CLI path via shell (handles .cmd/.bat on Windows). */
 function findCopilotPath(): Promise<string> {
   return new Promise((resolve) => {
-    exec("where copilot", (err, stdout) => {
+    const child = exec("where copilot", (err, stdout) => {
+      clearTimeout(timer);
       if (!err && stdout.trim()) {
-        // Take the first result, prefer .exe over .bat
         const paths = stdout.trim().split("\n").map(p => p.trim());
         const exe = paths.find(p => p.endsWith(".exe")) ?? paths[0];
         resolve(exe);
@@ -17,6 +18,12 @@ function findCopilotPath(): Promise<string> {
         resolve("copilot"); // fallback to PATH
       }
     });
+
+    const timer = setTimeout(() => {
+      child.kill();
+      console.warn("[chat-engine] findCopilotPath timed out, using fallback");
+      resolve("copilot");
+    }, COPILOT_LOOKUP_TIMEOUT_MS);
   });
 }
 
@@ -42,16 +49,14 @@ export class ChatEngine {
   private sendLock: Promise<void> = Promise.resolve(); // serializes concurrent sends
 
   constructor(
-    private mcpClient: McpClient,
-    private orchestrator: OrchestratorBridge,
+    private apiClient: DuckyAIClient,
     private vaultPath: string,
     private notify?: NotifyFn,
   ) {}
 
   /** Build DuckyAI vault + orchestrator tools for the Copilot SDK session. */
   private buildTools() {
-    const mcp = this.mcpClient;
-    const orch = this.orchestrator;
+    const api = this.apiClient;
 
     // Helper: wrap an MCP tool call so the LLM gets back a string result
     const mcpTool = <T>(
@@ -68,7 +73,7 @@ export class ChatEngine {
           const a = mapArgs ? mapArgs(args) : (args as Record<string, unknown>);
           console.log(`[tool] ${name}`, JSON.stringify(a).slice(0, 120));
           try {
-            const result = await mcp.callTool(name, a);
+            const result = await api.callTool(name, a);
             return result;
           } catch (err: any) {
             return { textResultForLlm: `Error: ${err?.message}`, resultType: "failure" as const };
@@ -132,16 +137,22 @@ export class ChatEngine {
         file: z.string().describe("Path to the note file to enrich"),
       })),
 
-      mcpTool("updateTopicIndex", "Update the topic index for a given topic", z.object({
-        topic: z.string().describe("Topic name to update index for"),
-      })),
-
-      mcpTool("generateRoundup", "Generate the daily roundup", z.object({})),
-
       mcpTool("prepareWeeklyReview", "Create the weekly review note", z.object({})),
 
       mcpTool("appendTeamsChatHighlights", "Append Teams chat highlights to daily note", z.object({
         highlights: z.string().describe("Chat highlights markdown content"),
+        date: z.string().optional().describe("Target date YYYY-MM-DD (defaults to today)"),
+        people: z.array(z.string()).optional().describe("People mentioned"),
+      })),
+
+      mcpTool("appendTeamsMeetingHighlights", "Append Teams meeting highlights to daily note", z.object({
+        highlights: z.string().describe("Meeting highlights markdown content"),
+        date: z.string().optional().describe("Target date YYYY-MM-DD (defaults to today)"),
+        people: z.array(z.string()).optional().describe("People mentioned"),
+      })),
+
+      mcpTool("convertUtcToLocalDate", "Convert a UTC timestamp to the user's local date and time", z.object({
+        utcTimestamp: z.string().describe("UTC timestamp string"),
       })),
 
       // ── Orchestrator tools ─────────────────────────────────────
@@ -151,35 +162,7 @@ export class ChatEngine {
         skipPermission: true,
         handler: async () => {
           try {
-            const status = await orch.status();
-            return JSON.stringify(status);
-          } catch (err: any) {
-            return { textResultForLlm: `Error: ${err?.message}`, resultType: "failure" as const };
-          }
-        },
-      }),
-
-      defineTool("startOrchestrator", {
-        description: "Start the DuckyAI orchestrator daemon",
-        parameters: z.object({}),
-        skipPermission: true,
-        handler: async () => {
-          try {
-            const status = await orch.start();
-            return JSON.stringify(status);
-          } catch (err: any) {
-            return { textResultForLlm: `Error: ${err?.message}`, resultType: "failure" as const };
-          }
-        },
-      }),
-
-      defineTool("stopOrchestrator", {
-        description: "Stop the DuckyAI orchestrator daemon",
-        parameters: z.object({}),
-        skipPermission: true,
-        handler: async () => {
-          try {
-            const status = await orch.stop();
+            const status = await api.status();
             return JSON.stringify(status);
           } catch (err: any) {
             return { textResultForLlm: `Error: ${err?.message}`, resultType: "failure" as const };
@@ -193,7 +176,7 @@ export class ChatEngine {
         skipPermission: true,
         handler: async () => {
           try {
-            const agents = await orch.listAgents();
+            const agents = await api.listAgents();
             return JSON.stringify(agents);
           } catch (err: any) {
             return { textResultForLlm: `Error: ${err?.message}`, resultType: "failure" as const };
@@ -202,17 +185,30 @@ export class ChatEngine {
       }),
 
       defineTool("triggerAgent", {
-        description: "Trigger a DuckyAI agent by abbreviation (e.g. TCS, TMS, GDR, EIC, TIU, TM, EDM). Returns immediately — agent runs in background.",
+        description: `Trigger a DuckyAI agent by abbreviation (e.g. TCS, TMS, EIC, TM). Returns immediately — agent runs in background.
+
+For TCS (Teams Chat Summary) and TMS (Teams Meeting Summary) only:
+Before triggering, ask the user to pick a time range:
+  Option A: "Catch up since last sync" — fetches only new data since the previous run (set sinceLastSync=true, omit lookbackHours).
+  Option B: "Look back N hours" — fetches data from the last N hours regardless of previous runs (set lookbackHours=N, omit sinceLastSync).
+Do NOT set both sinceLastSync and lookbackHours — they are mutually exclusive.
+If the user says "just run it" or similar without specifying, default to sinceLastSync=true.
+For non-TCS/TMS agents, ignore these parameters entirely.`,
         parameters: z.object({
-          agent: z.string().describe("Agent abbreviation (e.g. TCS, GDR, EIC)"),
+          agent: z.string().describe("Agent abbreviation (e.g. TCS, EIC)"),
           file: z.string().optional().describe("Optional file path for file-triggered agents"),
-          lookback: z.string().optional().describe("Optional lookback period (e.g. '2h', '1d')"),
+          lookbackHours: z.number().optional().describe("Lookback N hours (ignores watermark). For TCS/TMS only."),
+          sinceLastSync: z.boolean().optional().describe("Use watermark (since last sync). For TCS/TMS only. Default true if no lookbackHours."),
         }),
         skipPermission: true,
         handler: async (args) => {
           console.log(`[tool] triggerAgent: ${args.agent} (fire-and-forget)`);
           // Fire and forget — don't block the LLM
-          orch.triggerAgent(args.agent, { file: args.file, lookback: args.lookback })
+          api.triggerAgent(args.agent, {
+            file: args.file,
+            lookback: args.lookbackHours,
+            sinceLastSync: args.sinceLastSync,
+          })
             .then((r) => {
               console.log(`[tool] triggerAgent ${args.agent} completed:`, r);
               this.notify?.({

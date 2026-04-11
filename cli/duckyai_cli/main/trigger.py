@@ -29,8 +29,9 @@ from .trigger_agent import trigger_orchestrator_agent
 )
 @click.option("--file", "input_file", default=None, help="Input file path to pass to the agent (relative to vault root).")
 @click.option("--lookback", "lookback_hours", type=int, default=None, help="Lookback hours for Teams agents (TCS/TMS) on first run or manual trigger.")
+@click.option("--agent-params", "agent_params_json", type=str, default=None, help='JSON string of agent_params to override (e.g., \'{"user_instructions": "summarize meetings about X"}\')')
 @click.pass_context
-def trigger_cli(ctx, agent, config_file, mcp_config, claude_settings, input_file, lookback_hours):
+def trigger_cli(ctx, agent, config_file, mcp_config, claude_settings, input_file, lookback_hours, agent_params_json):
     """Trigger an orchestrator agent.
 
     If AGENT abbreviation is provided, triggers that agent directly.
@@ -40,6 +41,7 @@ def trigger_cli(ctx, agent, config_file, mcp_config, claude_settings, input_file
         duckyai trigger        # interactive selector
         duckyai trigger EIC --file Ingest/Clipping/what_is_duckai.md
         duckyai trigger TCS --lookback 24
+        duckyai trigger TMS --agent-params '{"user_instructions": "summarize the sprint planning meeting held today"}'
     """
     working_dir = ctx.obj.get("working_dir") if ctx.obj else None
     # Use local --config-file if provided, otherwise fall back to parent context
@@ -49,5 +51,5 @@ def trigger_cli(ctx, agent, config_file, mcp_config, claude_settings, input_file
     combined_mcp_config = parent_mcp_config + mcp_config if mcp_config else parent_mcp_config
     # Use local --claude-settings if provided, otherwise fall back to parent context
     effective_claude_settings = claude_settings or (ctx.obj.get("claude_settings") if ctx.obj else None)
-    trigger_orchestrator_agent(abbreviation=agent, config_file=effective_config_file, working_dir=working_dir, mcp_config=combined_mcp_config, claude_settings=effective_claude_settings, input_file=input_file, lookback_hours=lookback_hours)
+    trigger_orchestrator_agent(abbreviation=agent, config_file=effective_config_file, working_dir=working_dir, mcp_config=combined_mcp_config, claude_settings=effective_claude_settings, input_file=input_file, lookback_hours=lookback_hours, agent_params_json=agent_params_json)
 

@@ -130,9 +130,10 @@ class _FakeProc:
 def test_cleanup_orchestrator_processes_fresh_start_terminates_matching_process(monkeypatch, tmp_path):
     vault_root = tmp_path / "Vault"
     vault_root.mkdir()
-    (vault_root / ".orchestrator.pid").write_text("123", encoding="utf-8")
+    duckyai_dir = vault_root / ".duckyai"
+    duckyai_dir.mkdir()
+    (duckyai_dir / ".orchestrator.pid").write_text("123", encoding="utf-8")
     discovery_dir = vault_root / ".duckyai"
-    discovery_dir.mkdir()
     (discovery_dir / "api.json").write_text(json.dumps({"pid": 123, "url": "http://127.0.0.1:52845"}), encoding="utf-8")
 
     proc = _FakeProc(123, vault_root, ["python", "-m", "duckyai_cli", "-o"])
@@ -157,17 +158,18 @@ def test_cleanup_orchestrator_processes_fresh_start_terminates_matching_process(
     assert proc.terminated is True
     assert result["terminated_pids"] == [123]
     assert result["healthy_pid"] is None
-    assert not (vault_root / ".orchestrator.pid").exists()
+    assert not (vault_root / ".duckyai" / ".orchestrator.pid").exists()
     assert not (vault_root / ".duckyai" / "api.json").exists()
 
 
 def test_cleanup_orchestrator_processes_keeps_healthy_process_when_not_fresh(monkeypatch, tmp_path):
     vault_root = tmp_path / "Vault"
     vault_root.mkdir()
-    pid_file = vault_root / ".orchestrator.pid"
+    duckyai_dir = vault_root / ".duckyai"
+    duckyai_dir.mkdir()
+    pid_file = duckyai_dir / ".orchestrator.pid"
     pid_file.write_text("123", encoding="utf-8")
     discovery_dir = vault_root / ".duckyai"
-    discovery_dir.mkdir()
     discovery_file = discovery_dir / "api.json"
     discovery_file.write_text(json.dumps({"pid": 123, "url": "http://127.0.0.1:52845"}), encoding="utf-8")
 
@@ -204,9 +206,11 @@ def test_cleanup_orchestrator_processes_keeps_healthy_process_when_not_fresh(mon
 def test_start_single_vault_reports_restarted_when_cleanup_replaces_processes(mock_popen, mock_launch_cmd, tmp_path, monkeypatch):
     vault_root = tmp_path / "Vault"
     vault_root.mkdir()
-    (vault_root / "duckyai.yml").write_text("id: vault1\n", encoding="utf-8")
+    duckyai_dir = vault_root / ".duckyai"
+    duckyai_dir.mkdir()
+    (duckyai_dir / "duckyai.yml").write_text("id: vault1\n", encoding="utf-8")
 
-    pid_file = vault_root / ".orchestrator.pid"
+    pid_file = duckyai_dir / ".orchestrator.pid"
     pid_file.write_text("999", encoding="utf-8")
 
     mock_proc = Mock(pid=321)

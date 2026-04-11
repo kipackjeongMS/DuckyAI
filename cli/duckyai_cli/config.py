@@ -14,6 +14,26 @@ logger = Logger()
 CONFIG_FILENAME = "duckyai.yml"
 """Canonical vault configuration filename."""
 
+CONFIG_DIR = ".duckyai"
+"""Directory inside the vault root that holds duckyai.yml and runtime state."""
+
+PID_FILENAME = ".orchestrator.pid"
+"""Orchestrator PID file name (lives inside CONFIG_DIR)."""
+
+
+def get_config_path(vault_path: Path) -> Path:
+    """Return ``<vault_path>/.duckyai/duckyai.yml``."""
+    p = Path(vault_path) / CONFIG_DIR / CONFIG_FILENAME
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def get_pid_path(vault_path: Path) -> Path:
+    """Return ``<vault_path>/.duckyai/.orchestrator.pid``."""
+    p = Path(vault_path) / CONFIG_DIR / PID_FILENAME
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
 
 def get_global_runtime_dir(vault_id: Optional[str] = None, vault_path: Optional[Path] = None) -> Path:
     """Return the runtime directory for a vault: ``<vault_path>/.duckyai/``.
@@ -58,10 +78,11 @@ class Config:
         """
         if config_file:
             self.config_path = Path(config_file)
-            self.vault_path = self.config_path.parent
+            # vault_path is the grandparent when config lives in .duckyai/
+            self.vault_path = self.config_path.parent.parent if self.config_path.parent.name == CONFIG_DIR else self.config_path.parent
         else:
             base_path = Path(vault_path) if vault_path else Path.cwd()
-            self.config_path = base_path / CONFIG_FILENAME
+            self.config_path = get_config_path(base_path)
             self.vault_path = base_path
 
         self.config: Dict[str, Any] = self._load_config()

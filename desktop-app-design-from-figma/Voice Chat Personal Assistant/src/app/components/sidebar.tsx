@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Clock,
@@ -8,6 +9,7 @@ import {
   FileText,
   Loader2,
 } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import type { Agent } from "../hooks/use-orchestrator";
 
 type AgentStatus = "idle" | "running" | "offline" | "queued";
@@ -41,8 +43,11 @@ export interface SidebarProps {
   agents: Agent[];
   triggeringId: string | null;
   onToggleOrchestrator: () => void;
-  onTriggerAgent: (abbreviation: string) => void;
+  onTriggerAgent: (abbreviation: string, opts?: Record<string, unknown>) => void;
 }
+
+const SYNC_AGENTS = new Set(["TCS", "TMS"]);
+const LOOKBACK_OPTIONS = [1, 2, 4, 8, 12, 24] as const;
 
 export function Sidebar({
   orchestratorRunning,
@@ -51,6 +56,8 @@ export function Sidebar({
   onToggleOrchestrator,
   onTriggerAgent,
 }: SidebarProps) {
+
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   const runningCount = agents.filter((a) => a.status === "running").length;
   const queuedCount = agents.filter((a) => a.status === "queued").length;
@@ -226,7 +233,94 @@ export function Sidebar({
 
                   {/* Trigger button */}
                   <AnimatePresence>
-                    {isTriggerable && (
+                    {isTriggerable && SYNC_AGENTS.has(agent.id) && (
+                      <Popover
+                        open={openPopoverId === agent.id}
+                        onOpenChange={(open) =>
+                          setOpenPopoverId(open ? agent.id : null)
+                        }
+                      >
+                        <PopoverTrigger asChild>
+                          <motion.button
+                            className="shrink-0 ml-2 p-1.5 rounded-md transition-colors"
+                            style={{
+                              background: "rgba(0,212,255,0.06)",
+                              border: "1px solid rgba(0,212,255,0.12)",
+                            }}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            whileHover={{
+                              background: "rgba(0,212,255,0.14)",
+                              borderColor: "rgba(0,212,255,0.3)",
+                            }}
+                            whileTap={{ scale: 0.9 }}
+                            title={`Trigger ${agent.name}`}
+                          >
+                            <Zap size={11} style={{ color: "#00d4ff" }} />
+                          </motion.button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="end"
+                          side="bottom"
+                          sideOffset={6}
+                          className="w-48 p-0"
+                          style={{
+                            background: "rgba(13,18,32,0.95)",
+                            border: "1px solid rgba(0,212,255,0.15)",
+                            backdropFilter: "blur(12px)",
+                          }}
+                        >
+                          <div className="py-1">
+                            <button
+                              className="w-full text-left px-3 py-2 transition-colors hover:bg-[rgba(0,212,255,0.08)]"
+                              style={{ fontSize: "0.72rem", color: "#e0e6f0" }}
+                              onClick={() => {
+                                setOpenPopoverId(null);
+                                onTriggerAgent(agent.id, { sinceLastSync: true });
+                              }}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Clock size={12} style={{ color: "#00d4ff", opacity: 0.7 }} />
+                                <span>Since last sync</span>
+                              </div>
+                            </button>
+                            <div
+                              className="mx-3 my-0.5"
+                              style={{ height: 1, background: "rgba(0,212,255,0.08)" }}
+                            />
+                            <div
+                              className="px-3 pt-1.5 pb-1"
+                              style={{
+                                fontSize: "0.6rem",
+                                color: "#00d4ff",
+                                opacity: 0.5,
+                                letterSpacing: "0.1em",
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Lookback
+                            </div>
+                            <div className="grid grid-cols-3 gap-0.5 px-2 pb-1.5">
+                              {LOOKBACK_OPTIONS.map((h) => (
+                                <button
+                                  key={h}
+                                  className="px-2 py-1.5 rounded transition-colors hover:bg-[rgba(0,212,255,0.08)] text-center"
+                                  style={{ fontSize: "0.68rem", color: "#c0c8d8" }}
+                                  onClick={() => {
+                                    setOpenPopoverId(null);
+                                    onTriggerAgent(agent.id, { lookback: h });
+                                  }}
+                                >
+                                  {h}h
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                    {isTriggerable && !SYNC_AGENTS.has(agent.id) && (
                       <motion.button
                         className="shrink-0 ml-2 p-1.5 rounded-md transition-colors"
                         style={{

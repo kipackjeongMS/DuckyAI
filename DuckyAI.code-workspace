@@ -3,10 +3,6 @@
     {
       "name": "DuckyAI",
       "path": "."
-    },
-    {
-      "name": "Doc Repos",
-      "path": ".repos"
     }
   ],
   "settings": {

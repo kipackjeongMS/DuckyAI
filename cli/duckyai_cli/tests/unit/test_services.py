@@ -24,7 +24,9 @@ def temp_vault(tmp_path):
     """Create a temporary vault with duckyai.yml."""
     vault = tmp_path / "TestVault"
     vault.mkdir()
-    config = vault / "duckyai.yml"
+    duckyai_dir = vault / ".duckyai"
+    duckyai_dir.mkdir()
+    config = duckyai_dir / "duckyai.yml"
     config.write_text(
         'version: "1.0.0"\n'
         'id: test_vault\n'
@@ -43,7 +45,9 @@ def temp_vault_no_services_config(tmp_path):
     """Create a vault without services section in config."""
     vault = tmp_path / "MyVault"
     vault.mkdir()
-    config = vault / "duckyai.yml"
+    duckyai_dir = vault / ".duckyai"
+    duckyai_dir.mkdir()
+    config = duckyai_dir / "duckyai.yml"
     config.write_text(
         'version: "1.0.0"\n'
         'id: my_vault\n'
@@ -70,7 +74,9 @@ class TestGetServicesPath:
         vault = tmp_path / "Vault"
         vault.mkdir()
         abs_svc = tmp_path / "custom-services"
-        config = vault / "duckyai.yml"
+        duckyai_dir = vault / ".duckyai"
+        duckyai_dir.mkdir()
+        config = duckyai_dir / "duckyai.yml"
         # Use forward slashes for YAML compatibility
         abs_svc_str = str(abs_svc).replace("\\", "/")
         config.write_text(
@@ -131,7 +137,7 @@ class TestAddService:
 
     def test_updates_duckyai_yml(self, temp_vault):
         add_service(temp_vault, "SvcB")
-        content = (temp_vault / "duckyai.yml").read_text(encoding="utf-8")
+        content = (temp_vault / ".duckyai" / "duckyai.yml").read_text(encoding="utf-8")
         assert '"SvcB"' in content
 
     def test_idempotent_add(self, temp_vault):
@@ -177,7 +183,7 @@ class TestRemoveService:
     def test_updates_duckyai_yml(self, temp_vault):
         add_service(temp_vault, "Gone")
         remove_service(temp_vault, "Gone")
-        content = (temp_vault / "duckyai.yml").read_text(encoding="utf-8")
+        content = (temp_vault / ".duckyai" / "duckyai.yml").read_text(encoding="utf-8")
         assert '"Gone"' not in content
 
 

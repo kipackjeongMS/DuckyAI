@@ -96,3 +96,18 @@ nodes:
     enabled: true
     agent_params:
       model: claude-haiku-4.5
+  - type: agent
+    name: Task Planner (TP)
+    input_type: manual
+    output_type: update_file
+    output_optional: true
+    executor: copilot_cli
+    max_parallel: 1
+    timeout_minutes: 30
+    use_container: true
+    extra_mounts:
+      - source: "${services_path}"
+        target: /services
+    enabled: true
+    agent_params:
+      model: ${model}

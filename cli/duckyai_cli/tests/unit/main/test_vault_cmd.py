@@ -95,7 +95,9 @@ def test_cleanup_legacy_runtime_apply_deletes_safe_and_orphaned(monkeypatch, tmp
 def test_init_command_registers_existing_vault(monkeypatch, tmp_path):
     vault_path = tmp_path / "Vault1"
     vault_path.mkdir()
-    (vault_path / "duckyai.yml").write_text("id: vault1\nname: Vault One\n", encoding="utf-8")
+    duckyai_dir = vault_path / ".duckyai"
+    duckyai_dir.mkdir()
+    (duckyai_dir / "duckyai.yml").write_text("id: vault1\nname: Vault One\n", encoding="utf-8")
 
     calls = []
 
@@ -123,7 +125,9 @@ def test_init_command_registers_existing_vault(monkeypatch, tmp_path):
 def test_init_command_reports_existing_home_vault(monkeypatch, tmp_path):
     vault_path = tmp_path / "Vault1"
     vault_path.mkdir()
-    (vault_path / "duckyai.yml").write_text("id: vault1\nname: Vault One\n", encoding="utf-8")
+    duckyai_dir = vault_path / ".duckyai"
+    duckyai_dir.mkdir()
+    (duckyai_dir / "duckyai.yml").write_text("id: vault1\nname: Vault One\n", encoding="utf-8")
 
     monkeypatch.setattr(vault_cmd, "find_vault_root", lambda path: Path(path))
     monkeypatch.setattr(

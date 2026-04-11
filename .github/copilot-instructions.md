@@ -106,6 +106,61 @@ See: [[DuckyAI MCP Server]] for full documentation.
 
 ---
 
+## Services Configuration
+
+The vault's `duckyai.yml` defines linked code repositories via `services.entries`. Each entry maps to a folder in the services directory (`<VaultName>-Services/<ServiceName>/`).
+
+### Schema
+
+```yaml
+services:
+  path: "../Main-Services"       # Relative path to services directory
+  entries:
+  - name: "DEPA"                 # Service name (= folder name in services dir)
+    metadata:
+      type: ado                  # Source control type: "ado" (Azure DevOps)
+      organization: "msazuredev" # ADO organization name
+      project: "AzureDevSvcAI"   # ADO project name
+      repositories:              # Repo patterns (glob-style)
+        - "DevOpsDeploymentAgents"   # Exact match
+    pr_scan: true                # Opt-in for PR scanning
+  - name: "AppConfig"
+    metadata:
+      type: ado
+      organization: "msazure"
+      project: "Azure AppConfig"
+      repositories:
+        - "*"                    # All repos in the project
+    pr_scan: true
+  - name: "ServiceConnector"
+    metadata:
+      type: ado
+      organization: "msazure"
+      project: "One"
+      repositories:
+        - "ServiceLinker*"       # Glob prefix match
+    pr_scan: false
+```
+
+### Repository Pattern Types
+
+| Pattern | Matches |
+|---------|---------|
+| `"*"` | All repos in the project |
+| `"ServiceLinker*"` | Repos starting with `ServiceLinker` |
+| `"Azconfig.*"` | Repos starting with `Azconfig.` |
+| `"DeploymentAgent"` | Exact repo name only |
+
+### Fields
+
+- `metadata.type`: Source control platform (`"ado"` for Azure DevOps)
+- `metadata.organization`: ADO org name (used in `https://dev.azure.com/{org}`)
+- `metadata.project`: ADO project name
+- `metadata.repositories`: List of glob patterns for repo names
+- `pr_scan`: If `true`, PRS agent scans this service's repos for assigned PRs
+
+---
+
 ## Vault Structure
 
 ```
@@ -520,6 +575,7 @@ Skills are located in `.github/skills/`. Each skill folder contains a `SKILL.md`
 - **Paragraph cohesion**: Write related sentences as a single paragraph (minimum 2-3 sentences)
   - Avoid paragraphs with only one sentence standing alone
   - Combine short sentences logically into one
+- **Summaries use bullet points, not paragraphs**: All summarization output (meeting highlights, chat highlights, PR review summaries, task summaries, daily roundups) must be written as concise bullet points — never as prose paragraphs. Each bullet should be one actionable or informational point.
 
 ### Table vs Diagram Selection
 - **Use tables for**: Attribute-value mappings, comparisons, option listings (structured data)
@@ -586,6 +642,8 @@ Every daily note follows this exact H2 section order. Do NOT add, remove, or ren
 ## Carried from yesterday
 ## Tasks
 ## PRs & Code Reviews
+### Requested
+### Discovered
 ## Notes
 ## Teams Meeting Highlights
 ## Teams Chat Highlights
@@ -602,7 +660,11 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 - `## Focus Today` — **User-curated**: planned work for the day. Only the user (or carry-forward logic) adds items here.
 - `## Carried from yesterday` — **System-generated**: auto-populated with unchecked Focus Today items from the previous day.
 - `## Tasks` — **Agent-populated**: when TCS, TMS, or other agents discover action items during the day, they go here (not Focus Today).
-- `## PRs & Code Reviews` — **Agent-populated**: pending PR review tasks go here as `- [ ]` items. Completed reviews are checked off in-place (`- [x]`).
+- `## PRs & Code Reviews` — **Agent-populated**: contains two subsections:
+  - `### Requested` — PRs explicitly asked by team members (via Teams chats/meetings → TM agent)
+  - `### Discovered` — PRs found automatically by AzDO scan (PRS agent)
+  - TM has priority: if TM writes a PR that already exists in Discovered, it moves to Requested
+  - PRS will not write to Requested — if a PR is already in Requested, PRS skips it
 
 ### Task items must be linked
 - Every task item in `## Focus Today`, `## Carried from yesterday`, or `## Tasks` must:
@@ -611,9 +673,11 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
   3. Call `createTask` MCP tool to create the task file, then call `logTask` to add it to `## Tasks` in the daily note
 
 ### PR review tasks go in PRReviews/
-- When a PR review task arises: call `logPRReview` with `action: "todo"` — creates `01-Work/PRReviews/{title}.md` and adds `- [ ]` entry to `## PRs & Code Reviews`
-- When a PR review is completed: call `logPRReview` with `action: "reviewed"` or `"commented"` — logs `- [x]` entry to `## PRs & Code Reviews`
+- When a PR review task arises from Teams: call `logPRReview` with `action: "todo"`, `subsection: "requested"` — creates `01-Work/PRReviews/{title}.md` and adds `- [ ]` entry to `### Requested`
+- When a PR review is discovered from AzDO scan: call `logPRReview` with `action: "todo"`, `subsection: "discovered"` — adds `- [ ]` entry to `### Discovered`
+- When a PR review is completed: call `logPRReview` with `action: "reviewed"` or `"commented"` — logs `- [x]` entry under `## PRs & Code Reviews`
 - Daily note pending format: `- [ ] [[01-Work/PRReviews/{PR Title}|PR {number}]] - {description}`
+- **Priority rule**: `### Requested` has priority over `### Discovered`. If TM writes a PR already in Discovered, it moves to Requested. PRS never overwrites Requested.
 
 ### Completing tasks
 - When a task is completed, check it off in-place (`- [x]`) — it stays in its original section

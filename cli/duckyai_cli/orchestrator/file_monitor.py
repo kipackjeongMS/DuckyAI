@@ -183,7 +183,7 @@ class _FileEventHandler(FileSystemEventHandler):
             relative_path = file_path
         
         # Check if this is duckyai.yml (special handling for hot-reload)
-        if str(relative_path) == "duckyai.yml":
+        if relative_path == Path(".duckyai") / "duckyai.yml":
             self._debounce_reload_event(event)
         elif not event.is_directory and self._matches_extension(event.src_path):
             self._debounce_file_event(event, 'created')
@@ -199,7 +199,7 @@ class _FileEventHandler(FileSystemEventHandler):
             relative_path = file_path
         
         # Check if this is duckyai.yml (special handling for hot-reload)
-        if str(relative_path) == "duckyai.yml":
+        if relative_path == Path(".duckyai") / "duckyai.yml":
             self._debounce_reload_event(event)
         elif not event.is_directory and self._matches_extension(event.src_path):
             self._debounce_file_event(event, 'modified')

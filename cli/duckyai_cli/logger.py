@@ -42,7 +42,7 @@ class Logger:
         default = os.path.join(str(vault_root), ".duckyai", "logs")
         try:
             import yaml
-            config_path = vault_root / "duckyai.yml"
+            config_path = vault_root / ".duckyai" / "duckyai.yml"
             if config_path.exists():
                 with config_path.open("r", encoding="utf-8") as fh:
                     data = yaml.safe_load(fh) or {}
@@ -89,7 +89,7 @@ class Logger:
         """
         try:
             import yaml
-            config_path = Path(vault_path) / "duckyai.yml"
+            config_path = Path(vault_path) / ".duckyai" / "duckyai.yml"
             if not config_path.exists():
                 return
 

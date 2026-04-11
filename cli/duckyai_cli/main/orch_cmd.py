@@ -58,7 +58,8 @@ def _is_orchestrator_alive(pid: int) -> bool:
 
 def _read_pid(vault_root: Path):
     """Read PID from .orchestrator.pid file. Returns (pid, alive) or (None, False)."""
-    pid_file = vault_root / ".orchestrator.pid"
+    from ..config import get_pid_path
+    pid_file = get_pid_path(vault_root)
     if not pid_file.exists():
         return None, False
     try:
@@ -241,7 +242,8 @@ def _cleanup_orchestrator_processes(
 
     cleaned_pid_file = False
     cleaned_discovery = False
-    pid_file = vault_root / ".orchestrator.pid"
+    from ..config import get_pid_path
+    pid_file = get_pid_path(vault_root)
     discovery_file = vault_root / ".duckyai" / "api.json"
 
     if fresh_start or kept_pid is None:
@@ -361,14 +363,14 @@ def orchestrator_group(ctx):
 # =============================================================================
 def _start_single_vault(vault_path: Path, vault_name: str) -> dict:
     """Start the orchestrator for a single vault. Returns a result dict."""
-    from duckyai_cli.config import CONFIG_FILENAME
+    from duckyai_cli.config import CONFIG_FILENAME, get_pid_path, get_config_path
 
-    pid_file = vault_path / ".orchestrator.pid"
+    pid_file = get_pid_path(vault_path)
 
     # Check duckyai.yml exists
-    config_yaml = vault_path / CONFIG_FILENAME
+    config_yaml = get_config_path(vault_path)
     if not config_yaml.exists():
-        return {"vault": vault_name, "path": str(vault_path), "status": "error", "message": "duckyai.yml not found"}
+        return {"vault": vault_name, "path": str(vault_path), "status": "error", "message": "duckyai.yml not found in .duckyai/"}
 
     cleanup = _cleanup_orchestrator_processes(vault_path, fresh_start=True)
 
@@ -765,8 +767,9 @@ def orch_list_agents(ctx, json_out):
 )
 @click.option("--lookback", "lookback_hours", type=int, default=None, help="Lookback N hours (ignores watermark). For TCS/TMS.")
 @click.option("--since-last-sync", "since_last_sync", is_flag=True, default=False, help="Use watermark (since last sync). Default for TCS/TMS when watermark exists.")
+@click.option("--agent-params", "agent_params_json", type=str, default=None, help='JSON string of agent_params to override (e.g., \'{"user_instructions": "summarize meetings about X"}\')')
 @click.pass_context
-def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, lookback_hours, since_last_sync):
+def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, lookback_hours, since_last_sync, agent_params_json):
     """Trigger an orchestrator agent by abbreviation.
 
     \b
@@ -783,6 +786,7 @@ def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, 
         duckyai orchestrator trigger TCS
         duckyai orchestrator trigger TCS --since-last-sync
         duckyai orchestrator trigger TCS --lookback 8
+        duckyai orchestrator trigger TMS --agent-params '{"user_instructions": "summarize sprint planning meeting today"}'
     """
     obj = ctx.obj or {}
     working_dir = obj.get("working_dir")
@@ -813,6 +817,7 @@ def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, 
             lookback_hours=lookback_hours,
             since_last_sync=since_last_sync,
             json_out=json_out,
+            agent_params_json=agent_params_json,
         )
     else:
         from .trigger_agent import trigger_orchestrator_agent
@@ -825,10 +830,11 @@ def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, 
             input_file=input_file,
             vault_path=vault_root,
             lookback_hours=lookback_hours,
+            agent_params_json=agent_params_json,
         )
 
 
-def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config, claude_settings, ctx, vault_root=None, lookback_hours=None, since_last_sync=False, json_out=True):
+def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config, claude_settings, ctx, vault_root=None, lookback_hours=None, since_last_sync=False, json_out=True, agent_params_json=None):
     """Trigger an agent non-interactively. Outputs JSON when json_out=True, plain text otherwise."""
     import time as _time
     from ..config import Config
@@ -891,6 +897,15 @@ def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config,
         elif since_last_sync:
             # Explicit watermark mode — don't set lookback_hours, let watermark take over
             agent_params_override = {'ignore_watermark': False}
+
+        # Merge --agent-params JSON override
+        if agent_params_json:
+            extra_params = json.loads(agent_params_json)
+            if agent_params_override is None:
+                agent_params_override = extra_params
+            else:
+                agent_params_override.update(extra_params)
+
         ctx_result = orch.trigger_agent_once(agent_upper, input_file=input_file, agent_params_override=agent_params_override)
         elapsed = _time.time() - start
 
@@ -901,7 +916,7 @@ def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config,
                 "duration_seconds": round(elapsed, 1),
             }
             if ctx_result.task_file:
-                result["task_file"] = str(ctx_result.task_file.name)
+                result["task_file"] = ctx_result.task_file.name if hasattr(ctx_result.task_file, 'name') else str(ctx_result.task_file)
             _output(result)
         else:
             error_msg = ctx_result.error_message if ctx_result else "Unknown error"

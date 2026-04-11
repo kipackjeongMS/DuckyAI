@@ -21,11 +21,35 @@ export interface DuckyAIConfig {
   }>;
 }
 
-/** Walk up from CWD or env var to find the vault root (contains duckyai.yml). */
+/** Resolve the vault root path.
+ *
+ * Priority:
+ *   1. DUCKYAI_VAULT_ROOT env var
+ *   2. home_vault from ~/.duckyai/config.json
+ *   3. Walk up from this file's directory to find duckyai.yml
+ */
 export function resolveVaultPath(): string {
   const fromEnv = process.env.DUCKYAI_VAULT_ROOT;
   if (fromEnv && fs.existsSync(path.join(fromEnv, "duckyai.yml"))) {
     return fromEnv;
+  }
+
+  // Check global config for home_vault
+  const globalConfig = path.join(
+    process.env.USERPROFILE || process.env.HOME || "",
+    ".duckyai",
+    "config.json",
+  );
+  if (fs.existsSync(globalConfig)) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(globalConfig, "utf-8"));
+      const homeVaultPath = cfg?.home_vault?.path;
+      if (homeVaultPath && fs.existsSync(path.join(homeVaultPath, "duckyai.yml"))) {
+        return homeVaultPath;
+      }
+    } catch {
+      // Ignore malformed config
+    }
   }
 
   // Walk up from this file's directory to find duckyai.yml
