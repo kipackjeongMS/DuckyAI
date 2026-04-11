@@ -123,7 +123,7 @@ class Logger:
         # Only write header if file doesn't exist
         if not os.path.exists(self.log_file):
             with open(self.log_file, 'w', encoding='utf-8') as f:
-                f.write(f"PKM CLI Log - Started at {datetime.now().isoformat()}\n")
+                f.write(f"DuckAI CLI Log - Started at {datetime.now().isoformat()}\n")
                 f.write("=" * 60 + "\n")
 
     def _write_log(self, level, message, exc_info=False, console=False):

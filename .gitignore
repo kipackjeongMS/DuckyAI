@@ -43,3 +43,19 @@ desktop.ini
 
 # Services directory junction (points outside vault)
 .services/
+
+# Node.js
+node_modules/
+dist/
+dist-electron/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+*.egg
+.venv/
+venv/
+
+# Build artifacts
+*.vsix

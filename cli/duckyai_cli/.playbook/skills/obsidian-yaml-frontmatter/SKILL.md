@@ -131,7 +131,7 @@ sources:
 ```yaml
 ✅ CORRECT:
 title: 'He said, "Hello."'
-note: 'It\'s called "PKM".'
+note: 'It\'s called "DuckAI".'
 ```
 
 **Double quote wrapping with escaping**:
@@ -151,7 +151,7 @@ quote_char: '"'
 **Mixed quotes preference**: Use double quotes, escape only `"` (single quotes don't need escaping):
 ```yaml
 ✅ CORRECT:
-note: "It's called \"PKM\"."
+note: "It's called \"DuckAI\"."
 
 ❌ INCORRECT:
 title: AI Era: Thriving Framework (unquoted colon)

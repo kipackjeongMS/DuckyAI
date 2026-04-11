@@ -38,7 +38,7 @@ def trigger_cli(ctx, agent, config_file, mcp_config, claude_settings, input_file
 
     Examples:
         duckyai trigger        # interactive selector
-        duckyai trigger EIC --file Ingest/Clipping/what_is_pkm.md
+        duckyai trigger EIC --file Ingest/Clipping/what_is_duckai.md
         duckyai trigger TCS --lookback 24
     """
     working_dir = ctx.obj.get("working_dir") if ctx.obj else None

@@ -21,7 +21,6 @@ You have access to powerful vault automation tools via MCP. **Use these tools pr
 | "start the orchestrator" / "start watching files" | `startOrchestrator` |
 | "stop the orchestrator" | `stopOrchestrator` |
 | "orchestrator status" / "what's running?" | `orchestratorStatus` |
-| "trigger the daily roundup" / "run GDR" | `triggerAgent` with agent="GDR" |
 | "list agents" / "what agents are available?" | `listAgents` |
 
 ### Vault Operations
@@ -31,16 +30,12 @@ You have access to powerful vault automation tools via MCP. **Use these tools pr
 | "triage my inbox" | `triageInbox` |
 | "enrich this note" | `enrichNote` |
 | "update topic index for X" | `updateTopicIndex` |
-| "generate today's roundup" | `generateRoundup` |
 | "create a task" | `createTask` |
 | "log my PR review" | `logPRReview` |
 | "create weekly review" | `prepareWeeklyReview` |
 
 ### Available Agents (via `triggerAgent`)
 - **EIC** — Enrich Ingested Content (auto-triggered on new files in 00-Inbox/)
-- **EDM** — Extract Document to Markdown (PDF/DOCX → MD)
-- **GDR** — Generate Daily Roundup (cron: 6 PM weekdays)
-- **TIU** — Topic Index Update (cron: 6:30 PM Fridays)
 - **TCS** — Teams Chat Summary (cron: hourly)
 - **TMS** — Teams Meeting Summary (cron: hourly)
 - **TM** — Task Manager (runs after TCS/TMS; extracts action items → creates tasks and PR reviews)
@@ -493,7 +488,7 @@ The CLI handles automation (file triggers + cron scheduling). Copilot + MCP hand
 - Prompts can be found in `.github/prompts-agent/`
 - Skills can be found in `.github/skills/`
 - Templates in `.github/templates/` and `Templates/`
-- Each prompt/agent can be called using abbreviations (e.g., EIC, GDR, TIU)
+- Each prompt/agent can be called using abbreviations (e.g., EIC, TCS)
 - Check `.github/prompts-agent/` first for new commands (especially abbreviations)
 
 ### Skills
@@ -639,6 +634,28 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 ## User Identity
 
 - The `user_name` in Agent Parameters is the vault owner
-- When writing notes, replace any reference to this person with **"Me"**
-- Do NOT create `[[wiki link]]` for the user — just write "Me"
+- When writing notes, replace any reference to this person with **"I"** (subject) or **"me"** (object)
+- Do NOT create `[[wiki link]]` for the user — just write "I" or "me"
 - Other people still get `[[Full Name]]` wiki links
+
+### Always-Explicit Subject Rule
+
+Every bullet point in notes must have a **clear, explicit subject** — never rely on heading context alone to imply who did what.
+
+**Bad** (ambiguous):
+```
+### John Doe
+- requested approval
+```
+
+**Good** (explicit):
+```
+### John Doe
+- John requested approval from me
+- I sent the deployment plan to John
+```
+
+Rules:
+- Every bullet must contain a subject (a person's name or "I"/"me")
+- Under a person's `###` heading, that person is typically the main actor — but if the user performed the action, write "I" explicitly
+- Never write a bullet where the reader must guess who did what

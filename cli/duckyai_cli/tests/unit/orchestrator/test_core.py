@@ -137,12 +137,9 @@ Test prompt body
         # Process event
         orch._process_event(trigger_event)
 
-        # Give thread time to execute
-        time.sleep(0.1)
-
-        # Verify execution was attempted
+        # Verify execution was attempted synchronously when orchestrator is not running
         assert mock_can_execute.called
-        # Note: mock_execute might be called in a thread, so we can't reliably check it synchronously
+        assert mock_execute.called
 
     def test_process_event_no_matching_agent(self, temp_vault):
         """Test processing event with no matching agents."""
@@ -290,3 +287,91 @@ Test prompt body
         orch._execute_agent(agent, event_data)
 
         assert mock_execute.called
+
+    def test_dispatch_dependents_waits_for_running_siblings(self, temp_vault):
+        """TM should NOT dispatch when a sibling parent (TMS) is still running."""
+        vault_path, agents_dir = temp_vault
+
+        orch = Orchestrator(vault_path, agents_dir)
+        orch.agent_registry.agents = {
+            "TCS": AgentDefinition(
+                name="Teams Chat Summary",
+                abbreviation="TCS",
+                category="cron",
+                trigger_event="manual",
+                prompt_body="TCS",
+            ),
+            "TMS": AgentDefinition(
+                name="Teams Meeting Summary",
+                abbreviation="TMS",
+                category="cron",
+                trigger_event="manual",
+                prompt_body="TMS",
+            ),
+            "TM": AgentDefinition(
+                name="Task Manager",
+                abbreviation="TM",
+                category="cron",
+                trigger_event="manual",
+                trigger_wait_for=["TCS", "TMS"],
+                requires_input_file=False,
+                prompt_body="TM",
+            ),
+        }
+
+        dependent_ctx = Mock(success=True, duration=0.1)
+        orch._execute_agent = Mock(return_value=dependent_ctx)
+        parent_ctx = Mock(start_time=datetime.now(), end_time=datetime.now())
+
+        # TMS is still running when TCS completes
+        orch.execution_manager.get_agent_running_count = Mock(side_effect=lambda abbr: 1 if abbr == "TMS" else 0)
+
+        with patch("duckyai_cli.orchestrator.core.time.sleep", return_value=None):
+            orch._dispatch_dependents(orch.agent_registry.agents["TCS"], parent_ctx)
+
+        orch._execute_agent.assert_not_called()
+
+    def test_dispatch_dependents_fires_when_siblings_idle(self, temp_vault):
+        """TM should dispatch when the completing parent's siblings are all idle."""
+        vault_path, agents_dir = temp_vault
+
+        orch = Orchestrator(vault_path, agents_dir)
+        orch.agent_registry.agents = {
+            "TCS": AgentDefinition(
+                name="Teams Chat Summary",
+                abbreviation="TCS",
+                category="cron",
+                trigger_event="manual",
+                prompt_body="TCS",
+            ),
+            "TMS": AgentDefinition(
+                name="Teams Meeting Summary",
+                abbreviation="TMS",
+                category="cron",
+                trigger_event="manual",
+                prompt_body="TMS",
+            ),
+            "TM": AgentDefinition(
+                name="Task Manager",
+                abbreviation="TM",
+                category="cron",
+                trigger_event="manual",
+                trigger_wait_for=["TCS", "TMS"],
+                requires_input_file=False,
+                prompt_body="TM",
+            ),
+        }
+
+        dependent_ctx = Mock(success=True, duration=0.1)
+        orch._execute_agent = Mock(return_value=dependent_ctx)
+        parent_ctx = Mock(start_time=datetime.now(), end_time=datetime.now())
+
+        # No siblings running — TMS already finished (or never ran)
+        orch.execution_manager.get_agent_running_count = Mock(return_value=0)
+
+        with patch("duckyai_cli.orchestrator.core.time.sleep", return_value=None):
+            orch._dispatch_dependents(orch.agent_registry.agents["TCS"], parent_ctx)
+
+        orch._execute_agent.assert_called_once()
+        called_agent = orch._execute_agent.call_args.args[0]
+        assert called_agent.abbreviation == "TM"

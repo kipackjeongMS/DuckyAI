@@ -21,7 +21,6 @@ You have access to powerful vault automation tools via MCP. **Use these tools pr
 | "start the orchestrator" / "start watching files" | `startOrchestrator` |
 | "stop the orchestrator" | `stopOrchestrator` |
 | "orchestrator status" / "what's running?" | `orchestratorStatus` |
-| "trigger the daily roundup" / "run GDR" | `triggerAgent` with agent="GDR" |
 | "list agents" / "what agents are available?" | `listAgents` |
 
 ### Vault Operations
@@ -31,16 +30,12 @@ You have access to powerful vault automation tools via MCP. **Use these tools pr
 | "triage my inbox" | `triageInbox` |
 | "enrich this note" | `enrichNote` |
 | "update topic index for X" | `updateTopicIndex` |
-| "generate today's roundup" | `generateRoundup` |
 | "create a task" | `createTask` |
 | "log my PR review" | `logPRReview` |
 | "create weekly review" | `prepareWeeklyReview` |
 
 ### Available Agents (via `triggerAgent`)
-- **EIC** — Enrich Ingested Content (auto-triggered on new files in 00-Inbox/)
-- **EDM** — Extract Document to Markdown (PDF/DOCX → MD)
-- **GDR** — Generate Daily Roundup (cron: 6 PM weekdays)
-- **TIU** — Topic Index Update (cron: 6:30 PM Fridays)
+- **CEA** — Content Enrichment Agent (auto-triggered on new files in 00-Inbox/)
 - **TCS** — Teams Chat Summary (cron: hourly)
 - **TMS** — Teams Meeting Summary (cron: hourly)
 - **TM** — Task Manager (runs after TCS/TMS; extracts action items → creates tasks and PR reviews)
@@ -367,7 +362,7 @@ When asked to restructure a document:
 
 When the user says they "did" something, "submitted" something, "sent" something, or otherwise indicates a completed action:
 1. Update today's daily note (`04-Periodic/Daily/YYYY-MM-DD.md`)
-2. Add to "Tasks Completed" section if it's a completion
+2. Check off the task in its section (`- [x]`) if it's a completion
 3. Add to "Notes" section if it's progress/context
 4. Add follow-up items to "Carry forward to tomorrow" if needed
 
@@ -376,7 +371,7 @@ When the user says they "did" something, "submitted" something, "sent" something
 When an item is unblocked:
 1. Update status from `blocked` → `in-progress`
 2. Update `modified` date
-3. Log the unblock in today's daily note (Tasks Completed section)
+3. Log the unblock in today's daily note (check off in Tasks section)
 4. Add next action to Focus Today or Carry Forward
 
 ### Logging PR Reviews
@@ -479,7 +474,7 @@ When working with [DOMAIN]:
 The vault includes a Python CLI orchestrator (`cli/`) for automated workflows:
 
 - **Run daemon:** `duckyai -o` — watches vault for file changes and triggers agents
-- **Trigger agent:** `duckyai trigger EIC --file 00-Inbox/article.md`
+- **Trigger agent:** `duckyai trigger CEA --file 00-Inbox/article.md`
 - **Config:** `duckyai.yml` at vault root — defines agents, triggers, schedules
 - **Hot-reload:** Edit `duckyai.yml` while daemon runs — zero-downtime updates
 
@@ -493,7 +488,7 @@ The CLI handles automation (file triggers + cron scheduling). Copilot + MCP hand
 - Prompts can be found in `.github/prompts-agent/`
 - Skills can be found in `.github/skills/`
 - Templates in `.github/templates/` and `Templates/`
-- Each prompt/agent can be called using abbreviations (e.g., EIC, GDR, TIU)
+- Each prompt/agent can be called using abbreviations (e.g., CEA, TCS)
 - Check `.github/prompts-agent/` first for new commands (especially abbreviations)
 
 ### Skills
@@ -591,7 +586,6 @@ Every daily note follows this exact H2 section order. Do NOT add, remove, or ren
 ## Carried from yesterday
 ## Tasks
 ## PRs & Code Reviews
-## Tasks Completed
 ## Notes
 ## Teams Meeting Highlights
 ## Teams Chat Highlights
@@ -608,22 +602,21 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 - `## Focus Today` — **User-curated**: planned work for the day. Only the user (or carry-forward logic) adds items here.
 - `## Carried from yesterday` — **System-generated**: auto-populated with unchecked Focus Today items from the previous day.
 - `## Tasks` — **Agent-populated**: when TCS, TMS, or other agents discover action items during the day, they go here (not Focus Today).
-- `## PRs & Code Reviews` — **Agent-populated**: pending PR review tasks go here as `- [ ]` items. Completed reviews move to `## Tasks Completed`.
-- `## Tasks Completed` — **Completion log**: checked-off items from any of the above sections move here.
+- `## PRs & Code Reviews` — **Agent-populated**: pending PR review tasks go here as `- [ ]` items. Completed reviews are checked off in-place (`- [x]`).
 
 ### Task items must be linked
-- Every task item in `## Focus Today`, `## Carried from yesterday`, `## Tasks`, or `## Tasks Completed` must:
+- Every task item in `## Focus Today`, `## Carried from yesterday`, or `## Tasks` must:
   1. Have a corresponding file in `01-Work/Tasks/{Task Title}.md`
   2. Be written as a deep Obsidian link: `- [ ] [[01-Work/Tasks/{Task Title}|{Task Title}]]`
   3. Call `createTask` MCP tool to create the task file, then call `logTask` to add it to `## Tasks` in the daily note
 
 ### PR review tasks go in PRReviews/
 - When a PR review task arises: call `logPRReview` with `action: "todo"` — creates `01-Work/PRReviews/{title}.md` and adds `- [ ]` entry to `## PRs & Code Reviews`
-- When a PR review is completed: call `logPRReview` with `action: "reviewed"` or `"commented"` — logs `- [x]` entry to `## Tasks Completed`
+- When a PR review is completed: call `logPRReview` with `action: "reviewed"` or `"commented"` — logs `- [x]` entry to `## PRs & Code Reviews`
 - Daily note pending format: `- [ ] [[01-Work/PRReviews/{PR Title}|PR {number}]] - {description}`
 
 ### Completing tasks
-- When a task in `## Focus Today`, `## Carried from yesterday`, **or `## Tasks`** is checked off (`- [x]`), move it to `## Tasks Completed`
+- When a task is completed, check it off in-place (`- [x]`) — it stays in its original section
 - Update the task file status to `done` via `updateTaskStatus`
 
 ### Carry-forward logic
@@ -639,6 +632,28 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 ## User Identity
 
 - The `user_name` in Agent Parameters is the vault owner
-- When writing notes, replace any reference to this person with **"Me"**
-- Do NOT create `[[wiki link]]` for the user — just write "Me"
+- When writing notes, replace any reference to this person with **"I"** (subject) or **"me"** (object)
+- Do NOT create `[[wiki link]]` for the user — just write "I" or "me"
 - Other people still get `[[Full Name]]` wiki links
+
+### Always-Explicit Subject Rule
+
+Every bullet point in notes must have a **clear, explicit subject** — never rely on heading context alone to imply who did what.
+
+**Bad** (ambiguous):
+```
+### John Doe
+- requested approval
+```
+
+**Good** (explicit):
+```
+### John Doe
+- John requested approval from me
+- I sent the deployment plan to John
+```
+
+Rules:
+- Every bullet must contain a subject (a person's name or "I"/"me")
+- Under a person's `###` heading, that person is typically the main actor — but if the user performed the action, write "I" explicitly
+- Never write a bullet where the reader must guess who did what

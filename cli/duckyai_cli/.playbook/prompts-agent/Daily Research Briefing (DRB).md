@@ -171,7 +171,7 @@ Brief overview of today's key findings across all topics.
 ```markdown
 ## Summary
 
-Today's briefing covers 3 active research areas: LLM Evaluation (new benchmark paper), PKM Tools (Obsidian plugin update), and Search Technology (algorithm changes).
+Today's briefing covers 3 active research areas: LLM Evaluation (new benchmark paper), DuckAI Tools (Obsidian plugin update), and Search Technology (algorithm changes).
 
 ## Topic Updates
 

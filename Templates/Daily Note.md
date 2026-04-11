@@ -20,9 +20,6 @@ tags:
 ## PRs & Code Reviews
 - [ ] 
 
-## Tasks Completed
-- [x] 
-
 ## Notes
 
 ## Teams Meeting Highlights

@@ -377,3 +377,15 @@ def trigger_orchestrator_agent(abbreviation=None, config_file=None, working_dir=
         logger.error(f"Error initializing orchestrator: {e}")
         logger.info(f"[red]✗ Error: {e}[/red]")
 
+
+def trigger_task_manager(config_file=None, working_dir=None, mcp_config=None, claude_settings=None, vault_path=None):
+    """Trigger Task Manager (TM) explicitly."""
+    return trigger_orchestrator_agent(
+        abbreviation="TM",
+        config_file=config_file,
+        working_dir=working_dir,
+        mcp_config=mcp_config,
+        claude_settings=claude_settings,
+        vault_path=vault_path,
+    )
+

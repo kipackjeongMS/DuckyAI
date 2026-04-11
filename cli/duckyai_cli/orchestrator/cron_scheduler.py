@@ -43,6 +43,7 @@ class CronScheduler:
         self.config = config or Config()
         self._running = False
         self._thread: Optional[threading.Thread] = None
+        self._stop_event = threading.Event()
         self._cooldowns: dict[str, float] = {}  # agent_abbr -> last_run_timestamp
 
     def start(self):
@@ -51,6 +52,7 @@ class CronScheduler:
             logger.warning("Cron scheduler already running")
             return
 
+        self._stop_event.clear()
         self._running = True
         self._thread = threading.Thread(target=self._scheduler_loop, daemon=True)
         self._thread.start()
@@ -62,6 +64,7 @@ class CronScheduler:
             return
 
         self._running = False
+        self._stop_event.set()
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=5.0)
         logger.info("Cron scheduler stopped")
@@ -76,10 +79,12 @@ class CronScheduler:
             try:
                 self._check_and_trigger_jobs()
                 # Sleep for 60 seconds (1 minute)
-                time.sleep(60)
+                if self._stop_event.wait(60):
+                    break
             except Exception as e:
                 logger.error(f"Error in cron scheduler loop: {e}", exc_info=True)
-                time.sleep(60)
+                if self._stop_event.wait(60):
+                    break
 
         logger.info("Cron scheduler loop stopped")
 
@@ -112,9 +117,13 @@ class CronScheduler:
                 cron = croniter(agent.cron, now)
                 prev_run = cron.get_prev(datetime)
 
+                compare_now = now
+                if prev_run.tzinfo is None:
+                    compare_now = datetime.now()
+
                 # If the previous run time is within the last minute, trigger the job
-                time_diff = (now - prev_run).total_seconds()
-                if 0 <= time_diff < 60:
+                time_diff = (compare_now - prev_run).total_seconds()
+                if 0 <= time_diff <= 60:
                     logger.info(f"Triggering scheduled agent: {agent.abbreviation} ({agent.name})")
                     self._trigger_agent(agent)
             except Exception as e:

@@ -22,7 +22,7 @@ Testing the complete workflow:
 ## Content Outline
 
 #AI - Please help me write an article about:
-- The importance of automated testing in PKM systems
+- The importance of automated testing in DuckAI systems
 - How integration tests improve reliability
 - Best practices for test fixture management
 

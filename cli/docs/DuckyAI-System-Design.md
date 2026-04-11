@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-**DuckyAI** is an AI-powered personal knowledge management (PKM) platform that combines an **Obsidian vault**, a **Python orchestrator daemon**, a **TypeScript MCP server**, and **GitHub Copilot / Claude Code integration** into a unified automation system.
+**DuckyAI** is an AI-powered personal knowledge management (DuckAI) platform that combines an **Obsidian vault**, a **Python orchestrator daemon**, a **TypeScript MCP server**, and **GitHub Copilot / Claude Code integration** into a unified automation system.
 
 The core idea: give AI assistants **persistent memory** of your work by storing everything in markdown files, then automate repetitive knowledge management tasks through event-driven agents.
 
@@ -19,7 +19,7 @@ The core idea: give AI assistants **persistent memory** of your work by storing 
 | **Automated document ingestion** | File watcher detects new files → AI enriches and organizes them |
 | **Scheduled summaries** | Cron-triggered agents generate daily roundups, topic indexes |
 | **Teams integration** | Hourly sync of chats & meetings into vault notes (configurable lookback) |
-| **Interactive PKM** | Copilot prompts for creating tasks, meetings, investigations |
+| **Interactive DuckAI** | Copilot prompts for creating tasks, meetings, investigations |
 | **Multi-executor AI** | Supports Claude Code, Copilot SDK, Gemini CLI as agent backends |
 
 ---
@@ -279,50 +279,41 @@ graph TB
         ARC["05-Archive/ - Completed items"]
     end
 
-    INB -->|EIC Agent| DOCS
-    INB -->|EDM Agent| DOCS
+    INB -->|CEA Agent| DOCS
     TASKS -->|archiveTask| ARC
     DAILY -->|GDR Agent| DAILY
-    DOCS -->|TIU Agent| TOPICS
 ```
 
 ---
 
 ## 4. Agent System
 
-### 4.1 Configured Agents (6)
+### 4.1 Configured Agents (4)
 
 ```mermaid
 graph LR
     subgraph FILE_TRIGGERED["File-Triggered Agents"]
-        EIC["EIC - Enrich Ingested Content"]
-        EDM["EDM - Extract Document to Markdown"]
+        CEA["CEA - Content Enrichment Agent"]
     end
 
     subgraph CRON_TRIGGERED["Cron-Triggered Agents"]
         GDR["GDR - Generate Daily Roundup<br/>6 PM Mon-Fri"]
-        TIU["TIU - Topic Index Update<br/>6:30 PM Fridays"]
         TCS["TCS - Teams Chat Summary<br/>Hourly at :10"]
         TMS["TMS - Teams Meeting Summary<br/>Hourly at :10"]
     end
 
-    INB[00-Inbox] -->|new file| EIC
-    INB -->|pdf/docx/doc/txt| EDM
-    EIC --> KNW[03-Knowledge]
-    EDM --> KNW
+    INB[00-Inbox] -->|new file| CEA
+    CEA --> KNW[03-Knowledge]
 
     GDR --> DAILY[04-Periodic/Daily]
-    TIU --> TOPICS[03-Knowledge/Topics]
     TCS --> DAILY
     TMS --> DAILY
 ```
 
 | Agent | Abbr | Trigger | Input | Output | Executor |
 |---|---|---|---|---|---|
-| Enrich Ingested Content | EIC | File created in `00-Inbox/` | `00-Inbox/*.md` | `03-Knowledge/Documentation/` | copilot_sdk |
-| Extract Document to Markdown | EDM | File created in `00-Inbox/` | `00-Inbox/*.pdf\|*.docx` | New `.md` file | copilot_sdk |
+| Content Enrichment Agent | CEA | File created in `00-Inbox/` | `00-Inbox/*.md` | `03-Knowledge/Documentation/` | copilot_sdk |
 | Generate Daily Roundup | GDR | Cron: `0 18 * * 1-5` | Scans vault | `04-Periodic/Daily/` | copilot_sdk |
-| Topic Index Update | TIU | Cron: `30 18 * * 5` | `04-Periodic/Daily/` | `03-Knowledge/Topics/` | copilot_sdk |
 | Teams Chat Summary | TCS | Cron: `10 * * * *` | WorkIQ (Microsoft Graph) | Daily note update | copilot_sdk |
 | Teams Meeting Summary | TMS | Cron: `10 * * * *` | WorkIQ (Microsoft Graph) | Daily note + meeting files | copilot_sdk |
 
@@ -367,7 +358,7 @@ graph TB
     subgraph SKILLS["21 Copilot Skills"]
         direction TB
 
-        subgraph PKM["Knowledge Management"]
+        subgraph DuckAI["Knowledge Management"]
             S1[daily-roundup]
             S2[triage-inbox]
             S3[docx-to-markdown]
@@ -433,22 +424,14 @@ sequenceDiagram
     participant U as User
     participant INB as 00-Inbox/
     participant FM as FileMonitor
-    participant EDM as EDM Agent
-    participant EIC as EIC Agent
+    participant CEA as CEA Agent
     participant KNW as 03-Knowledge/
-    participant TIU as TIU Agent
-    participant TOP as Topics/
 
-    U->>INB: Drop file (PDF/DOCX/MD)
+    U->>INB: Drop file (MD)
     FM->>FM: Detect new file
-    FM->>EDM: Trigger (if non-MD)
-    EDM->>INB: Convert to Markdown
-    FM->>EIC: Trigger (MD file)
-    EIC->>EIC: Enrich with frontmatter, links, structure
-    EIC->>KNW: Write enriched file
-    Note over TIU: Friday 6:30 PM
-    TIU->>KNW: Scan documentation
-    TIU->>TOP: Create/update topic indexes
+    FM->>CEA: Trigger (MD file)
+    CEA->>CEA: Enrich with frontmatter, links, structure
+    CEA->>KNW: Write enriched file
 ```
 
 ### 6.2 Daily Workflow Cycle
@@ -660,10 +643,11 @@ graph TB
     COPILOT -->|reads| INSTR[.github/copilot-instructions.md]
     COPILOT -->|discovers| SKILLS[.github/skills/]
     COPILOT -->|executes| PROMPTS[.github/prompts/]
-    COPILOT <-->|stdio| MCP_SRV[MCP Server - node dist/index.js]
-    MCP_SRV <-->|read/write| VAULT[Vault Files]
+    COPILOT <-->|stdio| VAULT_MCP[Vault MCP - duckyai-vault-mcp]
+    VAULT_MCP --> SERVICE[VaultService]
+    SERVICE <-->|read/write| VAULT[Vault Files]
 
-    VSCODE -->|mcp.json config| MCP_SRV
+    VSCODE -->|mcp.json config| VAULT_MCP
 ```
 
 ---
@@ -673,7 +657,7 @@ graph TB
 | Layer | Technology | Purpose |
 |---|---|---|
 | **Orchestrator** | Python 3.9+, Click, watchdog, croniter | Daemon, CLI, file monitoring, scheduling |
-| **MCP Server** | TypeScript, Node.js, @modelcontextprotocol/sdk, Zod | Vault tools for AI assistants |
+| **Vault MCP** | Python, FastMCP, VaultService | Native vault tools for AI assistants |
 | **AI Executors** | Claude Code SDK, Copilot SDK, Gemini CLI | Agent execution backends |
 | **Desktop App** | Tauri 2.x (Rust + TypeScript) | Native wrapper (in development) |
 | **Vault** | Obsidian + Periodic Notes + Templater + Dataview | Note-taking and knowledge management |
@@ -729,12 +713,12 @@ DuckyAI/
 ├── cli/
 │   ├── duckyai_cli/                   # Python CLI + Orchestrator
 │   │   ├── main/                      # CLI commands (Click)
+│   │   ├── mcp_server.py              # Python MCP wrapper over VaultService
 │   │   ├── orchestrator/              # Daemon subsystem
 │   │   ├── pollers/                   # External data pollers
 │   │   └── voice/                     # Voice interaction
-│   └── mcp-server/                    # TypeScript MCP server
-│       ├── src/index.ts               # 19 MCP tools (~1300 lines)
-│       └── package.json               # Node.js dependencies
+│   ├── mcp-server/release-dashboard/  # Separate Python MCP package for release dashboards
+│   └── docs/                          # Design docs and diagrams
 ├── desktop/                           # Tauri desktop app
 ├── scripts/
 │   └── sync-repos.ps1                 # Clone documentation repos

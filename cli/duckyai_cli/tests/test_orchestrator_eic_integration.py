@@ -25,11 +25,11 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the CLI workspace root to path for package imports when running from source.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from logger import Logger
-from config import Config
+from duckyai_cli.logger import Logger
+from duckyai_cli.config import Config
 
 logger = Logger(console_output=True)
 

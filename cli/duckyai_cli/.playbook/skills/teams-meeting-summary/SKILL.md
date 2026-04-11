@@ -82,12 +82,15 @@ The sync state is stored at `<vault_root>/.duckyai/state/tms-last-sync.json`:
 Query WorkIQ for meetings within the **resolved date range**:
 
 ```
-"List all Teams meetings I attended between {start} and {end} (inclusive).
-STRICT DATE FILTER: Only include meetings whose start time falls within this exact window — do NOT include anything before {start} or after {end}.
+"List all Teams meetings I attended between {start} and {end} (inclusive) that have ALREADY ENDED.
+STRICT DATE FILTER: Only include PAST meetings — meetings whose end time is before the current time. Do NOT include upcoming, in-progress, or future scheduled meetings.
+Only include meetings whose start time falls within this exact window — do NOT include anything before {start} or after {end}.
 For each meeting include: title, start/end time, organizer, attendees, and any available notes, recap, or transcript."
 ```
 
-**Strictness rule**: Regardless of how `{start}` / `{end}` were determined, always enforce them. **Discard any meeting WorkIQ returns that falls outside the window** — do not trust WorkIQ to filter perfectly; validate each meeting's start time before writing to the vault.
+**Strictness rules**:
+1. **Past-only**: Discard any meeting whose **end time** is after `current_utc` (injected in Agent Parameters). Graph API returns calendar events by time range overlap, which can include upcoming or in-progress meetings — you must validate each meeting's end time and drop anything not yet concluded.
+2. **Window boundary**: Discard any meeting WorkIQ returns that falls outside the `{start}`–`{end}` window — do not trust WorkIQ to filter perfectly; validate each meeting's start time before writing to the vault.
 
 ### Step 3: Summarize Each Meeting
 For each meeting: summary, attendees, decisions, action items. Skip canceled/declined/trivial meetings.
@@ -111,13 +114,14 @@ Lightweight references with short summaries and links to full notes:
 ## Teams Meeting Highlights
 
 ### Sprint Planning (09:00 - 10:00)
-**Attendees**: [[Alice Smith]], [[Bob Jones]], [[Carol White]]
-**Summary**: Reviewed sprint backlog and prioritized auth module and API refactor. Decided to use JWT over session tokens. Sprint demo moved to Friday.
+- Reviewed sprint backlog and prioritized auth module and API refactor
+- Decided to use JWT over session tokens
+- Sprint demo moved to Friday
 → **Full notes**: [[2026-03-10 Sprint Planning]]
 
 ### 1:1 with Bob (14:00 - 14:30)
-**Attendees**: [[Bob Jones]]
-**Summary**: Discussed API schema progress and testing blockers. Bob will draft schema by Wednesday.
+- Discussed API schema progress and testing blockers
+- Bob will draft schema by Wednesday
 → **Full notes**: [[2026-03-10 1:1 with Bob]]
 ```
 

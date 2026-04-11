@@ -11,10 +11,10 @@ from ..logger import Logger
 logger = Logger(console_output=True)
 
 
-def show_config():
+def show_config(vault_path: Path = None):
     """Show current configuration."""
     try:
-        config = Config()
+        config = Config(vault_path=vault_path)
 
         # Get orchestrator config
         orch_config = config.get_orchestrator_config()

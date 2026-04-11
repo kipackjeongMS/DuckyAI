@@ -2,8 +2,11 @@
   "servers": {
     "duckyai-vault": {
       "type": "stdio",
-      "command": "node",
-      "args": ["${workspaceFolder}/cli/mcp-server/dist/index.js"]
+      "command": "duckyai-vault-mcp",
+      "args": [],
+      "env": {
+        "DUCKYAI_VAULT_ROOT": "${workspaceFolder}"
+      }
     },
     "workiq": {
       "type": "stdio",

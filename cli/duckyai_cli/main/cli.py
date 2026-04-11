@@ -12,16 +12,50 @@ import click
 import logging
 from pathlib import Path
 
+from .install_health import get_duckyai_launch_cmd
 from .show_config import show_config as show_config_handler
 from .orchestrator import run_orchestrator_daemon
-from .orch_cmd import orchestrator_group, _read_pid, orch_status, orch_list_agents
-from .vault import find_vault_root, resolve_vault
+from .orch_cmd import orchestrator_group, _cleanup_orchestrator_processes, _read_pid, orch_status, orch_list_agents
+from .vault import find_vault_root, is_inside_vault, resolve_vault
 
 
 def signal_handler(sig, frame):
     """Handle SIGINT (Ctrl+C) gracefully."""
     print("\n\nShutting down DuckyAI...")
     sys.exit(0)
+
+
+def _get_onboarding_target(
+    *,
+    invoked_subcommand,
+    orchestrator: bool,
+    orchestrator_status: bool,
+    show_config: bool,
+    list_agents: bool,
+    prompt_text: str | None,
+    interactive_prompt: bool,
+    working_dir: str | None,
+) -> Path | None:
+    """Return the path that should trigger first-run onboarding, if any."""
+    from ..vault_registry import get_home_vault
+
+    if invoked_subcommand is not None:
+        return None
+
+    if orchestrator or orchestrator_status or show_config or list_agents:
+        return None
+
+    if prompt_text or interactive_prompt:
+        return None
+
+    candidate = Path(working_dir).resolve() if working_dir else Path.cwd().resolve()
+    if is_inside_vault(candidate):
+        return None
+
+    if get_home_vault():
+        return None
+
+    return candidate
 
 
 def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
@@ -32,21 +66,19 @@ def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
     Returns:
         True if orchestrator was freshly started, False if already running.
     """
-    pid, alive = _read_pid(vault_root)
-    if alive:
+    cleanup = _cleanup_orchestrator_processes(vault_root, fresh_start=False)
+    if cleanup.get("healthy_pid"):
         return False  # already running
 
     pid_file = vault_root / ".orchestrator.pid"
     if pid_file.exists():
         pid_file.unlink(missing_ok=True)
 
-    duckyai_exe = shutil.which("duckyai")
-
     if os.name == "nt":
         CREATE_NEW_PROCESS_GROUP = 0x00000200
         CREATE_NO_WINDOW = 0x08000000
         flags = CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW
-        cmd = [duckyai_exe, "-o"] if duckyai_exe else [sys.executable, "-m", "duckyai_cli.main.cli", "-o"]
+        cmd = get_duckyai_launch_cmd("-o")
         try:
             proc = subprocess.Popen(
                 cmd,
@@ -71,7 +103,7 @@ def ensure_orchestrator_running(vault_root: Path, debug: bool = False):
             click.echo(f"⚠️  Failed to auto-start orchestrator: {e}", err=True)
             return False
     else:
-        cmd = [duckyai_exe, "-o"] if duckyai_exe else [sys.executable, "-m", "duckyai_cli.main.cli", "-o"]
+        cmd = get_duckyai_launch_cmd("-o")
         try:
             proc = subprocess.Popen(
                 cmd,
@@ -98,21 +130,14 @@ def _detect_ides() -> list:
     return ides
 
 
-def _open_vault_in_ide(vault_root: Path):
-    """Prompt user to pick an IDE and open the vault."""
+def _select_ide() -> tuple | None:
+    """Prompt user to pick an IDE and return the selection."""
     ides = _detect_ides()
     if not ides:
-        return
+        return None
 
     if len(ides) == 1:
-        name, exe = ides[0]
-        try:
-            subprocess.Popen([exe, str(vault_root)],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            click.echo(f"🖥️  Opened vault in {name}")
-        except Exception:
-            pass
-        return
+        return ides[0]
 
     # Multiple IDEs — use arrow-key selector
     from .vault import _interactive_select
@@ -120,13 +145,27 @@ def _open_vault_in_ide(vault_root: Path):
     items = [{"name": name, "path": exe} for name, exe in ides]
     choice = _interactive_select(items, default_index=0)
     if choice is not None:
-        name, exe = ides[choice]
-        try:
-            subprocess.Popen([exe, str(vault_root)],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            click.echo(f"\n  ✓ Opened vault in {name}")
-        except Exception:
-            pass
+        return ides[choice]
+    return None
+
+
+def _open_vault_in_selected_ide(vault_root: Path, selected_ide: tuple | None):
+    """Open the vault in the selected IDE."""
+    if not selected_ide:
+        return
+
+    name, exe = selected_ide
+    try:
+        subprocess.Popen([exe, str(vault_root)],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        click.echo(f"\n  ✓ Opened vault in {name}")
+    except Exception:
+        pass
+
+
+def _open_vault_in_ide(vault_root: Path):
+    """Backward-compatible wrapper that selects and opens the vault in an IDE."""
+    _open_vault_in_selected_ide(vault_root, _select_ide())
 
 
 def _enqueue_tcs_task(vault_root: Path, lookback_hours: int = None):
@@ -231,6 +270,22 @@ Teams Meeting Summary (TMS) will update this section with output information.
 ## Evaluation Log
 """
     task_path.write_text(content, encoding='utf-8')
+
+
+def _prompt_startup_teams_sync(vault_root: Path) -> None:
+    """Prompt to queue Teams sync after startup orchestration is ready."""
+    from .trigger_agent import _prompt_yn, _prompt_teams_sync_lookback
+    from rich.console import Console
+
+    try:
+        if _prompt_yn("\n🔄 Sync Teams chats & meetings now?"):
+            override = _prompt_teams_sync_lookback(vault_root, Console())
+            lookback_hours = override.get("lookback_hours") if override else None
+            _enqueue_tcs_task(vault_root, lookback_hours=lookback_hours)
+            _enqueue_tms_task(vault_root, lookback_hours=lookback_hours)
+            click.echo("✓ TCS & TMS queued — orchestrator will pick them up shortly")
+    except (EOFError, KeyboardInterrupt):
+        pass
 
 
 def _is_junction(path: Path) -> bool:
@@ -355,26 +410,66 @@ def ensure_init(vault_root: Path):
         pass  # non-critical
 
 
+def _resolve_node_cmd_shim(cmd_name: str) -> tuple[str, list[str]] | None:
+    """Resolve a Node.js .cmd shim to (node_path, [js_entry_point]).
+
+    On Windows, npm creates .cmd wrapper scripts that cannot be spawned by
+    Node.js child_process.spawn() without shell=true.  The Copilot CLI's
+    MCP server launcher uses spawn(), so .cmd commands silently fail.
+
+    This function reads the .cmd file to extract the underlying .js entry
+    point and returns a (node, [script.js]) pair that spawn() can handle.
+
+    Returns None if the command isn't a .cmd shim or can't be resolved.
+    """
+    if os.name != "nt":
+        return None
+
+    resolved = shutil.which(cmd_name)
+    if not resolved:
+        return None
+
+    # Only process .cmd files
+    if not resolved.lower().endswith(".cmd"):
+        return None
+
+    try:
+        content = Path(resolved).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+
+    # npm .cmd shims end with a line like:
+    #   "%_prog%" "%dp0%\node_modules\@pkg\bin\entry.js" %*
+    # Extract the .js path relative to the cmd file's directory
+    import re
+    # Match patterns like "%dp0%\path\to\file.js" or "%dp0%/path/to/file.js"
+    match = re.search(r'"%dp0%[\\\/]([^"]+\.js)"', content)
+    if not match:
+        return None
+
+    js_rel = match.group(1)
+    cmd_dir = Path(resolved).parent
+    js_path = cmd_dir / js_rel
+
+    if not js_path.exists():
+        return None
+
+    node = shutil.which("node")
+    if not node:
+        return None
+
+    return (node, [str(js_path)])
+
+
 def get_mcp_config(vault_root: Path) -> str:
     """Build MCP config JSON for DuckyAI MCP servers."""
     config = {"mcpServers": {}}
 
-    # Vault MCP server — resolve from vault root first, then installed package location
-    mcp_index = vault_root / 'cli' / 'mcp-server' / 'dist' / 'index.js'
-    if not mcp_index.exists():
-        # Fallback: resolve relative to installed duckyai_cli package
-        # Package layout: cli/duckyai_cli/ and cli/mcp-server/ are siblings
-        pkg_dir = Path(__file__).resolve().parent  # duckyai_cli/main/
-        mcp_index = pkg_dir.parent.parent / 'mcp-server' / 'dist' / 'index.js'
-        if not mcp_index.exists():
-            mcp_index = None
-
-    if mcp_index:
-        config["mcpServers"]["duckyai-vault"] = {
-            "command": "node",
-            "args": [str(mcp_index)],
-            "env": {"DUCKYAI_VAULT_ROOT": str(vault_root)}
-        }
+    config["mcpServers"]["duckyai-vault"] = {
+        "command": "duckyai-vault-mcp",
+        "args": [],
+        "env": {"DUCKYAI_VAULT_ROOT": str(vault_root)},
+    }
 
     # Release Dashboard MCP server (Python)
     rd_pkg = vault_root / 'cli' / 'mcp-server' / 'release-dashboard' / 'src' / 'release_dashboard_mcp' / 'server.py'
@@ -389,18 +484,55 @@ def get_mcp_config(vault_root: Path) -> str:
         }
 
     # Microsoft WorkIQ MCP server (M365 Copilot data)
-    config["mcpServers"]["workiq"] = {
-        "command": "npx",
-        "args": ["-y", "@microsoft/workiq", "mcp"]
-    }
+    # On Windows, npx is a .cmd shim that Node.js child_process.spawn()
+    # cannot execute.  Resolve to a direct node invocation instead.
+    workiq_resolved = _resolve_node_cmd_shim("workiq")
+    if workiq_resolved:
+        node_bin, js_args = workiq_resolved
+        config["mcpServers"]["workiq"] = {
+            "command": node_bin,
+            "args": js_args + ["mcp"],
+        }
+    else:
+        # Fallback: use npx (works on macOS/Linux where npx isn't a .cmd)
+        config["mcpServers"]["workiq"] = {
+            "command": "npx",
+            "args": ["-y", "@microsoft/workiq", "mcp"]
+        }
 
     return json.dumps(config) if config["mcpServers"] else None
+
+
+def _resolve_copilot_command() -> list[str]:
+    """Resolve the best available Copilot launcher for the current platform."""
+    if os.name == "nt":
+        for candidate in ("copilot.exe", "copilot.bat", "copilot"):
+            resolved = shutil.which(candidate)
+            if resolved:
+                return [resolved]
+    return ["copilot"]
+
+
+def _launch_copilot_in_new_terminal(cmd: list[str], vault_root: Path) -> int:
+    """Launch Copilot in a separate terminal window when supported."""
+    if os.name == "nt":
+        CREATE_NEW_CONSOLE = 0x00000010
+        subprocess.Popen(
+            cmd,
+            cwd=str(vault_root),
+            creationflags=CREATE_NEW_CONSOLE,
+        )
+        click.echo("Launching Copilot in a new terminal...")
+        return 0
+
+    result = subprocess.run(cmd, cwd=str(vault_root))
+    return result.returncode
 
 
 def launch_copilot(vault_root: Path, prompt: str = None, interactive_prompt: str = None,
                    mcp_config: tuple = None, session_id: str = None, model: str = None):
     """Launch GitHub Copilot CLI from the vault root."""
-    cmd = ['copilot']
+    cmd = _resolve_copilot_command()
 
     if prompt:
         cmd.extend(['--prompt', prompt])
@@ -425,6 +557,9 @@ def launch_copilot(vault_root: Path, prompt: str = None, interactive_prompt: str
         cmd.extend(['--model', model])
 
     try:
+        if prompt is None:
+            return _launch_copilot_in_new_terminal(cmd, vault_root)
+
         result = subprocess.run(cmd, cwd=str(vault_root))
         return result.returncode
     except FileNotFoundError:
@@ -434,34 +569,31 @@ def launch_copilot(vault_root: Path, prompt: str = None, interactive_prompt: str
 
 
 def _show_global_orchestrator_status():
-    """Show orchestrator status for all registered vaults."""
-    from ..vault_registry import list_vaults
+    """Show orchestrator status for the configured home vault."""
+    from ..vault_registry import get_home_vault
     from rich.table import Table
     from rich.console import Console
 
-    vaults = list_vaults()
-    if not vaults:
-        click.echo("No vaults registered. Use 'duckyai vault new <path>' or 'duckyai init'.")
+    home_vault = get_home_vault()
+    if not home_vault:
+        click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
         return
 
-    table = Table(title="Orchestrator Status (All Vaults)")
+    table = Table(title="Orchestrator Status")
     table.add_column("Vault", style="cyan bold")
     table.add_column("Status", justify="center")
     table.add_column("PID", justify="right")
     table.add_column("Agents", justify="right")
     table.add_column("Path")
 
-    for v in vaults:
-        vault_path = Path(v["path"])
-        if not vault_path.exists():
-            table.add_row(v["name"], "⚠️  Missing", "-", "-", v["path"])
-            continue
-
+    vault_path = Path(home_vault["path"])
+    if not vault_path.exists():
+        table.add_row(home_vault["name"], "⚠️  Missing", "-", "-", home_vault["path"])
+    else:
         pid, alive = _read_pid(vault_path)
         status_str = "🟢 Running" if alive else "🔴 Stopped"
         pid_str = str(pid) if pid else "-"
 
-        # Count agents from config
         agent_count = "-"
         try:
             from ..config import Config
@@ -473,36 +605,33 @@ def _show_global_orchestrator_status():
         except Exception:
             pass
 
-        table.add_row(v["name"], status_str, pid_str, agent_count, v["path"])
+        table.add_row(home_vault["name"], status_str, pid_str, agent_count, home_vault["path"])
 
     Console().print(table)
 
 
 def _show_global_agents():
-    """Show agents for all registered vaults."""
-    from ..vault_registry import list_vaults
+    """Show agents for the configured home vault."""
+    from ..vault_registry import get_home_vault
     from ..config import Config
     from ..orchestrator.core import Orchestrator
     from rich.table import Table
     from rich.console import Console
 
-    vaults = list_vaults()
-    if not vaults:
-        click.echo("No vaults registered. Use 'duckyai vault new <path>' or 'duckyai init'.")
+    home_vault = get_home_vault()
+    if not home_vault:
+        click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
         return
 
-    table = Table(title="Agents (All Vaults)")
+    table = Table(title="Agents")
     table.add_column("Vault", style="cyan")
     table.add_column("Abbr", style="bold")
     table.add_column("Name")
     table.add_column("Category")
     table.add_column("Cron")
 
-    for v in vaults:
-        vault_path = Path(v["path"])
-        if not vault_path.exists():
-            continue
-
+    vault_path = Path(home_vault["path"])
+    if vault_path.exists():
         try:
             config = Config(vault_path=vault_path)
             orch = Orchestrator(vault_path=vault_path, config=config)
@@ -511,11 +640,11 @@ def _show_global_agents():
                 agent_obj = orch.agent_registry.agents.get(a["abbreviation"])
                 cron = agent_obj.cron if agent_obj else "-"
                 table.add_row(
-                    v["name"], a["abbreviation"], a["name"],
+                    home_vault["name"], a["abbreviation"], a["name"],
                     a.get("category", "-"), cron or "-"
                 )
         except Exception:
-            table.add_row(v["name"], "⚠️", "Error loading agents", "-", "-")
+            table.add_row(home_vault["name"], "⚠️", "Error loading agents", "-", "-")
 
     Console().print(table)
 
@@ -585,12 +714,6 @@ def _show_global_agents():
     type=str,
     help="AI model to use",
 )
-@click.option(
-    "--vault",
-    "vault_id",
-    type=str,
-    help="Use a specific registered vault by ID (skips selection prompt)",
-)
 @click.pass_context
 def main(
     ctx,
@@ -606,7 +729,6 @@ def main(
     session_id,
     mcp_config,
     model,
-    vault_id,
 ):
     """DuckyAI — AI-powered developer assistant.
 
@@ -627,32 +749,36 @@ def main(
     else:
         logging.basicConfig(level=logging.WARNING)
 
+    onboarding_target = _get_onboarding_target(
+        invoked_subcommand=ctx.invoked_subcommand,
+        orchestrator=orchestrator,
+        orchestrator_status=orchestrator_status,
+        show_config=show_config,
+        list_agents=list_agents,
+        prompt_text=prompt_text,
+        interactive_prompt=interactive_prompt,
+        working_dir=working_dir,
+    )
+    if onboarding_target is not None:
+        from .setup import run_onboarding
+
+        click.echo("No home vault configured. Starting first-time setup...")
+        run_onboarding(vault_root=onboarding_target)
+        return
+
     # Resolve vault root
     vault_root = None
-    if vault_id:
-        # Explicit --vault flag: look up from registry
-        from ..vault_registry import list_vaults as _list_vaults, touch_vault as _touch
-        _match = next((v for v in _list_vaults() if v["id"] == vault_id), None)
-        if _match and Path(_match["path"]).exists():
-            vault_root = Path(_match["path"])
-            _touch(vault_id)
-        else:
-            click.echo(f"⚠️  Vault '{vault_id}' not found in registry.", err=True)
-            raise SystemExit(1)
-    elif ctx.invoked_subcommand is not None:
+    if ctx.invoked_subcommand is not None:
         # Subcommand will handle its own vault resolution if needed
-        # Only resolve if CWD is inside a vault (cheap, no prompts)
         from .vault import is_inside_vault
-        if is_inside_vault(Path(working_dir) if working_dir else None):
-            vault_root = find_vault_root(Path(working_dir) if working_dir else None)
-    elif orchestrator or show_config:
-        # Flag-based commands that need a specific vault
-        vault_root = find_vault_root(Path(working_dir) if working_dir else None)
-    elif orchestrator_status or list_agents:
-        # Global commands: vault_root stays None → triggers multi-vault display
-        pass
+        candidate = Path(working_dir) if working_dir else None
+        if is_inside_vault(candidate):
+            vault_root = find_vault_root(candidate)
+        else:
+            vault_root = resolve_vault(working_dir)
+    elif orchestrator or show_config or orchestrator_status or list_agents:
+        vault_root = resolve_vault(working_dir)
     else:
-        # Interactive use: full vault resolution with selection prompt
         vault_root = resolve_vault(working_dir)
 
     # Store context for subcommands
@@ -662,7 +788,6 @@ def main(
     ctx.obj["debug"] = debug
     ctx.obj["mcp_config"] = mcp_config
     ctx.obj["vault_root"] = vault_root
-    ctx.obj["vault_explicit"] = bool(vault_id)
 
     # Reconfigure logger for the resolved vault
     if vault_root:
@@ -676,31 +801,29 @@ def main(
 
     # Handle flag-based commands (shortcuts for subcommands)
     if orchestrator_status:
-        if vault_id:
-            # Single vault status
+        if vault_root:
             ctx.invoke(orch_status, json_out=False)
         else:
-            # Global status: show all vaults
             _show_global_orchestrator_status()
     elif orchestrator:
         run_orchestrator_daemon(vault_path=vault_root, debug=debug, working_dir=working_dir, config_file=config_file, mcp_config=mcp_config)
     elif list_agents:
-        if vault_id:
+        if vault_root:
             ctx.invoke(orch_list_agents, json_out=False)
         else:
             _show_global_agents()
     elif show_config:
-        show_config_handler()
+        show_config_handler(vault_root)
     elif prompt_text or interactive_prompt or not any([orchestrator, orchestrator_status, list_agents, show_config]):
         # Auto-init .github symlink, skills, services junction, etc.
         ensure_init(vault_root)
 
-        # Check for WorkIQ auth expired flag
+        # Check for WorkIQ auth expired flag (interactive TTY only)
         from duckyai_cli.orchestrator.execution_manager import ExecutionManager
         from duckyai_cli.config import Config as _Config
         _cfg = _Config(vault_path=vault_root)
         _vault_id = _cfg.get("id", "default")
-        if ExecutionManager.check_workiq_auth_flag(_vault_id, vault_path=vault_root):
+        if sys.stdin and sys.stdin.isatty() and ExecutionManager.check_workiq_auth_flag(_vault_id, vault_path=vault_root):
             try:
                 click.echo("\n⚠️  WorkIQ authentication expired (permission denied on last run).")
                 from .trigger_agent import _prompt_yn
@@ -711,19 +834,19 @@ def main(
             except (EOFError, KeyboardInterrupt):
                 pass
 
-        # Auto-start orchestrator if enabled in duckyai.yml
+        # Ask for IDE selection first so startup ordering stays consistent
+        selected_ide = _select_ide()
+
+        # Auto-start orchestrator if enabled in duckyai.yml, after IDE open flow
         from duckyai_cli.config import Config
         ws_config = Config(vault_path=vault_root)
         if ws_config.orchestrator_auto_start:
-            freshly_started = ensure_orchestrator_running(vault_root, debug=debug)
+            click.echo("Starting orchestrator background service...")
+            ensure_orchestrator_running(vault_root, debug=debug)
+            _prompt_startup_teams_sync(vault_root)
 
-            # Prompt Teams sync when orchestrator was freshly started
-            if freshly_started:
-                from .vault import _prompt_teams_sync
-                _prompt_teams_sync(vault_root)
-
-        # Open vault in IDE
-        _open_vault_in_ide(vault_root)
+        # Open vault in IDE after background startup and sync prompt
+        _open_vault_in_selected_ide(vault_root, selected_ide)
 
         # Launch Copilot (interactive if no -p flag)
         returncode = launch_copilot(
@@ -741,8 +864,9 @@ def main(
 main.add_command(orchestrator_group)
 
 # Vault management (global scope)
-from .vault_cmd import vault_group
+from .vault_cmd import init_command, vault_group
 main.add_command(vault_group)
+main.add_command(init_command)
 
 # Onboarding wizard
 from .setup import setup_command
@@ -755,6 +879,10 @@ main.add_command(voice_command)
 # Service management
 from .service_cmd import service_group
 main.add_command(service_group)
+
+# Installation diagnostics / repair
+from .doctor import doctor_command
+main.add_command(doctor_command)
 
 
 if __name__ == "__main__":

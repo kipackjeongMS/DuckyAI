@@ -53,7 +53,16 @@ class Orchestrator:
         from datetime import datetime
 
         self.vault_path = Path(vault_path)
-        self.config = config or Config()
+
+        # Backward compatibility: older call sites passed agents_dir as the
+        # second positional argument before working_dir existed.
+        if agents_dir is None and working_dir is not None:
+            legacy_agents_dir = Path(working_dir)
+            if legacy_agents_dir.is_dir() and legacy_agents_dir.name.lower() in {"agents", "prompts-agent"}:
+                agents_dir = legacy_agents_dir
+                working_dir = None
+
+        self.config = config or Config(vault_path=self.vault_path)
         self.mcp_config = mcp_config
         self.claude_settings = claude_settings
 
@@ -124,9 +133,7 @@ class Orchestrator:
         # (event loop + slot-freed callback can race)
         self._queue_processing_lock = threading.Lock()
 
-        # Track which parent agents have completed for each dependent (AND semantics).
-        # Maps dep_abbr → set of completed parent abbreviations.
-        self._dependent_parents_completed: Dict[str, set] = {}
+        # Cooldown to prevent duplicate dependent dispatch within 60s.
         self._dependent_cooldown: Dict[str, float] = {}  # agent_abbr → last_dispatch_timestamp
         self._dependent_cooldown_lock = threading.Lock()
 
@@ -187,30 +194,25 @@ class Orchestrator:
 
         logger.info("Orchestrator started successfully")
 
-        # Process any existing QUEUED tasks from previous run
-        self._load_queued_tasks_on_startup()
+        # Process any existing QUEUED tasks in the background so we don't
+        # block the calling thread (which may be a Flask request handler).
+        threading.Thread(
+            target=self._load_queued_tasks_on_startup,
+            name="queued-task-loader",
+            daemon=True,
+        ).start()
 
     def _load_queued_tasks_on_startup(self):
         """
         Load and process existing QUEUED tasks on startup.
 
-        Scans the tasks directory for tasks with status=QUEUED and
-        processes them (up to max_concurrent limit).
+        Uses v2 daily log API to find QUEUED entries.
         """
-        from ..markdown_utils import read_frontmatter
-
         try:
-            task_files = sorted(self.execution_manager.task_manager.tasks_dir.glob("*.md"))
-            queued_count = 0
-
-            for task_path in task_files:
-                fm = read_frontmatter(task_path)
-                if fm.get('status') == 'QUEUED':
-                    queued_count += 1
+            queued_count = self.execution_manager.task_manager.count_queued()
 
             if queued_count > 0:
                 logger.info(f"Found {queued_count} QUEUED task(s) from previous run")
-                # Process queued tasks (will respect max_concurrent limit)
                 for _ in range(queued_count):
                     self._process_queued_tasks()
         except Exception as e:
@@ -506,6 +508,12 @@ class Orchestrator:
             event_data: Event data dictionary
             trigger_event: Original trigger event
         """
+        # Backward compatibility: older tests patch can_execute() directly.
+        if not self.execution_manager.can_execute(agent):
+            self._create_queued_task(agent, event_data)
+            logger.info(f"Queued {agent.abbreviation}: concurrency limit reached")
+            return
+
         # Try to reserve a slot atomically (prevents race conditions)
         if not self.execution_manager.reserve_slot(agent):
             # Create QUEUED task instead of dropping
@@ -524,6 +532,13 @@ class Orchestrator:
         input_filename = Path(trigger_event.path).name if trigger_event.path else "scheduled"
         logger.info(f"🚀 Triggering {trigger_event.event_type} agent: {agent.abbreviation} ({input_filename})", console=True)
         logger.debug(f"Starting {agent.abbreviation}: {trigger_event.path}")
+
+        if not self._running:
+            logger.debug(
+                f"Running {agent.abbreviation} synchronously because orchestrator is not running"
+            )
+            self._execute_agent(agent, event_data, True)
+            return
 
         # Execute in background thread (slot already reserved)
         execution_thread = threading.Thread(
@@ -549,6 +564,12 @@ class Orchestrator:
             # Create worker-specific agent variant
             worker_agent = self._create_worker_agent_variant(agent, worker)
 
+            # Backward compatibility: older tests patch can_execute() directly.
+            if not self.execution_manager.can_execute(worker_agent):
+                self._create_queued_task(worker_agent, event_data)
+                logger.info(f"Queued {worker_agent.abbreviation}: concurrency limit reached")
+                continue
+
             # Try to reserve a slot for this worker
             if not self.execution_manager.reserve_slot(worker_agent):
                 # Create QUEUED task for this worker
@@ -557,6 +578,13 @@ class Orchestrator:
                 continue
 
             logger.debug(f"Starting worker {worker_agent.abbreviation}: {trigger_event.path}")
+
+            if not self._running:
+                logger.debug(
+                    f"Running worker {worker_agent.abbreviation} synchronously because orchestrator is not running"
+                )
+                self._execute_agent(worker_agent, event_data, True)
+                continue
 
             # Execute in background thread (slot already reserved)
             execution_thread = threading.Thread(
@@ -568,21 +596,20 @@ class Orchestrator:
 
     def _create_queued_task(self, agent: AgentDefinition, event_data: dict):
         """
-        Create a QUEUED task file for an agent that couldn't get a slot.
+        Create a QUEUED execution entry for an agent that couldn't get a slot.
 
         Args:
             agent: Agent definition (may be a worker variant)
             event_data: Event data dictionary
 
         Returns:
-            Path to the created task file, or None on failure
+            Execution ID string, or None on failure
         """
         import json
         from datetime import datetime, date
 
         # Convert all date/datetime objects to strings for JSON serialization
         def make_json_serializable(obj):
-            """Recursively convert date/datetime objects to ISO strings."""
             if isinstance(obj, (datetime, date)):
                 return obj.isoformat()
             elif isinstance(obj, dict):
@@ -593,24 +620,20 @@ class Orchestrator:
                 return obj
 
         event_data_serializable = make_json_serializable(event_data)
+        trigger_data_json = json.dumps(event_data_serializable, ensure_ascii=False)
 
-        # Serialize trigger data (escape quotes for YAML)
-        trigger_data_json = json.dumps(event_data_serializable, ensure_ascii=False).replace('"', '\\"')
-
-        # Create minimal context for task file creation
         ctx = ExecutionContext(
             agent=agent,
             trigger_data=event_data,
             start_time=self.config.user_now()
         )
 
-        # Create QUEUED task
-        task_path = self.execution_manager.task_manager.create_task_file(
+        exec_id = self.execution_manager.task_manager.create_task_file(
             ctx, agent,
             initial_status="QUEUED",
             trigger_data_json=trigger_data_json
         )
-        return task_path
+        return exec_id
 
     def _execute_agent(self, agent, event_data, slot_reserved=False):
         """
@@ -639,6 +662,8 @@ class Orchestrator:
 
             if ctx.success:
                 logger.info(f"{agent.abbreviation} completed ({ctx.duration:.1f}s)")
+                # Post-execution hooks
+                self._run_post_execution(agent, ctx, event_data)
                 # Dispatch dependent agents (trigger_wait_for)
                 self._dispatch_dependents(agent, ctx)
             else:
@@ -654,17 +679,81 @@ class Orchestrator:
             logger.error(f"{agent.abbreviation} error: {e}", exc_info=True)
             return None
 
+    def _run_post_execution(self, agent: AgentDefinition, ctx: ExecutionContext, event_data: dict):
+        """Run post-execution hooks after a successful agent run."""
+        try:
+            # PR agent: check off the reviewed PR in today's daily note
+            if agent.abbreviation == 'PR' and event_data.get('path'):
+                self._checkoff_pr_in_daily_note(event_data['path'])
+        except Exception as e:
+            logger.warning(f"Post-execution hook failed for {agent.abbreviation}: {e}")
+
+    def _checkoff_pr_in_daily_note(self, pr_file_path: str):
+        """Mark a PR review as completed in today's daily note.
+
+        Finds the matching `- [ ]` line in the `## PRs & Code Reviews` section
+        that links to the PR file and changes it to `- [x]`.
+        """
+        import re
+        from datetime import date
+
+        today_str = date.today().strftime('%Y-%m-%d')
+        daily_note = self.vault_path / '04-Periodic' / 'Daily' / f'{today_str}.md'
+        if not daily_note.exists():
+            logger.debug(f"No daily note for {today_str}, skipping PR checkoff")
+            return
+
+        content = daily_note.read_text(encoding='utf-8')
+
+        # Extract the PR filename (without extension) to match against wiki links
+        pr_filename = Path(pr_file_path).stem
+
+        # Find the ## PRs & Code Reviews section
+        section_match = re.search(r'^## PRs & Code Reviews\n(.*?)(?=^## |\Z)', content, re.MULTILINE | re.DOTALL)
+        if not section_match:
+            logger.debug("No '## PRs & Code Reviews' section found in daily note")
+            return
+
+        section_start = section_match.start(1)
+        section_text = section_match.group(1)
+
+        # Find unchecked line that references this PR file
+        # Matches: - [ ] ...PR filename... (wiki link or plain text)
+        updated_section = []
+        found = False
+        for line in section_text.splitlines(keepends=True):
+            if not found and '- [ ]' in line and pr_filename in line:
+                line = line.replace('- [ ]', '- [x]', 1)
+                found = True
+            updated_section.append(line)
+
+        if found:
+            new_section = ''.join(updated_section)
+            new_content = content[:section_start] + new_section + content[section_start + len(section_text):]
+            daily_note.write_text(new_content, encoding='utf-8')
+            logger.info(f"✅ Checked off PR in daily note: {pr_filename}", console=True)
+        else:
+            logger.debug(f"No unchecked PR entry found for {pr_filename} in daily note")
+
     def _dispatch_dependents(self, completed_agent: AgentDefinition, ctx: ExecutionContext,
                               _chain_depth: int = 0):
         """
         After a successful execution, dispatch any agents that depend on the completed agent
         via `trigger_wait_for`.
 
-        Uses AND semantics: if trigger_wait_for lists multiple parents (e.g., [TCS, TMS]),
-        the dependent is dispatched only after ALL listed parents have completed.
+        Dispatch logic: when a parent completes, check whether any *other* listed
+        parents are still running (via ExecutionManager slot counts).  If none are
+        running, dispatch the dependent immediately.  If siblings are still active,
+        do nothing — their own completions will re-evaluate and eventually trigger
+        the dependent once the last one finishes.
+
+        This is resilient to any combination of parents running or not:
+        - Only TCS runs → TCS completes → TMS not running → dispatch TM
+        - Both run     → first completes → sibling still running → skip;
+                         second completes → no siblings running → dispatch TM
 
         A small grace period (3s) is applied before dispatch to ensure file writes
-        from parent agents are fully flushed to disk.
+        from the last parent are fully flushed to disk.
 
         Args:
             completed_agent: The agent that just completed successfully
@@ -705,25 +794,23 @@ class Orchestrator:
                     )
                     continue
 
-                # AND semantics: track which parents have completed
-                if dep_key not in self._dependent_parents_completed:
-                    self._dependent_parents_completed[dep_key] = set()
-                self._dependent_parents_completed[dep_key].add(completed_abbr)
+                # Check if any sibling parents are still running
+                siblings_running = []
+                for parent_abbr in dep_agent.trigger_wait_for:
+                    if parent_abbr == completed_abbr:
+                        continue  # just finished
+                    if self.execution_manager.get_agent_running_count(parent_abbr) > 0:
+                        siblings_running.append(parent_abbr)
 
-                required = set(dep_agent.trigger_wait_for)
-                satisfied = self._dependent_parents_completed[dep_key]
-                pending = required - satisfied
-
-                if pending:
+                if siblings_running:
                     logger.info(
                         f"⛓️ {completed_abbr} ✓ for {dep_key}, "
-                        f"waiting on: {', '.join(sorted(pending))}",
+                        f"waiting on running: {', '.join(sorted(siblings_running))}",
                         console=True
                     )
                     continue
 
-                # All parents satisfied — clear tracking and set cooldown
-                self._dependent_parents_completed.pop(dep_key, None)
+                # No siblings running — dispatch
                 self._dependent_cooldown[dep_key] = now
 
             try:
@@ -965,12 +1052,18 @@ class Orchestrator:
         
         input_section = input_section_match.group(1)
         
-        # Look for wiki links [[path/to/file]] or `[[path/to/file]]`
+        # Look for markdown links [text](path/to/file.md) first
+        md_link_pattern = r'\[[^\]]*\]\(([^)]+)\)'
+        md_matches = re.findall(md_link_pattern, input_section)
+        if md_matches:
+            from urllib.parse import unquote
+            return unquote(md_matches[0])
+        
+        # Fall back to wiki links [[path/to/file]] or `[[path/to/file]]`
         wiki_link_pattern = r'(?:`)?\[\[([^\]]+)\]\](?:`)?'
         matches = re.findall(wiki_link_pattern, input_section)
         
         if matches:
-            # Return first wiki link found
             return matches[0]
         
         # Look for file paths in backticks
@@ -1232,6 +1325,12 @@ class Orchestrator:
 
         logger.info(f"Manually triggering agent: {agent.abbreviation} ({agent.name})")
 
+        # If no input_file given but agent has input_path, scan for matching files
+        logger.debug(f"Scan guard: input_file={input_file!r}, input_path={agent.input_path!r}, requires_input_file={agent.requires_input_file!r}")
+        if not input_file and agent.input_path and agent.requires_input_file:
+            logger.info(f"Scanning {agent.input_path} for files matching {agent.abbreviation} criteria", console=True)
+            return self._scan_and_trigger(agent, session_id=session_id)
+
         # Create TriggerEvent - use input_file if provided, otherwise manual trigger
         if input_file:
             from ..markdown_utils import read_frontmatter
@@ -1304,6 +1403,96 @@ class Orchestrator:
             err_ctx.status = 'failed'
             err_ctx.error_message = str(e)
             return err_ctx
+
+    def _scan_and_trigger(self, agent: AgentDefinition, session_id: Optional[str] = None) -> Optional[ExecutionContext]:
+        """
+        Scan an agent's input directories for files matching its trigger criteria
+        and trigger the agent for each matching file sequentially.
+
+        Args:
+            agent: Agent definition with input_path and optional trigger_content_pattern
+            session_id: Optional session ID for tracking
+
+        Returns:
+            Last ExecutionContext from the batch, or None if no files matched
+        """
+        import re
+        import fnmatch
+        from ..markdown_utils import read_frontmatter
+
+        matching_files: list[Path] = []
+        input_pattern = agent.trigger_pattern or "*.md"
+        patterns = [p.strip() for p in input_pattern.split('|')]
+
+        for input_dir in agent.input_path:
+            scan_dir = self.vault_path / input_dir
+            if not scan_dir.exists():
+                logger.debug(f"Scan directory does not exist: {scan_dir}")
+                continue
+
+            for file_path in sorted(scan_dir.glob("*.md")):
+                if not file_path.is_file():
+                    continue
+
+                # Check filename pattern
+                rel_path = str(file_path.relative_to(self.vault_path))
+                if not any(fnmatch.fnmatch(rel_path, p) for p in patterns):
+                    continue
+
+                # Check exclusion pattern
+                if agent.trigger_exclude_pattern:
+                    exclude_patterns = [p.strip() for p in agent.trigger_exclude_pattern.split('|')]
+                    if any(fnmatch.fnmatch(rel_path, p) for p in exclude_patterns):
+                        continue
+
+                # Check content pattern (e.g., status: todo)
+                if agent.trigger_content_pattern:
+                    try:
+                        content = file_path.read_text(encoding='utf-8')
+                        if not re.search(agent.trigger_content_pattern, content, re.IGNORECASE | re.MULTILINE):
+                            continue
+                    except Exception as e:
+                        logger.debug(f"Error reading {file_path}: {e}")
+                        continue
+
+                matching_files.append(file_path)
+
+        if not matching_files:
+            logger.info(f"No matching files found for {agent.abbreviation} scan", console=True)
+            return None
+
+        logger.info(
+            f"Found {len(matching_files)} file(s) matching {agent.abbreviation} criteria",
+            console=True,
+        )
+
+        last_ctx = None
+        for file_path in matching_files:
+            rel_path = str(file_path.relative_to(self.vault_path))
+            fm = read_frontmatter(file_path) if file_path.exists() else {}
+            logger.info(f"  → Triggering {agent.abbreviation} for: {file_path.name}", console=True)
+
+            event_data = {
+                'path': rel_path,
+                'event_type': 'created',
+                'is_directory': False,
+                'timestamp': self.config.user_now(),
+                'frontmatter': fm,
+                'session_id': session_id,
+            }
+
+            try:
+                ctx = self._execute_agent(agent, event_data, slot_reserved=False)
+                if ctx:
+                    last_ctx = ctx
+                    if not ctx.success:
+                        logger.error(f"  ✗ {agent.abbreviation} failed for {file_path.name}: {ctx.error_message}", console=True)
+                    else:
+                        logger.info(f"  ✓ {agent.abbreviation} completed for {file_path.name}", console=True)
+            except Exception as e:
+                logger.error(f"  ✗ Error executing {agent.abbreviation} for {file_path.name}: {e}", console=True)
+
+        return last_ctx
 
     def execute_prompt_with_session(self, prompt: str, system_prompt: str = None, system_prompt_file: Optional[Path] = None, append_system_prompt: str = None, append_system_prompt_file: Optional[Path] = None, session_id: Optional[str] = None) -> Optional[ExecutionContext]:
         """

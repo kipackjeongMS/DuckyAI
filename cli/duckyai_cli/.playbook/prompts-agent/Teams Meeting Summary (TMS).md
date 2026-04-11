@@ -20,29 +20,41 @@ If `retry_highlight_dates` is present in Agent Parameters, previous syncs failed
 
 1. For each date in `retry_highlight_dates`, read the existing meeting notes from `02-People/Meetings/` for that date
 2. Reconstruct the meeting highlights from those notes
-3. Call `updateDailyNoteSection` for each pending date (using the read-merge-write pattern)
+3. Call `appendTeamsMeetingHighlights` for each pending date (send ONLY new content — tool handles dedup)
 4. Continue to Step 2 for normal processing
 
-### Step 2: Read fetch window (pre-resolved)
+### Step 2: Read fetch windows (pre-resolved)
 
-The fetch window has been **pre-resolved** for you in the Agent Parameters section below. Check the `fetch_mode` parameter:
+The fetch windows have been **pre-computed** for you in the Agent Parameters section below. The `fetch_windows` parameter contains a list of UTC datetime ranges, each covering at most 6 hours. Example:
 
-- **`fetch_mode: watermark`** → Use the `fetch_since` value from Agent Parameters. This is the pre-resolved watermark timestamp. Do NOT call `getTeamsMeetingSyncState` — the value is already provided.
-- **`fetch_mode: lookback`** → Use the `lookback_hours` value from Agent Parameters (fetch meetings from last N hours, default 24).
+```json
+[
+  {"start": "2026-03-27T06:00:00Z", "end": "2026-03-27T12:00:00Z"},
+  {"start": "2026-03-27T12:00:00Z", "end": "2026-03-27T18:00:00Z"}
+]
+```
 
-⚠️ **Use ONLY the values provided in Agent Parameters.** Do not override `fetch_since` with `lookback_hours` or vice versa.
+⚠️ **Use ONLY the values provided in Agent Parameters.** Do not compute your own time ranges.
 
-### Step 2: Fetch Teams meetings
+### Step 2b: Fetch Teams meetings
 
-Call `workiq-ask_work_iq` with a query based on `fetch_mode`:
+For **each window** in `fetch_windows`, call `workiq-ask_work_iq` with:
 
-**fetch_mode: watermark:**
+> "List Teams meetings I was the organizer or attendee of between {start} and {end} that have ALREADY ENDED. IMPORTANT: Only include PAST meetings — meetings whose end time is before the current time. Do NOT include upcoming, in-progress, or future scheduled meetings. For each meeting, include if available: meeting title, start/end time, organizer, attendees, and any available meeting notes, recap, or transcript summary."
 
-> "What Teams meetings was I the organizer or attendee of since {fetch_since}? For each meeting, include if available: meeting title, start/end time, organizer, attendees, and any available meeting notes, recap, or transcript summary."
+Where `{start}` and `{end}` are the exact UTC ISO timestamps from the window.
 
-**fetch_mode: lookback:**
+Merge results from all windows and deduplicate by meeting title/time before proceeding to Step 3.
 
-> "What Teams meetings was I the organizer or attendee of in the last {lookback_hours} hours? For each meeting, include if available: meeting title, start/end time, organizer, attendees, and any available meeting notes, recap, or transcript summary."
+### Step 2c: Post-fetch validation — discard future meetings
+
+⚠️ **CRITICAL**: After fetching, you MUST validate each meeting's **end time** against `current_utc` from Agent Parameters. **Discard any meeting whose end time is after `current_utc`** (i.e., hasn't finished yet). Do NOT trust WorkIQ to filter perfectly — Graph API returns calendar events by time range overlap, which can include upcoming meetings.
+
+For each meeting returned:
+1. Parse the meeting's end time
+2. Compare to `current_utc` (provided in Agent Parameters — do NOT compute your own)
+3. If `meeting_end_time > current_utc` → **skip it entirely, do not process, do not log**
+4. Only proceed with meetings that have fully concluded
 
 ### Step 3: Process and summarize
 
@@ -80,37 +92,37 @@ For each meeting with meaningful content, call `createMeeting` with:
 Then **edit the created meeting note** to fill in the detailed sections:
 - `## Discussion`: Full discussion points, context, and quotes
 - `## Decisions`: All decisions made
-- `## Action Items`: All action items with `@[[Person]]` assignments
+- `## Action Items`: All action items with `@[Person]({vault_root_rel}02-People/Contacts/Person.md)` assignments
 
 This is the **primary detailed record** — put everything here.
 
 #### 4b. Daily Notes — Teams Meeting Highlights
 
-**Call `updateDailyNoteSection` once per date.**
+**Call `appendTeamsMeetingHighlights` once per date with ONLY new content.**
 
-1. **Read existing highlights**:
-   - First, check if the daily note for that date exists.
-   - If it does, read the `## Teams Meeting Highlights` section to see what's already there.
+⚠️ **Open/Closed Principle**: The tool appends new content to the section. It NEVER modifies existing content. You must send ONLY the delta — new meeting blocks. Do NOT read existing content and re-send it.
 
-2. **Merge intelligently**:
-   - If the section is empty, just format your new highlights.
-   - If the section already has content, **merge your new findings into it**.
-   - Do NOT duplicate meetings. If a meeting with the same title/time is already listed, skip it or add only new information.
-   - Maintain the structure: `### [[Link|Title]] (Time)` → `**Summary**`.
+1. **Send only new highlights**:
+   - Format your newly discovered meeting highlights as H3 meeting blocks.
+   - Do NOT read the existing `## Teams Meeting Highlights` section first.
+   - Do NOT include previously synced meetings in your call.
+   - The tool handles deduplication automatically — if a meeting title already exists, it's skipped; new meetings are appended at the end.
 
-3. **Update the note**:
-   - Call `updateDailyNoteSection` with:
-     - `date`: The local date (YYYY-MM-DD)
-     - `sectionHeader`: "Teams Meeting Highlights"
-     - `content`: The **fully merged, complete markdown** for that section (including both old and new content).
+2. **Call `appendTeamsMeetingHighlights`** with:
+   - `date`: The local date (YYYY-MM-DD)
+   - `highlights`: The **new highlights only** — formatted as H3 meeting blocks.
+   - `people`: Array of person names mentioned
+   - `personNotes`: Array of {name, note} objects for contact updates
 
 **Format rules:**
 ```markdown
-### [[YYYY-MM-DD Meeting Title|Meeting Title]] ({HH:MM - HH:MM})   
-**Summary**: 3-4 sentence summary of key discussion points and outcomes.
+### [Meeting Title]({vault_root_rel}02-People/Meetings/YYYY-MM-DD%20Meeting%20Title.md) ({HH:MM - HH:MM})   
+- Key discussion point or outcome 1
+- Key discussion point or outcome 2
+- Key discussion point or outcome 3
 ```
 
-Embed the wiki link directly in the H3 title using `[[YYYY-MM-DD Meeting Title|Meeting Title]]` (aliased link showing just the title). Do NOT add a separate "Full notes" line. Each entry should be concise — summary only, with the link in the heading.
+Embed a standard markdown link in the H3 title using `[Meeting Title]({vault_root_rel}02-People/Meetings/YYYY-MM-DD%20Meeting%20Title.md)` — use `{vault_root_rel}` (from Agent Parameters) as the relative path prefix, with spaces URL-encoded as `%20`. Do NOT add a separate "Full notes" line. Each entry should be concise — summary only, with the link in the heading.
 
 ⚠️ **Do NOT include attendees in the daily note highlights.** No `**Attendees**:` line. Attendee lists belong ONLY in the per-meeting note (Step 4a). The daily note is a lightweight summary — keep it short.
 
@@ -125,16 +137,18 @@ Embed the wiki link directly in the H3 title using `[[YYYY-MM-DD Meeting Title|M
 After all processing is complete, call `updateTeamsMeetingSyncState` with:
 - `lastSynced`: Current ISO timestamp (the time of THIS sync, not the meeting timestamps)
 - `processedMeetingIds`: Array of meeting/event IDs processed (if available from WorkIQ response)
-- `processedDates`: Array of all dates (YYYY-MM-DD) that had `updateDailyNoteSection` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
+- `processedDates`: Array of all dates (YYYY-MM-DD) that had `appendTeamsMeetingHighlights` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
 
 ## Important Rules
 
+- **Append-only**: Send ONLY new content to `appendTeamsMeetingHighlights`. Never read existing highlights, never re-send previously synced content. The tool handles dedup and placement automatically.
 - **Attendees in meeting note only**: Do NOT include `**Attendees**:` in daily note highlights. Attendee lists belong only in the per-meeting note (Step 4a).
-- **In attendee lists, write "Me"**: Replace the user's name with "Me" in meeting note attendee lists.
+- **In attendee lists, write "I"**: Replace the user's name with "I" in meeting note attendee lists.
+- **Always-explicit subjects**: Every bullet in meeting notes and daily highlights must have a clear subject. Write "I proposed..." or "John agreed to..." — never just "proposed..." where the actor is ambiguous.
 - **Skip meetings without transcripts**: If a meeting has no transcript, recap, or notes available from WorkIQ, do NOT create a meeting note or daily note entry for it. Only process meetings with actual content.
 - **Never re-process**: Always check the watermark first. Only process new meetings.
 - **Idempotent**: If a meeting note already exists in `02-People/Meetings/`, skip creating it.
-- **Details in meeting note, summary in daily note**: Full discussion/decisions/action items go in the per-meeting note. The daily note gets only a 3-4 sentence summary with the meeting title linked to the full note.
-- **Respect existing content**: When updating the daily note, preserve all existing sections.
+- **Details in meeting note, bullet points in daily note**: Full discussion/decisions/action items go in the per-meeting note. The daily note gets only concise bullet points per key context with the meeting title linked to the full note.
+- **Never modify existing content**: The daily note's existing sections are immutable. Only append new data.
 - **Separate from chats**: Do NOT include chat messages. Only process calendar meetings with Teams links.
 - **If no new meetings**: Simply update the watermark and report "No new Teams meetings since last sync."

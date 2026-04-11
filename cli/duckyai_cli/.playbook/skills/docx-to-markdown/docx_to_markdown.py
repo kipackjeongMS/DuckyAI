@@ -2,7 +2,7 @@
 """
 DOCX to Markdown Converter
 Converts DOCX files to well-formatted markdown with images.
-Designed for integration with EDM (Extract Document to Markdown) workflow.
+Converts DOCX files to well-formatted markdown with images.
 """
 
 import sys
@@ -293,7 +293,7 @@ class DOCXToMarkdown:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Convert DOCX to Markdown file with images (EDM-compatible)'
+        description='Convert DOCX to Markdown file with images'
     )
     parser.add_argument('docx_file', help='Path to DOCX file')
     parser.add_argument(

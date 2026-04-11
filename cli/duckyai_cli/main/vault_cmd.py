@@ -1,10 +1,10 @@
 """Vault management CLI subcommand group.
 
-Provides commands for managing registered vaults globally:
-  duckyai vault list                   — Show all registered vaults with orchestrator status
-  duckyai vault new                    — Create and register a new vault
-  duckyai vault remove                 — Remove a vault (deletes vault folder + runtime data)
-  duckyai vault cleanup-legacy-runtime — Preview/remove stale ~/.duckyai/vaults/<id>/ folders
+Provides commands for managing the configured home vault:
+    duckyai vault list                   — Show the configured home vault
+    duckyai vault new                    — Create and configure a new home vault
+    duckyai vault remove                 — Remove the home vault (deletes vault folder + runtime data)
+    duckyai vault cleanup-legacy-runtime — Preview/remove stale ~/.duckyai/vaults/<id>/ folders
 """
 
 import json
@@ -17,13 +17,14 @@ from typing import Dict, List
 import click
 
 from ..logger import Logger
+from .vault import find_vault_root
 from ..vault_registry import (
-    list_vaults,
-    register_vault,
-    unregister_vault,
-    find_vault_by_path,
+    clear_home_vault,
+    get_home_vault,
+    set_home_vault,
 )
 from ..config import Config
+from ..services import ensure_services_dir
 from .orch_cmd import _read_pid
 
 logger = Logger(console_output=True)
@@ -36,7 +37,8 @@ def _get_legacy_runtime_root() -> Path:
 
 def _collect_legacy_runtime_entries() -> List[Dict[str, object]]:
     """Inspect legacy runtime directories and classify cleanup safety."""
-    registry = {v["id"]: v for v in list_vaults()}
+    home_vault = get_home_vault()
+    registry = {home_vault["id"]: home_vault} if home_vault else {}
     legacy_root = _get_legacy_runtime_root()
 
     if not legacy_root.exists():
@@ -116,46 +118,122 @@ def _delete_legacy_runtime_entries(
 
 @click.group("vault")
 def vault_group():
-    """Manage registered DuckyAI vaults."""
+    """Manage the configured DuckyAI home vault."""
     pass
+
+
+def init_existing_vault(vault_path: Path) -> Dict[str, object]:
+    """Configure an existing DuckyAI vault as the single home vault."""
+    resolved_input = Path(vault_path).resolve()
+    resolved_vault = find_vault_root(resolved_input)
+    config_path = resolved_vault / "duckyai.yml"
+
+    if not config_path.exists():
+        raise click.ClickException(
+            f"No duckyai.yml found in {resolved_vault}. Use 'duckyai setup' for a new vault."
+        )
+
+    config = Config(vault_path=resolved_vault)
+    vault_id = str(config.get("id", "")).strip() or resolved_vault.name.lower()
+    vault_name = str(config.get("name", "")).strip() or resolved_vault.name
+
+    previous_home = get_home_vault()
+    existing_by_path = previous_home and str(Path(previous_home["path"]).resolve()) == str(resolved_vault)
+
+    set_home_vault(vault_id=vault_id, name=vault_name, path=resolved_vault)
+    services_dir = ensure_services_dir(resolved_vault)
+    set_home_vault(
+        vault_id=vault_id,
+        name=vault_name,
+        path=resolved_vault,
+        services_path=str(services_dir),
+    )
+
+    from .cli import ensure_init
+
+    ensure_init(resolved_vault)
+
+    return {
+        "vault_id": vault_id,
+        "vault_name": vault_name,
+        "vault_path": str(resolved_vault),
+        "services_path": str(services_dir),
+        "already_registered": existing_by_path is not None,
+        "previous_home_path": previous_home.get("path") if previous_home else None,
+    }
+
+
+@click.command("init")
+@click.argument(
+    "vault_path",
+    required=False,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+)
+def init_command(vault_path):
+    """Configure an existing DuckyAI vault as the single home vault.
+
+    \b
+    Use this for an existing vault directory that already has duckyai.yml but
+    is not yet configured as your DuckyAI home vault.
+
+    \b
+    Examples:
+        duckyai init
+        duckyai init .
+        duckyai init C:/Users/me/Documents/MyVault
+    """
+    target = vault_path or Path.cwd()
+    result = init_existing_vault(target)
+
+    previous_home_path = result.get("previous_home_path")
+    if result["already_registered"]:
+        click.echo(f"Home vault already configured: {result['vault_name']} ({result['vault_id']})")
+    elif previous_home_path and previous_home_path != result["vault_path"]:
+        click.echo(f"Configured home vault: {result['vault_name']} ({result['vault_id']})")
+        click.echo(f"Previous home vault: {previous_home_path}")
+    else:
+        click.echo(f"Configured home vault: {result['vault_name']} ({result['vault_id']})")
+
+    click.echo(f"Vault path: {result['vault_path']}")
+    click.echo(f"Services path: {result['services_path']}")
+    click.echo("Initialized .github/ and services wiring.")
 
 
 @vault_group.command("list")
 @click.option("--json-output", "json_out", is_flag=True, help="Output JSON")
 def vault_list(json_out):
-    """List all registered vaults with orchestrator status."""
-    vaults = list_vaults()
+    """Show the configured home vault."""
+    home_vault = get_home_vault()
 
-    if not vaults:
+    if not home_vault:
         if json_out:
-            click.echo(json.dumps({"vaults": []}))
+            click.echo(json.dumps({"home_vault": None}))
         else:
-            click.echo("No vaults registered. Use 'duckyai vault new <path>' or 'duckyai init'.")
+            click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
         return
 
     results = []
-    for v in vaults:
-        vault_path = Path(v["path"])
-        exists = vault_path.exists()
-        pid, alive = _read_pid(vault_path) if exists else (None, False)
-        entry = {
-            "id": v["id"],
-            "name": v["name"],
-            "path": v["path"],
-            "exists": exists,
-            "orchestrator_running": alive,
-            "orchestrator_pid": pid,
-            "last_used": v.get("last_used"),
-        }
-        results.append(entry)
+    vault_path = Path(home_vault["path"])
+    exists = vault_path.exists()
+    pid, alive = _read_pid(vault_path) if exists else (None, False)
+    entry = {
+        "id": home_vault["id"],
+        "name": home_vault["name"],
+        "path": home_vault["path"],
+        "exists": exists,
+        "orchestrator_running": alive,
+        "orchestrator_pid": pid,
+        "last_used": home_vault.get("last_used"),
+    }
+    results.append(entry)
 
     if json_out:
-        click.echo(json.dumps({"vaults": results}, indent=2))
+        click.echo(json.dumps({"home_vault": results[0]}, indent=2))
     else:
         from rich.table import Table
         from rich.console import Console
 
-        table = Table(title="Registered Vaults")
+        table = Table(title="Home Vault")
         table.add_column("ID", style="cyan")
         table.add_column("Name", style="bold")
         table.add_column("Path")
@@ -175,12 +253,12 @@ def vault_list(json_out):
 
 @vault_group.command("new")
 def vault_new():
-    """Create and register a new DuckyAI vault via the onboarding wizard.
+    """Create and configure a new DuckyAI home vault via the onboarding wizard.
 
     \b
     Runs the same interactive setup as 'duckyai setup' — configures
-    user info, agents, Teams sync, folder structure, and registers
-    the vault.
+    user info, agents, Teams sync, folder structure, and configures
+    the resulting vault as the home vault.
 
     \b
     Example:
@@ -192,32 +270,39 @@ def vault_new():
 
 
 @vault_group.command("remove")
-@click.argument("vault_id")
+@click.argument("vault_id", required=False)
 @click.option("--force", is_flag=True, help="Skip confirmation")
 def vault_remove(vault_id, force):
-    """Remove a vault — deletes vault folder, services folder, and runtime data.
+    """Remove the configured home vault and its local data.
 
     \b
     This will:
       1. Stop the orchestrator if running
       2. Delete the vault folder (e.g., ~/MyVault/, including <vault>/.duckyai/)
       3. Delete the services folder (e.g., ~/MyVault-Services/)
-      4. Remove from vault registry
+      4. Clear the home vault configuration
 
     \b
     Examples:
-        duckyai vault remove test5
-        duckyai vault remove test5 --force
+        duckyai vault remove
+        duckyai vault remove duckyai_vault --force
     """
-    vaults = list_vaults()
-    match = next((v for v in vaults if v["id"] == vault_id), None)
+    match = get_home_vault()
 
     if not match:
-        click.echo(f"⚠️  Vault '{vault_id}' not found in registry.", err=True)
+        click.echo("⚠️  No home vault is configured.", err=True)
+        raise SystemExit(1)
+
+    if vault_id and match["id"] != vault_id:
+        click.echo(
+            f"⚠️  Requested vault '{vault_id}' does not match the configured home vault '{match['id']}'.",
+            err=True,
+        )
         raise SystemExit(1)
 
     vault_path = Path(match["path"])
     vault_name = match["name"]
+    vault_id = match["id"]
     services_path = match.get("services_path")
 
     # Show what will be deleted
@@ -260,10 +345,10 @@ def vault_remove(vault_id, force):
         except Exception as e:
             click.echo(f"  ⚠️  Could not delete services folder: {e}", err=True)
 
-    # 5. Remove from registry
-    removed = unregister_vault(vault_id)
+    # 5. Clear home vault configuration
+    removed = clear_home_vault()
     if removed:
-        click.echo(f"  ✓ Removed from vault registry")
+        click.echo(f"  ✓ Cleared home vault configuration")
     click.echo(f"\n  Vault '{vault_name}' has been removed.")
 
 

@@ -15,7 +15,7 @@ test_polling_performance.py
 test_trigger_detection.py
 
 # Extra fixtures not in main test suite
-fixtures/test_limitless_hey_pkm_variations.md
+fixtures/test_limitless_hey_duckai_variations.md
 
 # Temporary Test Output
 /tmp/

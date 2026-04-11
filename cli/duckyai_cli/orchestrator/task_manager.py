@@ -82,12 +82,12 @@ class TaskFileManager:
             # Get generation log link
             log_link = ""
             if ctx.log_file:
-                # Make relative to vault for wiki link
+                # Make relative to vault for path reference
                 try:
                     rel_log = ctx.log_file.relative_to(self.vault_path)
-                    log_link = f"[[{rel_log.parent}/{rel_log.stem}]]"
+                    log_link = f"{rel_log.parent}/{rel_log.stem}"
                 except ValueError:
-                    log_link = f"[[{ctx.log_file}]]"
+                    log_link = str(ctx.log_file)
 
             # Create task content
             task_content = self._build_task_content(
@@ -114,6 +114,7 @@ class TaskFileManager:
         task_path: Path,
         status: str,
         output: Optional[str] = None,
+        output_link: Optional[str] = None,
         error_message: Optional[str] = None
     ):
         """
@@ -132,6 +133,9 @@ class TaskFileManager:
         try:
             # Read current content
             content = task_path.read_text(encoding='utf-8')
+
+            if output is None and output_link is not None:
+                output = output_link
 
             # Update frontmatter
             from ..markdown_utils import update_frontmatter_fields
@@ -365,6 +369,7 @@ class TaskFileManager:
             'title': title,
             'created': created_time,
             'archived': str(agent.task_archived).lower(),
+            'agent': agent.abbreviation,
             'worker': agent.executor,
             'status': initial_status,
             'priority': agent.task_priority,
@@ -412,7 +417,7 @@ class TaskFileManager:
         # Build input section based on whether agent requires an input file
         if agent.requires_input_file and input_file_path:
             event_desc = f"{event_type.capitalize()} file event triggered {agent.name} processing"
-            input_section = f"Target file: `[[{input_file_path}]]`\n\n{event_desc}."
+            input_section = f"Target file: `{input_file_path}`\n\n{event_desc}."
         else:
             event_desc = f"{event_type.capitalize()} event triggered {agent.name} processing"
             input_section = f"{event_desc}."

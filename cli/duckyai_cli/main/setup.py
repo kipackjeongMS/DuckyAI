@@ -117,14 +117,13 @@ def run_onboarding(vault_root: Path = None):
             webbrowser.open("https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli")
             click.echo("  Install and re-run `duckyai` when ready.")
 
-    # ─── Step 4: MCP Server ────────────────────────────
-    click.echo("\n🔧 Step 4/10 — MCP Server")
-    cli_root = Path(__file__).resolve().parent.parent.parent  # cli/duckyai_cli/main -> cli/
-    mcp_js = cli_root / 'mcp-server' / 'dist' / 'index.js'
-    if mcp_js.exists():
-        click.echo("  ✓ MCP server found")
+    # ─── Step 4: Vault MCP Tooling ─────────────────────
+    click.echo("\n🔧 Step 4/10 — Vault MCP Tooling")
+    duckyai_vault_mcp = shutil.which("duckyai-vault-mcp")
+    if duckyai_vault_mcp:
+        click.echo(f"  ✓ Native vault MCP server found: {duckyai_vault_mcp}")
     else:
-        click.echo("  ⚠️  MCP server not built — run: cd cli/mcp-server && npm install && npm run build")
+        click.echo("  ℹ️  Native vault MCP server will be available once the CLI package is installed into your Python environment")
 
     # ─── Step 5: WorkIQ EULA ────────────────────────────
     click.echo("\n📋 Step 5/10 — WorkIQ (Teams Data)")
@@ -270,9 +269,6 @@ tags:
 
 ## PRs & Code Reviews
 - [ ] 
-
-## Tasks Completed
-- [x] 
 
 ## Notes
 
@@ -458,10 +454,9 @@ tags:
         click.echo(f"  Teams sync: disabled")
     click.echo("")
 
-    # Register vault in global registry (~/.duckyai/vaults.json)
-    from ..vault_registry import register_vault, list_vaults as _list_existing
+    # Configure the single home vault (~/.duckyai/config.json)
+    from ..vault_registry import set_home_vault
     import yaml as _yaml
-    import re as _re
 
     # Derive vault_id from duckyai.yml if present, otherwise from vault name
     _vault_id = None
@@ -478,23 +473,15 @@ tags:
             pass
 
     if not _vault_id:
-        # Generate a unique slug from vault name (e.g. "My Vault" -> "my-vault")
+        import re as _re
         _vault_id = _re.sub(r'[^a-z0-9]+', '-', vault_name.lower()).strip('-') or "vault"
-        # Ensure uniqueness against existing registry entries
-        _existing_ids = {v["id"] for v in _list_existing()}
-        _candidate = _vault_id
-        _suffix = 2
-        while _candidate in _existing_ids:
-            _candidate = f"{_vault_id}-{_suffix}"
-            _suffix += 1
-        _vault_id = _candidate
 
-    register_vault(
+    set_home_vault(
         vault_id=_vault_id,
         name=vault_name,
         path=vault_path,
     )
-    click.echo(f"  ✓ Registered in ~/.duckyai/vaults.json")
+    click.echo(f"  ✓ Configured as home vault in ~/.duckyai/config.json")
 
     # Create services directory and register services
     from ..services import ensure_services_dir, add_service, get_services_path
@@ -504,8 +491,8 @@ tags:
         add_service(vault_path, svc_name)
         click.echo(f"    ✓ Service: {svc_name}/")
 
-    # Update vault registry with services_path
-    register_vault(
+    # Update home vault config with services_path
+    set_home_vault(
         vault_id=_vault_id,
         name=vault_name,
         path=vault_path,

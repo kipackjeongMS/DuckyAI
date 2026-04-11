@@ -39,13 +39,19 @@ Scan the `## Teams Meeting Highlights` and `## Teams Chat Highlights` sections f
 For each extracted action item, classify it as:
 
 ### PR Review Task
-Indicators: mentions a PR number, review request, "approve", "check my PR"
+Indicators (any of these):
+- Mentions a specific PR number (e.g., "PR #1234", "PR 1234")
+- Review request language: "review", "approve", "check my PR", "take a look", "cherry-pick"
+- PR-related actions: "merge", "sign off", "LGTM", "code review"
+- Mentions "PR" or "pull request" in any form, even without a number
+
+**When in doubt between General Task and PR Review, prefer PR Review** if the item involves reviewing, approving, or acting on someone else's code changes.
 
 Extract:
 - `person`: PR author name
-- `prNumber`: PR number (digits only)
-- `prUrl`: Full PR URL (if available in the highlight text; otherwise leave empty)
-- `description`: Brief description of the PR
+- `prNumber`: PR number (digits only). If no specific PR number is mentioned, use an empty string `""`
+- `prUrl`: Full PR URL if available. **Actively search for URLs in the highlight text** — look for markdown links `[text](url)` where the URL contains `dev.azure.com` or `pullrequest`. Also check for any raw URLs in surrounding bullets. If no URL is found, use an empty string `""`. Do NOT construct or guess URLs.
+- `description`: Brief description of the PR or review request
 
 ### General Task
 Everything else that requires the user's action.
@@ -62,14 +68,14 @@ Extract:
 
 Call `logPRReview` with:
 - `person`: PR author
-- `prNumber`: PR number
+- `prNumber`: PR number if known; otherwise use an empty string `""`
 - `prUrl`: Full PR URL if provided in the highlight text. If not available, use an empty string `""`. Do NOT construct or guess URLs.
 - `description`: Brief PR description
 - `action`: `"todo"`
 
 This will:
-1. Create a file in `01-Work/PRReviews/Review PR {number} - {description}.md`
-2. Add `- [ ] [[01-Work/PRReviews/...|PR {number}]] - {description}` to `## PRs & Code Reviews` in the daily note
+1. Create a file in `01-Work/PRReviews/` (named with PR number if available, otherwise description only)
+2. Add a `- [ ]` entry to `## PRs & Code Reviews` in the daily note
 
 ### For General Tasks
 
@@ -80,7 +86,7 @@ This will:
 
 This will:
 1. Create a file in `01-Work/Tasks/{title}.md`
-2. Add `- [ ] [[01-Work/Tasks/{title}|{title}]]` to `## Tasks` in the daily note
+2. Add `- [ ] [{title}](../../01-Work/Tasks/{title}.md)` to `## Tasks` in the daily note
 
 ## Step 5: Report results
 
@@ -99,7 +105,8 @@ If no action items were found, print: "No new action items found in today's high
 - **Idempotent**: Both `createTask` and `logPRReview` have built-in deduplication. If a task or PR review file already exists, the tool will skip creation. Always call the tools — don't try to manually check for duplicates.
 - **Only process today's note**: Do not scan older daily notes. TM runs after each TCS/TMS sync — it only needs today's content.
 - **Do not modify highlights**: Never edit `## Teams Meeting Highlights` or `## Teams Chat Highlights` content. Those sections belong to TMS/TCS.
-- **User identity**: The vault owner is the "user". When highlights mention them by name, treat those as user-assigned tasks. References to "Me" in highlights also mean the user.
+- **User identity**: The vault owner is the "user". When highlights mention them by name, treat those as user-assigned tasks. References to "I" or "me" in highlights also mean the user.
 - **Preserve existing tasks**: If `## Tasks` or `## PRs & Code Reviews` already has items, the MCP tools will append — never clear existing content.
 - **No hallucinated tasks**: Only create tasks for items explicitly mentioned in the highlights. Do not infer or imagine tasks that aren't there.
 - **PR URL construction**: If a PR number is mentioned but no URL is provided, use an empty string for `prUrl`. Do not guess URLs.
+- **No PR number**: When the action item is clearly a PR review task but no specific PR number is mentioned (e.g., "approve cherry-pick PRs", "review changes"), still use `logPRReview` with an empty `prNumber`. Do NOT fall back to `createTask`/`logTask` for PR review items.

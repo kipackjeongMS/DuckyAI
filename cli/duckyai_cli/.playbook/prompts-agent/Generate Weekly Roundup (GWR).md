@@ -5,15 +5,15 @@ category: "workflow"
 created: "2024-01-01"
 ---
 
-Generate comprehensive weekly summaries from daily roundups with highlights and cross-references.
+Generate comprehensive weekly summaries from regular daily notes with highlights and cross-references.
 
 ## Input
 - Target Week: YYYY-MM-DD(Sun) ~ YYYY-MM-DD(Sat) (default: last week)
-- Daily roundup files: 04-Periodic/Daily/{{YYYY-MM-DD}}*
+- Daily note files: 04-Periodic/Daily/YYYY-MM-DD.md for each day in the target week
 - [[Weekly Roundup Template]] for structure
 
 ## Output
-- File: 04-Periodic/Daily/Weekly/{{YYYY-MM-DD(1)}}~{{YYYY-MM-DD(2)}} - {{Agent-Name}}.md
+- File: 04-Periodic/Weekly/{{YYYY-MM-DD(1)}}~{{YYYY-MM-DD(2)}} - {{Agent-Name}}.md
 - Weekly highlights with source links
 - Summary section synthesizing key themes
 - Original language preservation (English/한글)
@@ -26,7 +26,9 @@ Generate comprehensive weekly summaries from daily roundups with highlights and 
    - Establish section structure
 
 2. HIGHLIGHTS COMPILATION
-   - Extract highlights from daily roundups
+   - Read each daily note for the target week
+   - Extract highlights from sections like Tasks Completed, Notes, Teams Meeting Highlights, Teams Chat Highlights, and End of Day
+   - Ignore placeholder checkboxes and empty sections
    - List key insights and moments of the week
    - Add links to source notes & sections
    - Maintain chronological or thematic organization
@@ -39,7 +41,7 @@ Generate comprehensive weekly summaries from daily roundups with highlights and 
 
 ## Caveats
 ### File Naming Convention
-⚠️ **CRITICAL**: Use format 04-Periodic/Daily/Weekly/{{YYYY-MM-DD(1)}}~{{YYYY-MM-DD(2)}} - {{Agent-Name}}.md
+⚠️ **CRITICAL**: Use format 04-Periodic/Weekly/{{YYYY-MM-DD(1)}}~{{YYYY-MM-DD(2)}} - {{Agent-Name}}.md
 
 ### Content Standards
 - Extract meaningful highlights, not just summaries
@@ -48,5 +50,5 @@ Generate comprehensive weekly summaries from daily roundups with highlights and 
 
 ### Week Scope
 - Default to last complete week (Sunday to Saturday)
-- Include all daily roundups within the target week
+- Include all daily notes within the target week
 - Ensure comprehensive coverage of the week's content

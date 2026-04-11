@@ -57,7 +57,7 @@ class AgentRegistry:
 
         self.agents_dir = Path(agents_dir)
         self.vault_path = Path(vault_path)
-        self.config = config or Config()
+        self.config = config or Config(vault_path=self.vault_path)
         self.agents: Dict[str, AgentDefinition] = {}
 
         # Use orchestrator config from Config instance (respects --config-file CLI option)
@@ -78,7 +78,8 @@ class AgentRegistry:
         nodes = self.orchestrator_config.get('nodes', [])
 
         if not nodes:
-            logger.warning("No nodes defined in duckyai.yml")
+            logger.info("No nodes defined in duckyai.yml; falling back to legacy file-based agent loading")
+            self._load_agents_from_files_legacy()
             return
 
         # Filter for enabled agent nodes (enabled defaults to True if not specified)
@@ -117,6 +118,81 @@ class AgentRegistry:
                 logger.error(f"Error loading agent from node: {e}")
 
         logger.info(f"Total agents loaded: {len(self.agents)}")
+
+    def _load_agents_from_files_legacy(self):
+        """Load agents directly from prompt files for legacy tests and old vaults."""
+        if not self.agents_dir.exists():
+            logger.warning(f"Agents directory not found: {self.agents_dir}")
+            return
+
+        for file_path in sorted(self.agents_dir.glob("*.md")):
+            try:
+                frontmatter = read_frontmatter(file_path)
+                if not frontmatter:
+                    logger.warning(f"No frontmatter found in {file_path}")
+                    continue
+
+                required = ['title', 'abbreviation', 'category', 'trigger_pattern', 'trigger_event']
+                missing = [field for field in required if field not in frontmatter]
+                if missing:
+                    logger.error(f"Missing required fields {missing} in {file_path}")
+                    continue
+
+                input_path = frontmatter.get('input_path', [])
+                if input_path is None:
+                    input_path = []
+                elif isinstance(input_path, str):
+                    input_path = [input_path]
+
+                skills = frontmatter.get('skills', [])
+                if isinstance(skills, str):
+                    skills = [skills]
+
+                mcp_servers = frontmatter.get('mcp_servers', [])
+                if isinstance(mcp_servers, str):
+                    mcp_servers = [mcp_servers]
+
+                trigger_wait_for = frontmatter.get('trigger_wait_for', [])
+                if isinstance(trigger_wait_for, str):
+                    trigger_wait_for = [trigger_wait_for]
+
+                agent = AgentDefinition(
+                    name=frontmatter['title'],
+                    abbreviation=frontmatter['abbreviation'],
+                    category=frontmatter['category'],
+                    trigger_pattern=frontmatter['trigger_pattern'],
+                    trigger_event=frontmatter['trigger_event'],
+                    trigger_exclude_pattern=frontmatter.get('trigger_exclude_pattern'),
+                    trigger_content_pattern=frontmatter.get('trigger_content_pattern'),
+                    trigger_schedule=frontmatter.get('trigger_schedule'),
+                    trigger_wait_for=trigger_wait_for,
+                    input_path=input_path,
+                    cron=frontmatter.get('cron'),
+                    input_type=frontmatter.get('input_type', 'new_file'),
+                    output_path=frontmatter.get('output_path', ''),
+                    output_type=frontmatter.get('output_type', 'new_file'),
+                    output_optional=bool(frontmatter.get('output_optional', False)),
+                    output_naming=frontmatter.get('output_naming', '{title} - {agent}.md'),
+                    requires_input_file=bool(frontmatter.get('requires_input_file', bool(input_path))),
+                    prompt_body=extract_body(file_path.read_text(encoding='utf-8')),
+                    skills=skills,
+                    mcp_servers=mcp_servers,
+                    executor=frontmatter.get('executor', 'claude_code'),
+                    max_parallel=int(frontmatter.get('max_parallel', 1)),
+                    timeout_minutes=int(frontmatter.get('timeout_minutes', 30)),
+                    task_create=bool(frontmatter.get('task_create', True)),
+                    task_priority=frontmatter.get('task_priority', 'medium'),
+                    task_archived=bool(frontmatter.get('task_archived', False)),
+                    file_path=file_path,
+                    version=str(frontmatter.get('version', '1.0')),
+                    agent_params=frontmatter.get('agent_params', {}),
+                )
+                self.agents[agent.abbreviation] = agent
+                logger.info(f"Loaded legacy agent: {agent.abbreviation} ({agent.name})")
+            except Exception as exc:
+                logger.error(f"Error loading legacy agent from {file_path}: {exc}")
+
+        logger.info(f"Total legacy agents loaded: {len(self.agents)}")
 
     def _find_agent_prompt_file(self, abbreviation: str) -> Optional[Path]:
         """
@@ -369,7 +445,9 @@ class AgentRegistry:
             file_path=file_path,
             version=node.get('version', '1.0'),
             agent_params=agent_params,
-            workers=workers
+            workers=workers,
+            use_container=node.get('use_container'),
+            extra_mounts=node.get('extra_mounts', []),
         )
 
         return agent
@@ -546,21 +624,30 @@ class AgentRegistry:
             True if task file already exists
         """
         try:
-            # Get tasks directory from config
+            tasks_dirs = []
+
+            # Primary configured tasks directory.
             tasks_dir_path = self.config.get_orchestrator_tasks_dir()
-            tasks_dir = self.vault_path / tasks_dir_path
-            if not tasks_dir.exists():
-                return False
+            tasks_dirs.append(self.vault_path / tasks_dir_path)
+
+            # Backward compatibility for legacy vault/test layout.
+            legacy_tasks_dir = self.vault_path / '_Tasks_'
+            if legacy_tasks_dir not in tasks_dirs:
+                tasks_dirs.append(legacy_tasks_dir)
 
             # Extract filename without extension
             source_filename = Path(event_path).stem
 
             # Search for task files containing the source filename
             # Format: YYYY-MM-DD {agent} - {source_filename}.md
-            for task_file in tasks_dir.glob("*.md"):
-                if source_filename in task_file.stem:
-                    logger.debug(f"Found existing task: {task_file.name}")
-                    return True
+            for tasks_dir in tasks_dirs:
+                if not tasks_dir.exists():
+                    continue
+
+                for task_file in tasks_dir.glob("*.md"):
+                    if source_filename in task_file.stem:
+                        logger.debug(f"Found existing task: {task_file.name}")
+                        return True
 
             return False
 

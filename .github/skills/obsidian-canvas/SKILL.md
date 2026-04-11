@@ -157,7 +157,7 @@ Event1 → Event2 → Event3 → Event4
 | Red | 1 | AI & Tech |
 | Orange | 2 | Work & Projects |
 | Yellow | 3 | Current Events |
-| Green | 4 | PKM & Learning |
+| Green | 4 | DuckAI & Learning |
 | Purple | 5 | Personal & Meta |
 | Blue | 6 | Education & Career |
 
@@ -400,7 +400,7 @@ Before finalizing canvas:
 - [ ] All nodes have unique IDs
 - [ ] **No overlapping nodes** (run overlap check formula above)
 - [ ] Minimum 30-50px spacing between adjacent nodes
-- [ ] Colors follow scheme (AI=1, PKM=4, etc.)
+- [ ] Colors follow scheme (AI=1, DuckAI=4, etc.)
 - [ ] Center node clearly visible
 - [ ] Edges don't cross unnecessarily
 - [ ] Wiki links are valid
@@ -410,7 +410,7 @@ Before finalizing canvas:
 
 ### 1. Weekly Reading Summary
 - **Layout**: Radial
-- **Categories**: AI, PKM, Current Events, Education
+- **Categories**: AI, DuckAI, Current Events, Education
 - **Nodes**: Article links with quotes
 - **Output**: `03-Knowledge/03-Knowledge/Topics/YYYY-MM-DD Weekly Reading.canvas`
 

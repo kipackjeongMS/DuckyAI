@@ -5,6 +5,7 @@ Monitors vault for file changes and queues events for processing.
 Uses debouncing to group rapid file changes and process them after a delay.
 """
 import threading
+import time
 from pathlib import Path
 from queue import Queue
 from datetime import datetime
@@ -50,10 +51,19 @@ class FileSystemMonitor:
         self._pending_events_lock = threading.Lock()
 
     def start(self):
-        """Start monitoring file system."""
+        """Start monitoring file system.
+
+        Creates a fresh Observer on each call so that start/stop can be
+        repeated (Python threads cannot be restarted after join).
+        """
+        # Create a new Observer — the previous one is dead after stop()/join()
+        self.observer = Observer()
         event_handler = _FileEventHandler(self, self.vault_path, self.debounce_interval, self.file_extensions)
         self.observer.schedule(event_handler, str(self.vault_path), recursive=True)
         self.observer.start()
+        deadline = time.time() + 0.2
+        while not self.observer.is_alive() and time.time() < deadline:
+            time.sleep(0.01)
         self._running = True
         logger.info(f"File system monitoring started on {self.vault_path} (debounce: {self.debounce_interval}s, extensions: {self.file_extensions})")
 
@@ -110,7 +120,7 @@ class FileSystemMonitor:
                     self.event_queue.put(trigger_event)
                     logger.debug(f"Processed debounced {event_data['event_type']} event: {event_data['path']}")
     
-    def _debounce_event(self, relative_path: str, event_type: str, event_data: dict):
+    def _debounce_event(self, relative_path: str, event_type: str, event_data: dict, delay: Optional[float] = None):
         """
         Debounce an event - group rapid events and process after delay.
         
@@ -130,7 +140,7 @@ class FileSystemMonitor:
             
             # Create new timer to process event after debounce interval
             timer = threading.Timer(
-                self.debounce_interval,
+                self.debounce_interval if delay is None else delay,
                 self._process_debounced_event,
                 args=(event_key, event_data)
             )
@@ -226,8 +236,12 @@ class _FileEventHandler(FileSystemEventHandler):
             'frontmatter': {}  # Will be populated when processed
         }
 
+        # Creation events need a shorter delay so tests and atomic writers don't
+        # race the default debounce interval.
+        delay = min(self.debounce_interval, 0.1) if event_type == 'created' else None
+
         # Debounce the event
-        self.file_monitor._debounce_event(str(relative_path), event_type, event_data)
+        self.file_monitor._debounce_event(str(relative_path), event_type, event_data, delay=delay)
 
     def _debounce_file_event_for_moved(self, event: FileSystemEvent, event_type: str):
         """Debounce a move event using the destination path."""
@@ -249,8 +263,10 @@ class _FileEventHandler(FileSystemEventHandler):
             'frontmatter': {}  # Will be populated when processed
         }
 
+        delay = min(self.debounce_interval, 0.1) if event_type == 'created' else None
+
         # Debounce the event
-        self.file_monitor._debounce_event(str(relative_path), event_type, event_data)
+        self.file_monitor._debounce_event(str(relative_path), event_type, event_data, delay=delay)
 
     def _debounce_reload_event(self, event: FileSystemEvent):
         """Debounce a config reload event for duckyai.yml changes."""

@@ -12,12 +12,23 @@ import time
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Optional
 
 import click
 
 from ..logger import Logger
+from .install_health import get_duckyai_launch_cmd
 
 logger = Logger(console_output=True)
+
+
+def _get_psutil():
+    """Import psutil lazily so tests can stub it and startup can degrade gracefully."""
+    try:
+        import psutil
+    except ImportError:
+        return None
+    return psutil
 
 
 def _is_orchestrator_alive(pid: int) -> bool:
@@ -57,70 +68,260 @@ def _read_pid(vault_root: Path):
         return None, False
 
 
+def _read_discovery(vault_root: Path) -> Optional[dict]:
+    """Read the API discovery file when present."""
+    discovery_file = vault_root / ".duckyai" / "api.json"
+    if not discovery_file.exists():
+        return None
+    try:
+        data = json.loads(discovery_file.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _probe_discovery_health(discovery: Optional[dict]) -> Optional[int]:
+    """Return the PID from a healthy discovery endpoint when available."""
+    if not discovery:
+        return None
+
+    url = discovery.get("url")
+    if not url:
+        host = discovery.get("host")
+        port = discovery.get("port")
+        if host and port:
+            url = f"http://{host}:{port}"
+    if not url:
+        return None
+
+    try:
+        import requests
+
+        response = requests.get(f"{str(url).rstrip('/')}/api/health", timeout=1.5)
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:
+        return None
+
+    if not isinstance(payload, dict) or payload.get("status") != "ok":
+        return None
+
+    pid = payload.get("pid")
+    try:
+        return int(pid) if pid is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _same_path(left: Optional[str], right: Path) -> bool:
+    """Return True when two paths resolve to the same location."""
+    if not left:
+        return False
+    try:
+        return Path(left).resolve() == right.resolve()
+    except OSError:
+        return False
+
+
+def _looks_like_orchestrator_cmd(cmdline: list[str]) -> bool:
+    """Identify a DuckyAI orchestrator daemon command line."""
+    if not cmdline:
+        return False
+
+    normalized = [str(part).lower() for part in cmdline if part]
+    joined = " ".join(normalized)
+    if "duckyai" not in joined and "duckyai_cli" not in joined:
+        return False
+    return "-o" in normalized
+
+
+def _find_matching_orchestrator_processes(vault_root: Path) -> tuple[list[dict], Optional[int]]:
+    """Find running orchestrator processes that belong to the given vault."""
+    discovery = _read_discovery(vault_root)
+    healthy_pid = _probe_discovery_health(discovery)
+    pid_from_file, _ = _read_pid(vault_root)
+
+    known_pids = set()
+    for candidate in (pid_from_file, discovery.get("pid") if discovery else None, healthy_pid):
+        try:
+            if candidate is not None:
+                known_pids.add(int(candidate))
+        except (TypeError, ValueError):
+            continue
+
+    psutil = _get_psutil()
+    if psutil is None:
+        return [], healthy_pid
+
+    matches: dict[int, dict] = {}
+    for proc in psutil.process_iter(["pid", "cmdline"]):
+        try:
+            if proc.pid == os.getpid():
+                continue
+
+            cmdline = proc.info.get("cmdline") or []
+            cwd = proc.cwd()
+            same_vault = _same_path(cwd, vault_root)
+            reasons = []
+
+            if healthy_pid and proc.pid == healthy_pid:
+                reasons.append("api_health")
+            if same_vault and _looks_like_orchestrator_cmd(cmdline):
+                reasons.append("cwd_cmdline")
+            if proc.pid in known_pids and same_vault:
+                reasons.append("known_pid")
+
+            if reasons:
+                matches[proc.pid] = {
+                    "process": proc,
+                    "pid": proc.pid,
+                    "cmdline": cmdline,
+                    "cwd": cwd,
+                    "healthy": proc.pid == healthy_pid,
+                    "reasons": reasons,
+                }
+        except (psutil.NoSuchProcess, psutil.AccessDenied, OSError):
+            continue
+
+    return list(matches.values()), healthy_pid
+
+
+def _cleanup_orchestrator_processes(
+    vault_root: Path,
+    *,
+    fresh_start: bool,
+    timeout_seconds: float = 5.0,
+) -> dict:
+    """Clean up stale or duplicate orchestrator processes for a vault.
+
+    When `fresh_start` is true, all matching processes are terminated so a new
+    daemon can start cleanly. Otherwise, one healthy matching process is kept
+    and only stale or duplicate processes are removed.
+    """
+    matches, healthy_pid = _find_matching_orchestrator_processes(vault_root)
+    kept_pid = None if fresh_start else healthy_pid
+    targets = [entry for entry in matches if entry["pid"] != kept_pid]
+
+    terminated_pids: list[int] = []
+    killed_pids: list[int] = []
+    errors: list[str] = []
+
+    psutil = _get_psutil()
+    if targets and psutil is not None:
+        processes = []
+        for entry in targets:
+            proc = entry["process"]
+            try:
+                proc.terminate()
+                processes.append(proc)
+            except (psutil.NoSuchProcess, ProcessLookupError):
+                terminated_pids.append(entry["pid"])
+            except (psutil.AccessDenied, OSError) as exc:
+                errors.append(f"PID {entry['pid']}: terminate failed ({exc})")
+
+        if processes:
+            gone, alive = psutil.wait_procs(processes, timeout=timeout_seconds)
+            terminated_pids.extend(proc.pid for proc in gone)
+
+            for proc in alive:
+                try:
+                    proc.kill()
+                except (psutil.NoSuchProcess, ProcessLookupError):
+                    terminated_pids.append(proc.pid)
+                except (psutil.AccessDenied, OSError) as exc:
+                    errors.append(f"PID {proc.pid}: kill failed ({exc})")
+
+            if alive:
+                gone_after_kill, still_alive = psutil.wait_procs(alive, timeout=2.0)
+                killed_pids.extend(proc.pid for proc in gone_after_kill)
+                for proc in still_alive:
+                    errors.append(f"PID {proc.pid}: still alive after forced kill")
+    elif targets:
+        errors.append("psutil unavailable; could not inspect or terminate matching orchestrator processes")
+
+    cleaned_pid_file = False
+    cleaned_discovery = False
+    pid_file = vault_root / ".orchestrator.pid"
+    discovery_file = vault_root / ".duckyai" / "api.json"
+
+    if fresh_start or kept_pid is None:
+        if pid_file.exists():
+            pid_file.unlink(missing_ok=True)
+            cleaned_pid_file = True
+        if discovery_file.exists():
+            discovery_file.unlink(missing_ok=True)
+            cleaned_discovery = True
+
+    return {
+        "matched_pids": [entry["pid"] for entry in matches],
+        "terminated_pids": sorted(set(terminated_pids)),
+        "killed_pids": sorted(set(killed_pids)),
+        "healthy_pid": kept_pid,
+        "errors": errors,
+        "cleaned_pid_file": cleaned_pid_file,
+        "cleaned_discovery": cleaned_discovery,
+    }
+
+
 def _get_vault_root(ctx) -> Path:
     """Resolve vault root from click context."""
     obj = ctx.obj or {}
     if obj.get("vault_root"):
         return Path(obj["vault_root"])
-    from .vault import find_vault_root
+    from .vault import resolve_vault
     working_dir = obj.get("working_dir")
-    return find_vault_root(Path(working_dir) if working_dir else None)
+    return resolve_vault(working_dir)
 
 
 def _show_all_vault_status(json_out: bool = False):
-    """Show orchestrator status for all registered vaults."""
-    from ..vault_registry import list_vaults
+    """Show orchestrator status for the configured home vault."""
+    from ..vault_registry import get_home_vault
     from ..config import Config
     from ..orchestrator.core import Orchestrator
 
-    vaults = list_vaults()
-    if not vaults:
+    home_vault = get_home_vault()
+    if not home_vault:
         if json_out:
-            click.echo(json.dumps({"vaults": []}))
+            click.echo(json.dumps({"home_vault": None}))
         else:
-            click.echo("No vaults registered. Use 'duckyai vault new <path>' or 'duckyai init'.")
+            click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
         return
 
     if json_out:
-        results = []
-        for v in vaults:
-            vault_path = Path(v["path"])
-            exists = vault_path.exists()
-            pid, alive = _read_pid(vault_path) if exists else (None, False)
-            entry = {
-                "id": v["id"],
-                "name": v["name"],
-                "path": v["path"],
-                "running": alive,
-                "pid": pid,
-            }
-            if exists and alive:
-                try:
-                    config = Config(vault_path=vault_path)
-                    orch = Orchestrator(vault_path=vault_path, config=config)
-                    status = orch.get_status()
-                    entry["agents_loaded"] = status.get("agents_loaded", 0)
-                except Exception:
-                    entry["agents_loaded"] = None
-            results.append(entry)
-        click.echo(json.dumps({"vaults": results}, indent=2))
+        vault_path = Path(home_vault["path"])
+        exists = vault_path.exists()
+        pid, alive = _read_pid(vault_path) if exists else (None, False)
+        result = {
+            "id": home_vault["id"],
+            "name": home_vault["name"],
+            "path": home_vault["path"],
+            "running": alive,
+            "pid": pid,
+        }
+        if exists and alive:
+            try:
+                config = Config(vault_path=vault_path)
+                orch = Orchestrator(vault_path=vault_path, config=config)
+                status = orch.get_status()
+                result["agents_loaded"] = status.get("agents_loaded", 0)
+            except Exception:
+                result["agents_loaded"] = None
+        click.echo(json.dumps({"home_vault": result}, indent=2))
     else:
         from rich.table import Table
         from rich.console import Console
 
-        table = Table(title="Orchestrator Status (All Vaults)")
+        table = Table(title="Orchestrator Status")
         table.add_column("Vault", style="cyan bold")
         table.add_column("Status", justify="center")
         table.add_column("PID", justify="right")
         table.add_column("Agents", justify="right")
         table.add_column("Path")
 
-        for v in vaults:
-            vault_path = Path(v["path"])
-            if not vault_path.exists():
-                table.add_row(v["name"], "⚠️  Missing", "-", "-", v["path"])
-                continue
-
+        vault_path = Path(home_vault["path"])
+        if not vault_path.exists():
+            table.add_row(home_vault["name"], "⚠️  Missing", "-", "-", home_vault["path"])
+        else:
             pid, alive = _read_pid(vault_path)
             status_str = "🟢 Running" if alive else "🔴 Stopped"
             pid_str = str(pid) if pid else "-"
@@ -134,7 +335,7 @@ def _show_all_vault_status(json_out: bool = False):
             except Exception:
                 pass
 
-            table.add_row(v["name"], status_str, pid_str, agent_count, v["path"])
+            table.add_row(home_vault["name"], status_str, pid_str, agent_count, home_vault["path"])
 
         Console().print(table)
 
@@ -164,23 +365,15 @@ def _start_single_vault(vault_path: Path, vault_name: str) -> dict:
 
     pid_file = vault_path / ".orchestrator.pid"
 
-    # Check if already running
-    pid, alive = _read_pid(vault_path)
-    if alive:
-        return {"vault": vault_name, "path": str(vault_path), "status": "already_running", "pid": pid}
-
-    # Clean stale PID file
-    if pid_file.exists():
-        pid_file.unlink(missing_ok=True)
-
     # Check duckyai.yml exists
     config_yaml = vault_path / CONFIG_FILENAME
     if not config_yaml.exists():
         return {"vault": vault_name, "path": str(vault_path), "status": "error", "message": "duckyai.yml not found"}
 
+    cleanup = _cleanup_orchestrator_processes(vault_path, fresh_start=True)
+
     # Spawn orchestrator as detached background process
-    duckyai_exe = shutil.which("duckyai")
-    cmd = [duckyai_exe, "-o"] if duckyai_exe else [sys.executable, "-m", "duckyai_cli.main.cli", "-o"]
+    cmd = get_duckyai_launch_cmd("-o")
 
     try:
         popen_kwargs = dict(
@@ -209,7 +402,15 @@ def _start_single_vault(vault_path: Path, vault_name: str) -> dict:
                     pass
             time.sleep(0.5)
 
-        return {"vault": vault_name, "path": str(vault_path), "status": "started", "pid": new_pid}
+        status = "restarted" if cleanup["terminated_pids"] or cleanup["killed_pids"] else "started"
+        return {
+            "vault": vault_name,
+            "path": str(vault_path),
+            "status": status,
+            "pid": new_pid,
+            "replaced_pids": cleanup["terminated_pids"] + cleanup["killed_pids"],
+            "cleanup_errors": cleanup["errors"],
+        }
     except Exception as e:
         return {"vault": vault_name, "path": str(vault_path), "status": "error", "message": str(e)}
 
@@ -222,8 +423,10 @@ def _echo_start_result(result: dict):
 
     if status == "started":
         click.echo(f"  🚀 {name} — started (PID {pid})")
-    elif status == "already_running":
-        click.echo(f"  🟢 {name} — already running (PID {pid})")
+    elif status == "restarted":
+        replaced = result.get("replaced_pids") or []
+        replaced_str = f" after stopping PID(s) {', '.join(str(p) for p in replaced)}" if replaced else ""
+        click.echo(f"  ♻️  {name} — restarted (PID {pid}){replaced_str}")
     elif status == "error":
         click.echo(f"  ⚠️  {name} — error: {result.get('message')}")
     elif status == "missing":
@@ -232,137 +435,22 @@ def _echo_start_result(result: dict):
 
 @orchestrator_group.command("start")
 @click.option("--json-output", "json_out", is_flag=True, help="Output JSON for machine consumption")
-@click.option("--all", "start_all", is_flag=True, help="Start orchestrators for all registered vaults")
 @click.pass_context
-def orch_start(ctx, json_out, start_all):
+def orch_start(ctx, json_out):
     """Start the orchestrator as a detached background daemon.
 
     \b
-    Without flags, shows an interactive picker to choose which vault(s)
-    to start. Use --vault <id> to target a specific vault, or --all
-    to start every registered vault.
+    Starts the orchestrator for the resolved home vault.
 
     \b
     Examples:
-        duckyai orchestrator start                  # Interactive picker
-        duckyai orchestrator start --vault doitall   # Start specific vault
-        duckyai orchestrator start --all             # Start all vaults
+        duckyai orchestrator start
     """
-    from ..vault_registry import list_vaults
-
-    obj = ctx.obj or {}
-
-    # --- Case 1: --all → start every registered vault ---
-    if start_all:
-        vaults = list_vaults()
-        if not vaults:
-            if json_out:
-                click.echo(json.dumps({"results": []}))
-            else:
-                click.echo("No vaults registered.")
-            return
-
-        results = []
-        for v in vaults:
-            vault_path = Path(v["path"])
-            if vault_path.exists():
-                results.append(_start_single_vault(vault_path, v["name"]))
-            else:
-                results.append({"vault": v["name"], "status": "missing", "path": v["path"]})
-
-        if json_out:
-            click.echo(json.dumps({"results": results}))
-        else:
-            for r in results:
-                _echo_start_result(r)
-        return
-
-    # --- Case 2: --vault was explicitly provided → start that vault ---
-    if obj.get("vault_explicit") and obj.get("vault_root"):
-        vault_root = Path(obj["vault_root"])
-        result = _start_single_vault(vault_root, vault_root.name)
-        if json_out:
-            click.echo(json.dumps(result))
-        else:
-            _echo_start_result(result)
-        return
-
-    # --- Case 3: No --vault, no --all → discover vaults and prompt ---
-    vaults = list_vaults()
-    if not vaults:
-        if json_out:
-            click.echo(json.dumps({"status": "error", "message": "No vaults registered"}))
-        else:
-            click.echo("No vaults registered. Use 'duckyai vault new <path>' or 'duckyai init'.")
-        return
-
-    # Partition into stopped/running
-    stopped = []
-    running = []
-    for v in vaults:
-        vault_path = Path(v["path"])
-        if not vault_path.exists():
-            continue
-        pid, alive = _read_pid(vault_path)
-        entry = {"id": v["id"], "name": v["name"], "path": v["path"], "pid": pid}
-        if alive:
-            running.append(entry)
-        else:
-            stopped.append(entry)
-
-    if not stopped:
-        if json_out:
-            click.echo(json.dumps({"status": "all_running", "running": running}))
-        else:
-            click.echo("All registered orchestrators are already running.")
-            for v in running:
-                click.echo(f"  🟢 {v['name']} (PID {v['pid']})")
-        return
-
-    if len(stopped) == 1 and not running:
-        # Only one vault and it's stopped — start it directly
-        v = stopped[0]
-        result = _start_single_vault(Path(v["path"]), v["name"])
-        if json_out:
-            click.echo(json.dumps(result))
-        else:
-            _echo_start_result(result)
-        return
-
+    vault_root = _get_vault_root(ctx)
+    result = _start_single_vault(vault_root, vault_root.name)
     if json_out:
-        click.echo(json.dumps({
-            "status": "multiple_vaults",
-            "message": "Multiple vaults available. Use --vault <id> or --all.",
-            "stopped": stopped,
-            "running": running,
-        }))
-        return
-
-    # Interactive picker — arrow-key navigation
-    from .vault import _interactive_select
-
-    if running:
-        click.echo(f"\n  Already running:")
-        for v in running:
-            click.echo(f"    🟢 {v['name']} (PID {v['pid']})")
-        click.echo()
-
-    click.echo("  Select vault to start (↑/↓ navigate, Enter select, q quit):\n")
-    menu_items = [{"name": v["name"], "path": v["path"]} for v in stopped]
-    menu_items.append({"name": "Start all", "path": f"{len(stopped)} vaults"})
-
-    idx = _interactive_select(menu_items)
-    if idx is None:
-        click.echo("  Cancelled.")
-        return
-
-    if idx == len(stopped):
-        for v in stopped:
-            result = _start_single_vault(Path(v["path"]), v["name"])
-            _echo_start_result(result)
+        click.echo(json.dumps(result))
     else:
-        v = stopped[idx]
-        result = _start_single_vault(Path(v["path"]), v["name"])
         _echo_start_result(result)
 
 
@@ -370,138 +458,69 @@ def orch_start(ctx, json_out, start_all):
 # duckyai orchestrator stop
 # =============================================================================
 def _stop_single_vault(vault_path: Path, vault_name: str) -> dict:
-    """Stop the orchestrator for a single vault. Returns a result dict."""
-    pid_file = vault_path / ".orchestrator.pid"
+    """Stop the orchestrator for a single vault. Returns a result dict.
+
+    Uses _cleanup_orchestrator_processes with fresh_start=True to robustly
+    find and terminate all matching orchestrator processes (daemon + children),
+    clean up the PID file, and clean up the discovery file.
+    """
     pid, alive = _read_pid(vault_path)
 
-    if not pid:
+    if not pid and not alive:
+        # No PID file — still try cleanup in case orphan processes exist
+        cleanup = _cleanup_orchestrator_processes(vault_path, fresh_start=True)
+        if cleanup["terminated_pids"] or cleanup["killed_pids"]:
+            killed = cleanup["terminated_pids"] + cleanup["killed_pids"]
+            return {
+                "vault": vault_name,
+                "path": str(vault_path),
+                "status": "stopped",
+                "pids_killed": killed,
+            }
         return {"vault": vault_name, "path": str(vault_path), "status": "not_running"}
 
-    if alive:
-        try:
-            os.kill(pid, signal.SIGTERM)
-            pid_file.unlink(missing_ok=True)
-            return {"vault": vault_name, "path": str(vault_path), "status": "stopped", "pid": pid}
-        except Exception as e:
-            pid_file.unlink(missing_ok=True)
-            return {"vault": vault_name, "path": str(vault_path), "status": "error", "message": str(e)}
-    else:
-        pid_file.unlink(missing_ok=True)
-        return {"vault": vault_name, "path": str(vault_path), "status": "not_running", "message": "Stale PID file cleaned up"}
+    cleanup = _cleanup_orchestrator_processes(vault_path, fresh_start=True)
+    killed = cleanup["terminated_pids"] + cleanup["killed_pids"]
+
+    if cleanup["errors"]:
+        return {
+            "vault": vault_name,
+            "path": str(vault_path),
+            "status": "error",
+            "message": "; ".join(cleanup["errors"]),
+            "pids_killed": killed,
+        }
+
+    if killed or not alive:
+        return {
+            "vault": vault_name,
+            "path": str(vault_path),
+            "status": "stopped",
+            "pid": pid,
+            "pids_killed": killed,
+        }
+
+    return {"vault": vault_name, "path": str(vault_path), "status": "not_running"}
 
 
 @orchestrator_group.command("stop")
 @click.option("--json-output", "json_out", is_flag=True, help="Output JSON for machine consumption")
-@click.option("--all", "stop_all", is_flag=True, help="Stop orchestrators for all registered vaults")
 @click.pass_context
-def orch_stop(ctx, json_out, stop_all):
+def orch_stop(ctx, json_out):
     """Stop the running orchestrator daemon.
 
     \b
-    Without flags, shows an interactive picker if multiple orchestrators
-    are running. Use --vault <id> to target a specific vault, or --all
-    to stop every running orchestrator.
+    Stops the orchestrator for the resolved home vault.
 
     \b
     Examples:
-        duckyai orchestrator stop                  # Interactive picker
-        duckyai orchestrator stop --vault doitall   # Stop specific vault
-        duckyai orchestrator stop --all             # Stop all vaults
+        duckyai orchestrator stop
     """
-    from ..vault_registry import list_vaults
-
-    obj = ctx.obj or {}
-
-    # --- Case 1: --all → stop every registered vault (highest priority) ---
-    if stop_all:
-        vaults = list_vaults()
-        if not vaults:
-            if json_out:
-                click.echo(json.dumps({"results": []}))
-            else:
-                click.echo("No vaults registered.")
-            return
-
-        results = []
-        for v in vaults:
-            vault_path = Path(v["path"])
-            if vault_path.exists():
-                results.append(_stop_single_vault(vault_path, v["name"]))
-            else:
-                results.append({"vault": v["name"], "status": "missing", "path": v["path"]})
-
-        if json_out:
-            click.echo(json.dumps({"results": results}))
-        else:
-            for r in results:
-                _echo_stop_result(r)
-        return
-
-    # --- Case 2: --vault was explicitly provided → stop that specific vault ---
-    if obj.get("vault_explicit") and obj.get("vault_root"):
-        vault_root = Path(obj["vault_root"])
-        result = _stop_single_vault(vault_root, vault_root.name)
-        if json_out:
-            click.echo(json.dumps(result))
-        else:
-            _echo_stop_result(result)
-        return
-
-    # --- Case 3: No --vault, no --all → discover running orchestrators and prompt ---
-    vaults = list_vaults()
-    running = []
-    for v in vaults:
-        vault_path = Path(v["path"])
-        if vault_path.exists():
-            pid, alive = _read_pid(vault_path)
-            if alive:
-                running.append({"id": v["id"], "name": v["name"], "path": v["path"], "pid": pid})
-
-    if not running:
-        if json_out:
-            click.echo(json.dumps({"status": "none_running"}))
-        else:
-            click.echo("No orchestrators are currently running.")
-        return
-
-    if len(running) == 1:
-        # Only one running — stop it directly
-        v = running[0]
-        result = _stop_single_vault(Path(v["path"]), v["name"])
-        if json_out:
-            click.echo(json.dumps(result))
-        else:
-            _echo_stop_result(result)
-        return
-
+    vault_root = _get_vault_root(ctx)
+    result = _stop_single_vault(vault_root, vault_root.name)
     if json_out:
-        # Non-interactive mode without --all or --vault: report what's running
-        click.echo(json.dumps({
-            "status": "multiple_running",
-            "message": "Multiple orchestrators running. Use --vault <id> or --all.",
-            "running": running,
-        }))
-        return
-
-    # Interactive picker — arrow-key navigation
-    from .vault import _interactive_select
-
-    click.echo("  Select orchestrator to stop (↑/↓ navigate, Enter select, q quit):\n")
-    menu_items = [{"name": f"{v['name']} (PID {v['pid']})", "path": v["path"]} for v in running]
-    menu_items.append({"name": "Stop all", "path": f"{len(running)} orchestrators"})
-
-    idx = _interactive_select(menu_items)
-    if idx is None:
-        click.echo("  Cancelled.")
-        return
-
-    if idx == len(running):
-        for v in running:
-            result = _stop_single_vault(Path(v["path"]), v["name"])
-            _echo_stop_result(result)
+        click.echo(json.dumps(result))
     else:
-        v = running[idx]
-        result = _stop_single_vault(Path(v["path"]), v["name"])
         _echo_stop_result(result)
 
 
@@ -532,22 +551,14 @@ def _echo_stop_result(result: dict):
 def orch_status(ctx, json_out):
     """Show orchestrator status, loaded agents, and schedules.
 
-    Without --vault, shows status for all registered vaults.
-    With --vault, shows detailed status for that specific vault.
+    Shows status for the resolved home vault.
     """
     from ..config import Config
     from ..orchestrator.core import Orchestrator
     from rich.panel import Panel
 
     obj = ctx.obj or {}
-
-    # If --vault was explicitly provided, show single-vault detail
-    # Otherwise show global multi-vault status
-    if not obj.get("vault_root"):
-        _show_all_vault_status(json_out)
-        return
-
-    vault_root = Path(obj["vault_root"])
+    vault_root = _get_vault_root(ctx)
     config_file = obj.get("config_file")
     working_dir = obj.get("working_dir")
 
@@ -752,24 +763,27 @@ def orch_list_agents(ctx, json_out):
     type=str,
     help="Path to settings JSON file or JSON string for Claude Code",
 )
-@click.option("--lookback", "lookback_hours", type=int, default=None, help="Lookback hours for Teams agents (TCS/TMS) on first run or manual trigger.")
+@click.option("--lookback", "lookback_hours", type=int, default=None, help="Lookback N hours (ignores watermark). For TCS/TMS.")
+@click.option("--since-last-sync", "since_last_sync", is_flag=True, default=False, help="Use watermark (since last sync). Default for TCS/TMS when watermark exists.")
 @click.pass_context
-def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, lookback_hours):
+def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, lookback_hours, since_last_sync):
     """Trigger an orchestrator agent by abbreviation.
 
     \b
     If AGENT is provided, triggers it directly.
     Otherwise, shows an interactive selector (human mode only).
-    Without --vault, prompts for vault selection when multiple exist.
+
+    \b
+    Time range for TCS/TMS:
+      --since-last-sync     Fetch only messages since last sync watermark (default)
+      --lookback 24         Fetch messages from the last 24 hours (ignores watermark)
 
     \b
     Examples:
-        duckyai orchestrator trigger EIC
-        duckyai orchestrator trigger EIC --file 00-Inbox/article.md
-        duckyai --vault doitall orchestrator trigger TCS
+        duckyai orchestrator trigger TCS
+        duckyai orchestrator trigger TCS --since-last-sync
+        duckyai orchestrator trigger TCS --lookback 8
     """
-    from ..vault_registry import list_vaults
-
     obj = ctx.obj or {}
     working_dir = obj.get("working_dir")
     config_file = obj.get("config_file")
@@ -777,34 +791,7 @@ def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, 
     combined_mcp_config = parent_mcp_config + mcp_config if mcp_config else parent_mcp_config
     effective_claude_settings = claude_settings or obj.get("claude_settings")
 
-    # --- Resolve vault root (with interactive picker if needed) ---
-    if obj.get("vault_explicit") and obj.get("vault_root"):
-        vault_root = Path(obj["vault_root"])
-    else:
-        vaults = list_vaults()
-        valid_vaults = [v for v in vaults if Path(v["path"]).exists()]
-
-        if not valid_vaults:
-            click.echo("No vaults registered. Use 'duckyai vault new <path>' or 'duckyai init'.")
-            return
-        elif len(valid_vaults) == 1:
-            vault_root = Path(valid_vaults[0]["path"])
-        elif json_out:
-            click.echo(json.dumps({
-                "status": "error",
-                "message": "Multiple vaults available. Use --vault <id> to specify.",
-                "vaults": [{"id": v["id"], "name": v["name"]} for v in valid_vaults],
-            }))
-            sys.exit(1)
-        else:
-            from .vault import _interactive_select
-            click.echo("\n  Select vault (↑/↓ navigate, Enter select, q quit):\n")
-            menu_items = [{"name": v["name"], "path": v["path"]} for v in valid_vaults]
-            idx = _interactive_select(menu_items)
-            if idx is None:
-                click.echo("  Cancelled.")
-                return
-            vault_root = Path(valid_vaults[idx]["path"])
+    vault_root = _get_vault_root(ctx)
 
     # Auto-discover MCP config if none provided
     if not combined_mcp_config:
@@ -814,19 +801,20 @@ def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, 
             combined_mcp_config = (auto_mcp,)
 
     if json_out and not agent:
-        click.echo(json.dumps({"status": "error", "message": "Agent abbreviation required for JSON mode"}))
+        if json_out:
+            click.echo(json.dumps({"status": "error", "message": "Agent abbreviation required for non-interactive mode"}))
         sys.exit(1)
 
     if json_out:
-        # Non-interactive JSON execution
         _trigger_agent_json(
             agent, input_file, config_file, working_dir,
             combined_mcp_config, effective_claude_settings, ctx,
             vault_root=vault_root,
             lookback_hours=lookback_hours,
+            since_last_sync=since_last_sync,
+            json_out=json_out,
         )
     else:
-        # Delegate to existing interactive trigger logic
         from .trigger_agent import trigger_orchestrator_agent
         trigger_orchestrator_agent(
             abbreviation=agent,
@@ -840,12 +828,30 @@ def orch_trigger(ctx, agent, input_file, json_out, mcp_config, claude_settings, 
         )
 
 
-def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config, claude_settings, ctx, vault_root=None, lookback_hours=None):
-    """Trigger an agent and return JSON result."""
+def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config, claude_settings, ctx, vault_root=None, lookback_hours=None, since_last_sync=False, json_out=True):
+    """Trigger an agent non-interactively. Outputs JSON when json_out=True, plain text otherwise."""
     import time as _time
     from ..config import Config
     from ..logger import Logger
     from ..orchestrator.core import Orchestrator
+
+    def _output(data: dict):
+        if json_out:
+            click.echo(json.dumps(data))
+        else:
+            status = data.get("status", "unknown")
+            msg = data.get("message") or data.get("error") or ""
+            agent_name = data.get("agent", agent)
+            duration = data.get("duration_seconds")
+            if status == "completed":
+                line = f"  ✓ {agent_name} completed"
+                if duration:
+                    line += f" ({duration}s)"
+                click.echo(line)
+            elif status in ("failed", "error"):
+                click.echo(f"  ⚠️  {agent_name}: {msg}", err=True)
+            else:
+                click.echo(f"  {agent_name}: {msg}")
 
     if vault_root is None:
         vault_root = _get_vault_root(ctx)
@@ -864,22 +870,27 @@ def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config,
             claude_settings=claude_settings,
         )
     except Exception as e:
-        click.echo(json.dumps({"status": "error", "message": f"Failed to init orchestrator: {e}"}))
+        _output({"status": "error", "message": f"Failed to init orchestrator: {e}"})
         sys.exit(1)
 
     agent_upper = agent.upper()
     if agent_upper not in orch.agent_registry.agents:
         available = sorted(orch.agent_registry.agents.keys())
-        click.echo(json.dumps({
+        _output({
             "status": "error",
             "message": f"Agent '{agent}' not found",
             "available_agents": available,
-        }))
+        })
         sys.exit(1)
 
     start = _time.time()
     try:
-        agent_params_override = {'lookback_hours': lookback_hours} if lookback_hours is not None else None
+        agent_params_override = None
+        if lookback_hours is not None:
+            agent_params_override = {'lookback_hours': lookback_hours, 'ignore_watermark': True}
+        elif since_last_sync:
+            # Explicit watermark mode — don't set lookback_hours, let watermark take over
+            agent_params_override = {'ignore_watermark': False}
         ctx_result = orch.trigger_agent_once(agent_upper, input_file=input_file, agent_params_override=agent_params_override)
         elapsed = _time.time() - start
 
@@ -891,22 +902,22 @@ def _trigger_agent_json(agent, input_file, config_file, working_dir, mcp_config,
             }
             if ctx_result.task_file:
                 result["task_file"] = str(ctx_result.task_file.name)
-            click.echo(json.dumps(result))
+            _output(result)
         else:
             error_msg = ctx_result.error_message if ctx_result else "Unknown error"
-            click.echo(json.dumps({
+            _output({
                 "status": "failed",
                 "agent": agent_upper,
                 "duration_seconds": round(elapsed, 1),
                 "error": error_msg,
-            }))
+            })
             sys.exit(1)
     except Exception as e:
         elapsed = _time.time() - start
-        click.echo(json.dumps({
+        _output({
             "status": "error",
             "agent": agent_upper,
             "duration_seconds": round(elapsed, 1),
             "error": str(e),
-        }))
+        })
         sys.exit(1)

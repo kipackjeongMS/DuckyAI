@@ -64,7 +64,7 @@ Agent should automatically load this skill when:
 **Setup Process**:
 1. Explain orchestrator purpose and benefits
 2. Show duckyai.yml structure (nodes, pollers, defaults)
-3. Configure first agent (e.g., EIC - Enrich Ingested Content)
+3. Configure first agent (e.g., CEA - Content Enrichment Agent)
 4. Test agent execution with file trigger
 
 **Prompt**: `DUCKYAI - Orchestrator Setup.md`
@@ -88,7 +88,7 @@ defaults:
 
 nodes:
   - type: agent
-    name: Enrich Ingested Content (EIC)
+    name: Content Enrichment Agent (CEA)
     input_path: 00-Inbox
     output_path: 03-Knowledge/Documentation
     executor: claude_code
@@ -119,8 +119,8 @@ pollers:
 | 필드 | 필수 | 설명 | 예시 |
 |------|------|------|------|
 | `type` | ✓ | 노드 타입 | `agent` |
-| `name` | ✓ | Agent 이름 | `Enrich Ingested Content (EIC)` |
-| `prompt` | | 프롬프트 파일 참조 (ABBR) | `EIC` |
+| `name` | ✓ | Agent 이름 | `Content Enrichment Agent (CEA)` |
+| `prompt` | | 프롬프트 파일 참조 (ABBR) | `CEA` |
 | `input_path` | | 입력 디렉토리 (파일 트리거) | `00-Inbox` |
 | `output_path` | | 출력 디렉토리 | `03-Knowledge/Documentation` |
 | `executor` | | 실행 엔진 | `claude_code`, `codex_cli`, `gemini_cli` |
@@ -135,7 +135,7 @@ pollers:
 
 | Type | Trigger | Example |
 |------|---------|---------|
-| File-triggered | New/updated file in input_path | EIC, GDR |
+| File-triggered | New/updated file in input_path | CEA |
 | Cron-scheduled | Time-based (cron expression) | DDW |
 
 ### Worker Configuration Fields
@@ -154,7 +154,7 @@ Multi-worker 설정 시 각 worker에 사용 가능한 필드:
 ```yaml
 - type: agent
   name: Article Summary Comparison
-  prompt: EIC
+  prompt: CEA
   input_path: 00-Inbox
   workers:
     - executor: gemini_cli
@@ -192,7 +192,7 @@ pollers:
     target_dir: "00-Inbox"
     albums:
       - "Screenshots"
-      - "PKM"
+      - "DuckAI"
 
   apple_notes:
     enabled: false

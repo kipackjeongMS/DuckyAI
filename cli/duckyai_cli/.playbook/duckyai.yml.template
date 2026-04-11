@@ -57,14 +57,6 @@ nodes:
     max_parallel: 1
     enabled: true
   - type: agent
-    name: Generate Daily Roundup (GDR)
-    cron: 0 18 * * 1-5
-    output_path: 04-Periodic/Daily
-    output_type: new_file
-    requires_input_file: false
-    max_parallel: 1
-    enabled: true
-  - type: agent
     name: Topic Index Update (TIU)
     cron: 30 18 * * 5
     input_path: 04-Periodic/Daily

@@ -19,9 +19,8 @@ These files are synced to users when they run `vault-update`:
 
 | Path | What it is |
 |------|-----------|
-| `mcp-server/src/index.ts` | MCP server source |
-| `mcp-server/package.json` | MCP dependencies |
-| `mcp-server/tsconfig.json` | TypeScript config |
+| `cli/duckyai_cli/api/vault_service.py` | Native Python vault tool implementations |
+| `cli/duckyai_cli/api/routes_vault.py` | Native vault API routing |
 | `Templates/*.md` | Obsidian note templates |
 | `.github/prompts/*.prompt.md` | Copilot prompts |
 | `.github/skills/*/SKILL.md` | Copilot skill definitions |
@@ -66,7 +65,7 @@ git checkout -b users/yourname/description
 
 - **New skill:** Create `.github/skills/your-skill/SKILL.md`
 - **New prompt:** Create `.github/prompts/your-prompt.prompt.md`
-- **MCP server change:** Edit `mcp-server/src/index.ts`, then `npm run build` in `mcp-server/`
+- **Vault tool change:** Edit `cli/duckyai_cli/api/vault_service.py` and add or update tests under `cli/duckyai_cli/tests/unit/`
 - **Template change:** Edit files in `Templates/`
 - **Instructions change:** Edit structural sections in `.github/copilot-instructions.md` (don't touch placeholder sections)
 
@@ -78,7 +77,7 @@ git checkout -b users/yourname/description
 
 ### 4. Test your changes
 
-- Verify the MCP server builds: `cd mcp-server && npm run build`
+- Verify the vault tool tests pass: `cd cli && python -m pytest duckyai_cli/tests/unit/test_vault_service.py duckyai_cli/tests/unit/test_routes_vault.py -q`
 - Check for accidental personal content: no hardcoded usernames, paths, or team-specific references
 - If you added a skill, test it in your own vault first
 
@@ -108,7 +107,7 @@ Create a PR targeting `main` in Azure DevOps.
 ### Do
 - ✅ Keep changes general and reusable
 - ✅ Use placeholders (`[USER_NAME]`, `[USER_ROLE]`) in user-facing config
-- ✅ Test MCP server builds before submitting
+- ✅ Test the native vault API and service coverage before submitting
 - ✅ Update CHANGELOG.md and version.json
 - ✅ Add `.gitkeep` files in new empty directories
 

@@ -1,16 +1,50 @@
 """
-Utilities for reading and writing markdown file frontmatter.
+Utilities for reading and writing markdown file frontmatter and links.
 
 This module provides functions to parse and update YAML frontmatter
 in markdown files. Used by both KTM (legacy) and orchestrator (new).
 """
+import os
 import re
 import yaml
 from typing import Dict, Any
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from io import StringIO
 from ruamel.yaml import YAML
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString
+
+
+def md_link(display: str, target_vault_rel: str, source_vault_rel: str) -> str:
+    """Generate a standard markdown link with a relative path from source file to target file.
+
+    Both paths must be vault-relative (e.g. ``01-Work/Tasks/Fix Bug.md``).
+    The function computes the relative traversal from *source* to *target*
+    and URL-encodes spaces.
+
+    Args:
+        display: The clickable display text.
+        target_vault_rel: Vault-relative path to the target file (with .md).
+        source_vault_rel: Vault-relative path to the file that will contain
+            the link.
+
+    Returns:
+        A markdown link, e.g. ``[Fix Bug](../../01-Work/Tasks/Fix%20Bug.md)``.
+    """
+    source_dir = str(PurePosixPath(source_vault_rel).parent)
+    rel = os.path.relpath(target_vault_rel, source_dir).replace("\\", "/")
+    rel = rel.replace(" ", "%20")
+    return f"[{display}]({rel})"
+
+
+def md_image(alt: str, target_vault_rel: str, source_vault_rel: str) -> str:
+    """Generate a standard markdown image embed with a relative path.
+
+    Same semantics as :func:`md_link` but prefixed with ``!``.
+    """
+    source_dir = str(PurePosixPath(source_vault_rel).parent)
+    rel = os.path.relpath(target_vault_rel, source_dir).replace("\\", "/")
+    rel = rel.replace(" ", "%20")
+    return f"![{alt}]({rel})"
 
 
 def extract_frontmatter(content: str) -> Dict[str, Any]:
@@ -87,13 +121,9 @@ def update_frontmatter_field(content: str, field: str, value: Any) -> str:
         # Parse existing YAML
         data = yaml_parser.load(yaml_content) or {}
         
-        # Update field with proper quoting
+        # Preserve legacy behavior expected by tests: quote all string values.
         if isinstance(value, str):
-            # Use double quotes for strings that need quoting (special chars, spaces, etc.)
-            if any(char in value for char in ['"', "'", ':', '[', ']', '{', '}', '&', '*', '#', '?', '|', '-', '<', '>', '=', '!', '%', '@', '`', '\n']):
-                data[field] = DoubleQuotedScalarString(value)
-            else:
-                data[field] = value
+            data[field] = DoubleQuotedScalarString(value)
         else:
             data[field] = value
         
@@ -148,14 +178,10 @@ def update_frontmatter_fields(content: str, updates: Dict[str, Any]) -> str:
         # Parse existing YAML
         data = yaml_parser.load(yaml_content) or {}
         
-        # Update all fields with proper quoting
+        # Preserve legacy behavior expected by tests: quote all string values.
         for field, value in updates.items():
             if isinstance(value, str):
-                # Use double quotes for strings that need quoting
-                if any(char in value for char in ['"', "'", ':', '[', ']', '{', '}', '&', '*', '#', '?', '|', '-', '<', '>', '=', '!', '%', '@', '`', '\n']):
-                    data[field] = DoubleQuotedScalarString(value)
-                else:
-                    data[field] = value
+                data[field] = DoubleQuotedScalarString(value)
             else:
                 data[field] = value
         

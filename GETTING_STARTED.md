@@ -9,9 +9,8 @@ This guide walks you through setting up your DuckyAI vault step by step.
 | Tool | Required | Why |
 |------|----------|-----|
 | [Obsidian](https://obsidian.md/) | ✅ | The vault viewer/editor |
-| [VS Code](https://code.visualstudio.com/) | ✅ | Copilot host + MCP server |
+| [VS Code](https://code.visualstudio.com/) | ✅ | Copilot host + vault automation |
 | [GitHub Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot) | ✅ | AI assistant with skills/prompts |
-| [Node.js](https://nodejs.org/) 18+ | ✅ | MCP server runtime |
 | Git | ✅ | Repo sync, version control |
 
 ## Step 1: Clone the Template
@@ -26,16 +25,9 @@ cd "$HOME\Documents\Obsidian\DuckyAI"
 
 Open `DuckyAI.code-workspace` in VS Code. This sets up the workspace with the vault and any synced doc repos.
 
-## Step 3: Build the MCP Server
+## Step 3: Use the Native Vault Tooling
 
-```powershell
-cd mcp-server
-npm install
-npm run build
-cd ..
-```
-
-The MCP server provides 9 automation tools that Copilot uses to manage your vault. After building, VS Code should detect the MCP server configuration in `.vscode/mcp.json`.
+The vault automation surface now runs natively in Python through the CLI daemon and HTTP API. There is no separate Node.js build step for the vault tools.
 
 ## Step 4: Personalize Your Vault
 
@@ -118,14 +110,14 @@ When new template versions are released:
 @workspace update my vault
 ```
 
-The update skill pulls template changes (MCP server, templates, prompts, skills) without touching your personal content (tasks, notes, people, etc.).
+The update skill pulls template changes (Python vault tools, templates, prompts, skills) without touching your personal content (tasks, notes, people, etc.).
 
 ## Troubleshooting
 
-### MCP server not detected
+### Vault automation not detected
 - Ensure you opened `DuckyAI.code-workspace` (not just the folder)
-- Check that `mcp-server/dist/index.js` exists (run `npm run build`)
-- Restart VS Code or run **MCP: Restart Server** from the command palette
+- Ensure the CLI environment is installed and the daemon can start
+- Restart VS Code or restart the DuckyAI daemon if discovery looks stale
 
 ### Daily note template not working
 - Ensure Periodic Notes plugin is installed and configured

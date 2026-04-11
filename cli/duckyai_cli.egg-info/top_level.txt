@@ -1,1 +1,0 @@
-duckyai_cli

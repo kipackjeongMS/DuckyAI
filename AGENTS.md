@@ -12,7 +12,7 @@ NEVER proactively create documentation or README files.
 
 # Generic AI Agent Rules
 
-*These rules apply to all AI agents (Claude Code, Gemini, Codex) working in this PKM vault.*
+*These rules apply to all AI agents (Claude Code, Gemini, Codex) working in this DuckAI vault.*
 
 ## Core Mission & Principles
 - **Your mission is to enhance and organize user's knowledge**
@@ -149,9 +149,9 @@ tags:
 - Verify file existence before linking
   - Fix broken links immediately
 - **Link to original sources, not topic indices**
-  - Topic files (e.g., `Topics/PKM.md`) are indices/aggregations
+  - Topic files (e.g., `Topics/DuckAI.md`) are indices/aggregations
   - Always link to the original article, clipping, or document where content first appeared
-  - Example: Link to `[[Ingest/Clippings/2025-08-15 역스킬 현상]]` not `[[Topics/PKM#역스킬]]`
+  - Example: Link to `[[Ingest/Clippings/2025-08-15 역스킬 현상]]` not `[[Topics/DuckAI#역스킬]]`
   - This maintains proper source attribution and traceability
   - **Tip**: `obsidian unresolved` lists all broken links; `obsidian backlinks file="Note"` checks incoming links (see `obsidian-cli` skill)
 
@@ -165,7 +165,7 @@ tags:
 ### Heading Structure Guidelines
 > **Detailed guide**: See `.github/skills/obsidian-markdown-structure/SKILL.md`
 
-- Clippings (EIC/ICT): begin with `## Summary`, then `## Improve Capture & Transcript (ICT)`, then transcript
+- Clippings (CEA/ICT): begin with `## Summary`, then `## Improve Capture & Transcript (ICT)`, then transcript
 - ICT means improve the transcript (correct grammar, translate to Korean, structure with h3), not summarize. Keep length comparable to source; summaries live only under `## Summary`
 - Lifelog: use H1 `# YYYY-MM-DD Lifelog - <Assistant>` then H2 sections (Monologues, Conversations, etc.)
 - Topics/Projects: start with H2 summary; avoid duplicating title as H1

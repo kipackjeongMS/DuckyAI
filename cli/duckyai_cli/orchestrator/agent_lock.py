@@ -27,15 +27,26 @@ def _is_pid_alive(pid: int) -> bool:
     if pid <= 0:
         return False
     try:
-        # On Windows, os.kill(pid, 0) doesn't work reliably — use ctypes
         if os.name == 'nt':
             import ctypes
             kernel32 = ctypes.windll.kernel32
-            handle = kernel32.OpenProcess(0x100000, False, pid)  # SYNCHRONIZE
-            if handle:
-                kernel32.CloseHandle(handle)
+            # PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE
+            handle = kernel32.OpenProcess(0x101000, False, pid)
+            if not handle:
+                return False
+            try:
+                # Check if process has exited (WaitForSingleObject with 0 timeout)
+                result = kernel32.WaitForSingleObject(handle, 0)
+                if result == 0:  # WAIT_OBJECT_0 — process has exited
+                    return False
+                # Also check exit code — non-STILL_ACTIVE means terminated
+                exit_code = ctypes.c_ulong()
+                if kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                    if exit_code.value != 259:  # STILL_ACTIVE = 259
+                        return False
                 return True
-            return False
+            finally:
+                kernel32.CloseHandle(handle)
         else:
             os.kill(pid, 0)
             return True

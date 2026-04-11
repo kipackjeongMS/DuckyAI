@@ -109,7 +109,7 @@ def copy_vault_folder(source_dir: Path, vault_folder: str, target_dir: Path) -> 
 
 @click.group("template")
 def template_group():
-    """Manage PKM vault templates."""
+    """Manage DuckAI vault templates."""
     pass
 
 

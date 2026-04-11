@@ -265,7 +265,7 @@ class AppleNotesPoller(BasePoller):
                 with open(image_path, 'wb') as f:
                     f.write(decoded_data)
                 
-                extracted_images.append(f"![[{filename}]]")
+                extracted_images.append(f"![{filename}](_files_/{filename.replace(' ', '%20')})")
                 return ""
             except Exception as e:
                 logger.warning(f"Could not extract image: {e}")

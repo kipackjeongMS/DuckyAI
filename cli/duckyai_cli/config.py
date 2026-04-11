@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -267,6 +268,21 @@ class Config:
         "Atlantic Standard Time": "America/Halifax",
     }
 
+    def _get_os_timezone_name(self) -> str:
+        """Resolve the local OS timezone name without surfacing tzlocal env warnings."""
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    message=r"Timezone offset does not match system offset: .*",
+                    category=UserWarning,
+                )
+                from tzlocal import get_localzone
+
+                return str(get_localzone())
+        except Exception:
+            return "UTC"
+
     def get_user_timezone(self) -> str:
         """Return the user's timezone as an IANA name.
 
@@ -277,11 +293,7 @@ class Config:
         if configured:
             # Map Windows timezone name to IANA if needed
             return self._WINDOWS_TZ_MAP.get(configured, configured)
-        try:
-            from tzlocal import get_localzone
-            return str(get_localzone())
-        except Exception:
-            return "UTC"
+        return self._get_os_timezone_name()
 
     def user_now(self) -> 'datetime':
         """Return the current datetime in the user's configured timezone.
@@ -301,8 +313,7 @@ class Config:
         except (KeyError, Exception):
             # Configured name invalid — try OS local timezone
             try:
-                from tzlocal import get_localzone
-                tz = ZoneInfo(str(get_localzone()))
+                tz = ZoneInfo(self._get_os_timezone_name())
             except Exception:
                 tz = timezone.utc
         return datetime.now(tz)

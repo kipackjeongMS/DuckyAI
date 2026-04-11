@@ -9,7 +9,7 @@ This folder contains canonical agent definitions for the DUCKYAI orchestrator sy
 **Examples**:
 - `Enrich Ingested Content (EIC).md`
 - `Process Life Logs (PLL).md`
-- `Ad-hoc Research within PKM (ARP).md`
+- `Ad-hoc Research within DuckAI (ARP).md`
 
 **Rules**:
 - Use descriptive full title (not "EIC Agent" but "Enrich Ingested Content")
@@ -273,7 +273,7 @@ output_type: new_file
 - Extracts and processes content
 - Creates markdown output with structured content
 
-**Example**: EDM (Extract Document to Markdown)
+**Example**: EIC (Enrich Ingested Content)
 
 ---
 
@@ -415,31 +415,27 @@ Create comprehensive daily summary integrating multiple sources.
 
 ---
 
-### Example 3: Image Processing
+### Example 3: Content Processing
 
 ```yaml
 ---
-title: Extract Document to Markdown (EDM)
-abbreviation: EDM
+title: Enrich Ingested Content (EIC)
+abbreviation: EIC
 category: ingestion
 input_path: 00-Inbox
 input_type: new_file
-input_pattern: "*.{pdf,docx,doc,txt,epub}"
-output_path: 03-Knowledge/Documentation
-output_type: new_file
-output_naming: "{title}.md"
+input_pattern: "*.md"
+output_path: 03-Knowledge
+output_type: updated_file
 ---
 
-Extract and convert documents to structured markdown.
+Enrich and structure ingested content with summaries and metadata.
 
 ## Input
-- Document files in `00-Inbox/`
-- Supported formats: PDF, DOCX, DOC, TXT, EPUB
+- New markdown files in `00-Inbox/`
 
 ## Output
-- Structured markdown in `03-Knowledge/Documentation/`
-- Preserves document structure and headings
-- Extracted text with proper formatting
+- Enriched content with summaries and proper frontmatter
 ```
 
 ---

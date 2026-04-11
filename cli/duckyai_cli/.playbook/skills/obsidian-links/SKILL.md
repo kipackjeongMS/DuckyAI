@@ -50,14 +50,14 @@ Activate when you need to:
 **Use exact header text, character-for-character**:
 ```markdown
 Source file header:
-## PKM System Maintenance
+## DuckAI System Maintenance
 
 ✅ CORRECT:
-[[04-Periodic/Daily/2025-10-31#PKM System Maintenance]]
+[[04-Periodic/Daily/2025-10-31#DuckAI System Maintenance]]
 
 ❌ INCORRECT:
-[[04-Periodic/Daily/2025-10-31#PKM System]] (truncated)
-[[04-Periodic/Daily/2025-10-31#pkm-system-maintenance]] (slug format)
+[[04-Periodic/Daily/2025-10-31#DuckAI System]] (truncated)
+[[04-Periodic/Daily/2025-10-31#duckai-system-maintenance]] (slug format)
 ```
 
 **Critical**: Match characters, punctuation, spacing exactly as written.
@@ -232,7 +232,7 @@ Validation:
 3. Use complete category path
 
 Examples:
-- [[03-Knowledge/Topics/Technology/PKM]]
+- [[03-Knowledge/Topics/Technology/DuckAI]]
 - [[03-Knowledge/Topics/Career/Skills]]
 
 ❌ NEVER link to non-existent topic pages

@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from ..config import Config
 
 logger = Logger()
+CLAUDE_CLI_PATH = shutil.which('claude') or 'claude'
 
 class ExecutionManager:
     """
@@ -48,10 +49,14 @@ class ExecutionManager:
         self.vault_path = Path(vault_path)
         self.working_dir = Path(working_dir) if working_dir else self.vault_path
         self.max_concurrent = max_concurrent
-        self.config = config or Config()
+        self.config = config or Config(vault_path=self.vault_path)
         self.orchestrator_settings = orchestrator_settings or {}
         self.mcp_config = mcp_config
         self.claude_settings = claude_settings
+
+        # Container isolation settings
+        self._use_container_global = self.orchestrator_settings.get('use_container', False)
+        self._container_config = self.orchestrator_settings.get('container', {})
 
         # Auto-discover MCP config if none provided
         if not self.mcp_config:
@@ -75,9 +80,18 @@ class ExecutionManager:
         # when the next file-system or cron event arrives.
         self._on_slot_freed: Optional[callable] = None
 
-        # Task file manager
-        from .task_manager import TaskFileManager
-        self.task_manager = TaskFileManager(vault_path, config=self.config, orchestrator_settings=orchestrator_settings)
+        # Task file manager (v2: daily execution logs)
+        from .task_manager_v2 import TaskFileManagerV2
+        self.task_manager = TaskFileManagerV2(vault_path, config=self.config, orchestrator_settings=orchestrator_settings)
+
+    def _should_use_container(self, agent: AgentDefinition) -> bool:
+        """Resolve whether this agent should run in a container.
+
+        Per-agent `use_container` overrides the global setting.
+        """
+        if agent.use_container is not None:
+            return agent.use_container
+        return self._use_container_global
 
     def _auto_discover_mcp_config(self) -> Optional[tuple]:
         """Auto-discover MCP config from CLI's get_mcp_config and vault's .github/copilot/mcp.json."""
@@ -163,6 +177,13 @@ class ExecutionManager:
         # Cross-process lock — prevents same agent running from multiple terminals
         from .agent_lock import acquire_agent_lock, release_agent_lock
         if not acquire_agent_lock(self.vault_path, agent.abbreviation):
+            # Release pre-reserved slot if one was held by the caller
+            if slot_reserved:
+                with self._count_lock:
+                    self._running_count -= 1
+                with self._agent_lock:
+                    self._agent_counts[agent.abbreviation] = max(0, self._agent_counts.get(agent.abbreviation, 1) - 1)
+
             ctx = ExecutionContext(
                 agent=agent,
                 trigger_data=trigger_data,
@@ -202,17 +223,23 @@ class ExecutionManager:
         log_path = self._prepare_log_path(agent, ctx)
         ctx.log_file = log_path
 
+        existing_task_id = trigger_data.get('_existing_task_id')
         existing_task_path = trigger_data.get('_existing_task_file')
-        if existing_task_path:
+        if existing_task_id:
+            # V2: reuse existing execution entry
+            ctx.task_file = existing_task_id
+            self.task_manager.update_task_status(existing_task_id, "IN_PROGRESS")
+            logger.info(f"Using existing execution entry: [{existing_task_id}]", console=True)
+        elif existing_task_path:
+            # Legacy: reuse existing task file (Path)
             task_file = Path(existing_task_path)
             ctx.task_file = task_file
-
             self.task_manager.update_task_status(task_file, "IN_PROGRESS")
             logger.info(f"Using existing task file: {task_file.name}", console=True)
         else:
-            # Create task file BEFORE execution starts
-            task_path = self.task_manager.create_task_file(ctx, agent)
-            ctx.task_file = task_path
+            # Create new execution entry
+            task_handle = self.task_manager.create_task_file(ctx, agent)
+            ctx.task_file = task_handle
 
         try:
             logger.debug(f"Starting execution: {agent.abbreviation} (ID: {ctx.execution_id})")
@@ -232,83 +259,72 @@ class ExecutionManager:
 
         except subprocess.TimeoutExpired:
             ctx.status = 'timeout'
+            ctx.error_message = f"{agent.abbreviation} timed out after {agent.timeout_minutes} minute(s)"
             logger.error(f"Timeout: {agent.abbreviation} (ID: {ctx.execution_id})")
 
         except Exception as e:
             ctx.status = 'failed'
+            if not ctx.error_message:
+                ctx.error_message = str(e)
             logger.error(f"Failed execution: {agent.abbreviation} (ID: {ctx.execution_id}): {e}")
 
         finally:
             ctx.end_time = self.config.user_now()
 
-            # Update task file with final status
+            # Update execution log with final status
             if ctx.task_file:
-                # Check if agent updated task file
-                agent_status = None
-                agent_output = None
-                if ctx.task_file.exists():
-                    from ..markdown_utils import read_frontmatter
-                    task_fm = read_frontmatter(ctx.task_file)
-                    agent_status = task_fm.get('status', '').upper()
-                    agent_output = task_fm.get('output', '').strip()
-                
-                # Validate output and determine final status
+                # Determine final status
                 final_status = ctx.status
                 output_link = None
                 validation_error = None
 
                 if ctx.status == 'completed' and 'path' in trigger_data:
-                    # Use agent-reported output if present and valid
-                    if agent_status in ['COMPLETED', 'PROCESSED'] and agent_output:
-                        # Validate agent-reported output file exists
-                        output_valid, validated_link, validation_error = self._validate_agent_output(
-                            agent_output, agent, trigger_data, ctx
-                        )
-                        if output_valid:
-                            output_link = validated_link
-                        else:
-                            # Agent reported invalid output, fall back to heuristic discovery
-                            output_valid, output_link, validation_error = self._validate_output(
-                                agent, trigger_data, ctx
-                            )
-                    else:
-                        # Agent didn't update, use heuristic discovery
-                        output_valid, output_link, validation_error = self._validate_output(
-                            agent, trigger_data, ctx
-                        )
+                    # Use heuristic discovery for output validation
+                    output_valid, output_link, validation_error = self._validate_output(
+                        agent, trigger_data, ctx
+                    )
 
-                    # If validation failed, mark as FAILED
                     if not output_valid:
                         final_status = 'failed'
                         ctx.error_message = validation_error
-                    # If validation passed but no output (optional no-output scenario)
                     elif output_valid and output_link is None and agent.output_optional:
                         final_status = 'ignored'
 
                 self.task_manager.update_task_status(
-                    task_path=ctx.task_file,
+                    task_handle=ctx.task_file,
                     status="IGNORE" if final_status == 'ignored' else
                            "PROCESSED" if final_status == 'completed' else "FAILED",
                     output=output_link,
                     error_message=ctx.error_message
                 )
-                
-                # Attach execution summary to Process Log
-                if ctx.log_file and ctx.log_file.exists():
-                    try:
-                        summary = f"Execution completed at {ctx.end_time.isoformat()}. See generation_log for details."
-                        content = ctx.task_file.read_text(encoding='utf-8')
-                        updated = self.task_manager._append_to_process_log(content, summary)
-                        ctx.task_file.write_text(updated, encoding='utf-8')
-                    except Exception as e:
-                        logger.warning(f"Failed to attach execution summary to task file: {e}")
 
             # Post-processing actions (e.g., remove trigger content)
             if ctx.status == 'completed' and agent.post_process_action:
                 self._apply_post_processing(agent, trigger_data)
 
+            # CRITICAL: Decrement counters FIRST — must always run even if logging fails.
+            # This was the root cause of agents getting stuck as "running" forever:
+            # if log writing crashed (e.g. ctx.task_file.name on a str), counters
+            # were never decremented.
+            try:
+                with self._count_lock:
+                    self._running_count = max(0, self._running_count - 1)
+
+                with self._agent_lock:
+                    if agent.abbreviation in self._agent_counts:
+                        self._agent_counts[agent.abbreviation] = max(0, self._agent_counts[agent.abbreviation] - 1)
+
+                with self._executions_lock:
+                    self._running_executions.pop(ctx.execution_id, None)
+            except Exception as cleanup_err:
+                logger.error(f"Failed to release execution slot: {cleanup_err}")
+
+            # Release cross-process lock
+            release_agent_lock(self.vault_path, agent.abbreviation)
+
             # Detect WorkIQ permission errors and set flag for interactive re-auth
             # Use specific phrases to avoid false positives from agents just mentioning "workiq"
+            agent_output = getattr(ctx, 'output', None) or ''
             if agent_output:
                 output_lower = agent_output.lower()
                 workiq_auth_phrases = [
@@ -325,63 +341,51 @@ class ExecutionManager:
                     self._set_workiq_auth_flag()
 
             # Log result to file (structured format: JSON metadata + raw output)
-            if ctx.log_file:
-                import json as _json
-                trigger_path = trigger_data.get('path', '')
-                input_file = Path(trigger_path).name if trigger_path else None
-                trigger_type = trigger_data.get('event_type', 'unknown')
+            # This runs AFTER counter cleanup so a logging crash can't leak slots.
+            try:
+                if ctx.log_file:
+                    import json as _json
+                    trigger_path = trigger_data.get('path', '')
+                    input_file = Path(trigger_path).name if trigger_path else None
+                    trigger_type = trigger_data.get('event_type', 'unknown')
 
-                metadata = {
-                    "agent": agent.abbreviation,
-                    "agent_name": agent.name,
-                    "execution_id": ctx.execution_id,
-                    "session_id": ctx.session_id,
-                    "status": ctx.status,
-                    "trigger_type": trigger_type,
-                    "input_file": input_file,
-                    "input_path": trigger_path,
-                    "output_path": agent.output_path or None,
-                    "executor": agent.executor,
-                    "start_time": ctx.start_time.isoformat() if ctx.start_time else None,
-                    "end_time": ctx.end_time.isoformat() if ctx.end_time else None,
-                    "duration_seconds": round(ctx.duration, 1) if ctx.duration else None,
-                    "error": ctx.error_message if ctx.error_message else None,
-                    "task_file": str(ctx.task_file.name) if ctx.task_file else None,
-                }
+                    metadata = {
+                        "agent": agent.abbreviation,
+                        "agent_name": agent.name,
+                        "execution_id": ctx.execution_id,
+                        "session_id": ctx.session_id,
+                        "status": ctx.status,
+                        "trigger_type": trigger_type,
+                        "input_file": input_file,
+                        "input_path": trigger_path,
+                        "output_path": agent.output_path or None,
+                        "executor": agent.executor,
+                        "start_time": ctx.start_time.isoformat() if ctx.start_time else None,
+                        "end_time": ctx.end_time.isoformat() if ctx.end_time else None,
+                        "duration_seconds": round(ctx.duration, 1) if ctx.duration else None,
+                        "error": ctx.error_message if ctx.error_message else None,
+                        "task_file": str(ctx.task_file) if ctx.task_file else None,
+                    }
 
-                with open(ctx.log_file, 'w', encoding='utf-8') as f:
-                    f.write("---\n")
-                    f.write(_json.dumps(metadata, indent=2, default=str))
-                    f.write("\n---\n\n")
-                    f.write(f"# Execution Log: {agent.abbreviation}\n\n")
-                    # Write only the unique per-execution context, not the full prompt
-                    # (system prompt + agent body are static and already in their source files)
-                    f.write("## Prompt Context\n\n")
-                    f.write(f"- Agent prompt: `{agent.file_path.name if agent.file_path else agent.abbreviation}`\n")
-                    # Extract trigger context + agent params (everything after the agent body)
-                    prompt_text = ctx.prompt or ''
-                    trigger_marker = '\n# Trigger Context\n'
-                    trigger_idx = prompt_text.find(trigger_marker)
-                    if trigger_idx >= 0:
-                        f.write(f"\n```\n{prompt_text[trigger_idx:]}\n```\n\n")
-                    else:
-                        f.write("\n(no trigger context)\n\n")
-                    f.write(f"## Response\n\n{ctx.response or '(no output)'}\n\n")
-                    if ctx.error_message:
-                        f.write(f"## Error\n\n```\n{ctx.error_message}\n```\n")
-
-            # Decrement counters
-            with self._count_lock:
-                self._running_count -= 1
-
-            with self._agent_lock:
-                self._agent_counts[agent.abbreviation] -= 1
-
-            with self._executions_lock:
-                del self._running_executions[ctx.execution_id]
-
-            # Release cross-process lock
-            release_agent_lock(self.vault_path, agent.abbreviation)
+                    with open(ctx.log_file, 'w', encoding='utf-8') as f:
+                        f.write("---\n")
+                        f.write(_json.dumps(metadata, indent=2, default=str))
+                        f.write("\n---\n\n")
+                        f.write(f"# Execution Log: {agent.abbreviation}\n\n")
+                        f.write("## Prompt Context\n\n")
+                        f.write(f"- Agent prompt: `{agent.file_path.name if agent.file_path else agent.abbreviation}`\n")
+                        prompt_text = ctx.prompt or ''
+                        trigger_marker = '\n# Trigger Context\n'
+                        trigger_idx = prompt_text.find(trigger_marker)
+                        if trigger_idx >= 0:
+                            f.write(f"\n```\n{prompt_text[trigger_idx:]}\n```\n\n")
+                        else:
+                            f.write("\n(no trigger context)\n\n")
+                        f.write(f"## Response\n\n{ctx.response or '(no output)'}\n\n")
+                        if ctx.error_message:
+                            f.write(f"## Error\n\n```\n{ctx.error_message}\n```\n")
+            except Exception as log_err:
+                logger.error(f"Failed to write execution log: {log_err}")
 
             # Notify orchestrator that a slot freed up so queued tasks
             # can be drained immediately (runs in a short-lived daemon
@@ -439,7 +443,7 @@ class ExecutionManager:
             ctx.prompt = self._build_prompt(agent, trigger_data, ctx)
         
         # Build command with optional session ID (prompt will be passed via stdin)
-        cmd = ['claude', '--permission-mode', 'bypassPermissions', '--print']
+        cmd = [CLAUDE_CLI_PATH, '--permission-mode', 'bypassPermissions', '--print']
         
         if ctx.system_prompt_file:
             cmd.extend(['--system-prompt-file', str(ctx.system_prompt_file)])
@@ -471,8 +475,10 @@ class ExecutionManager:
             # If it fails because session exists, we'll catch and retry with --resume
             cmd.extend(['--session-id', ctx.session_id])
         
+        use_container = self._should_use_container(agent)
+
         try:
-            self._execute_subprocess(ctx, 'Claude CLI', cmd, agent.timeout_minutes * 60, stdin_input=ctx.prompt)
+            self._execute_subprocess(ctx, 'Claude CLI', cmd, agent.timeout_minutes * 60, stdin_input=ctx.prompt, use_container=use_container, agent=agent)
         except RuntimeError as e:
             # Check if error is about session already existing
             error_msg = str(e)
@@ -483,7 +489,7 @@ class ExecutionManager:
                 logger.info(f"Session {ctx.session_id} already exists, resuming...")
                 # Clear previous error
                 ctx.error_message = None
-                cmd_resume = ['claude', '--permission-mode', 'bypassPermissions', '--print', '--resume', ctx.session_id]
+                cmd_resume = [CLAUDE_CLI_PATH, '--permission-mode', 'bypassPermissions', '--print', '--resume', ctx.session_id]
                 if ctx.system_prompt_file:
                     cmd_resume.extend(['--system-prompt-file', str(ctx.system_prompt_file)])
                 # Add system prompt to resume command
@@ -502,7 +508,7 @@ class ExecutionManager:
                 # Add Claude settings to resume command
                 if self.claude_settings:
                     cmd_resume.extend(['--settings', self.claude_settings])
-                self._execute_subprocess(ctx, 'Claude CLI', cmd_resume, agent.timeout_minutes * 60, stdin_input=ctx.prompt)
+                self._execute_subprocess(ctx, 'Claude CLI', cmd_resume, agent.timeout_minutes * 60, stdin_input=ctx.prompt, use_container=use_container, agent=agent)
             else:
                 # Re-raise if it's a different error
                 raise
@@ -526,10 +532,20 @@ class ExecutionManager:
         if not runner_script.exists():
             raise FileNotFoundError(f"Copilot SDK runner not found: {runner_script}")
 
-        # Find Python 3.10+ for the SDK (requires union type syntax)
-        sdk_python = self._find_sdk_python()
+        use_container = self._should_use_container(agent)
 
-        cmd = [sdk_python, str(runner_script), '--prompt', ctx.prompt, '--cwd', str(self.working_dir)]
+        if use_container:
+            # In container mode, use the container's Python and installed runner script
+            sdk_python = 'python3'
+            runner_path = '/app/duckyai_cli/scripts/copilot_sdk_runner.py'
+            cwd_path = self._container_config.get('vault_mount', '/vault')
+        else:
+            # Find Python 3.10+ for the SDK (requires union type syntax)
+            sdk_python = self._find_sdk_python()
+            runner_path = str(runner_script)
+            cwd_path = str(self.working_dir)
+
+        cmd = [sdk_python, runner_path, '--prompt', ctx.prompt, '--cwd', cwd_path]
 
         # Model selection
         if agent.agent_params and agent.agent_params.get('model'):
@@ -538,39 +554,57 @@ class ExecutionManager:
         # MCP config
         if self.mcp_config:
             for config in self.mcp_config:
+                if use_container:
+                    config = self._adapt_mcp_config_for_container(config)
                 cmd.extend(['--mcp-config', config])
 
-        self._execute_subprocess(ctx, 'Copilot SDK', cmd, agent.timeout_minutes * 60)
+        self._execute_subprocess(ctx, 'Copilot SDK', cmd, agent.timeout_minutes * 60, use_container=use_container, agent=agent)
+
+    def _adapt_mcp_config_for_container(self, config_json: str) -> str:
+        """Translate MCP config for container execution.
+
+        Replaces host vault paths with container mount paths in env vars
+        and command arguments so MCP servers resolve correctly inside
+        the container.
+        """
+        import json as _json
+        try:
+            config = _json.loads(config_json)
+        except (_json.JSONDecodeError, TypeError):
+            return config_json
+
+        vault_mount = self._container_config.get('vault_mount', '/vault')
+        vault_str = str(self.vault_path)
+        vault_str_fwd = vault_str.replace('\\', '/')
+
+        servers = config.get('mcpServers', {})
+        for name, server in list(servers.items()):
+            # Translate env vars that contain host vault paths
+            env = server.get('env', {})
+            for key, val in env.items():
+                if isinstance(val, str):
+                    val = val.replace(vault_str, vault_mount)
+                    if vault_str_fwd != vault_str:
+                        val = val.replace(vault_str_fwd, vault_mount)
+                    env[key] = val
+
+            # Translate args that contain host vault paths
+            args = server.get('args', [])
+            for i, arg in enumerate(args):
+                if isinstance(arg, str):
+                    arg = arg.replace(vault_str, vault_mount)
+                    if vault_str_fwd != vault_str:
+                        arg = arg.replace(vault_str_fwd, vault_mount)
+                    args[i] = arg
+
+        return _json.dumps(config)
 
     @staticmethod
     def _find_sdk_python() -> str:
         """Find a Python 3.10+ interpreter for the Copilot SDK."""
-        import glob
+        from ..main.install_health import find_copilot_sdk_python
 
-        # Check uv-managed Pythons first
-        uv_python_dir = Path.home() / ".local" / "share" / "uv" / "python"
-        if not uv_python_dir.exists():
-            uv_python_dir = Path(os.environ.get("APPDATA", "")) / "uv" / "python"
-
-        if uv_python_dir.exists():
-            for ver_dir in sorted(uv_python_dir.iterdir(), reverse=True):
-                if "cpython-3.1" in ver_dir.name or "cpython-3.2" in ver_dir.name:
-                    py = ver_dir / "python.exe" if os.name == "nt" else ver_dir / "bin" / "python3"
-                    if py.exists():
-                        return str(py)
-
-        # Check PATH for python3.12, python3.11, python3.10
-        for ver in ["3.14", "3.13", "3.12", "3.11", "3.10"]:
-            py = shutil.which(f"python{ver}")
-            if py:
-                return py
-
-        # Fallback to python3
-        py = shutil.which("python3") or shutil.which("python")
-        if py:
-            return py
-
-        raise FileNotFoundError("Python 3.10+ not found for Copilot SDK. Install with: uv python install 3.12")
+        return find_copilot_sdk_python()
 
     @staticmethod
     def _resolve_copilot_node_cmd():
@@ -619,8 +653,10 @@ class ExecutionManager:
         if ctx.session_id:
             cmd.extend(['--session-id', ctx.session_id])
 
+        use_container = self._should_use_container(agent)
+
         try:
-            self._execute_subprocess(ctx, 'GitHub Copilot CLI', cmd, agent.timeout_minutes * 60)
+            self._execute_subprocess(ctx, 'GitHub Copilot CLI', cmd, agent.timeout_minutes * 60, use_container=use_container, agent=agent)
         except RuntimeError as e:
             error_msg = str(e)
             full_error = f"{error_msg} {ctx.error_message or ''}"
@@ -634,13 +670,241 @@ class ExecutionManager:
                 if self.mcp_config:
                     for config in self.mcp_config:
                         cmd_resume.extend(['--additional-mcp-config', config])
-                self._execute_subprocess(ctx, 'GitHub Copilot CLI', cmd_resume, agent.timeout_minutes * 60)
+                self._execute_subprocess(ctx, 'GitHub Copilot CLI', cmd_resume, agent.timeout_minutes * 60, use_container=use_container, agent=agent)
             else:
                 raise
 
-    def _execute_subprocess(self, ctx: ExecutionContext, agent_name: str, cmd: List[str], timeout_seconds: int, stdin_input: Optional[str] = None, env: Optional[Dict] = None):
-        # On Windows, resolve .cmd/.bat files to their full paths
-        if platform.system() == 'Windows' and cmd:
+    @staticmethod
+    def _get_copilot_token() -> Optional[str]:
+        """Extract the Copilot CLI OAuth token from the platform credential store."""
+        # Check environment first
+        token = os.environ.get('GITHUB_TOKEN') or os.environ.get('GH_TOKEN')
+        if token:
+            return token
+
+        if platform.system() != 'Windows':
+            return None
+
+        try:
+            import ctypes
+            import ctypes.wintypes as w
+
+            advapi32 = ctypes.windll.advapi32
+            fields = [
+                ('Flags', w.DWORD), ('Type', w.DWORD), ('TargetName', w.LPWSTR),
+                ('Comment', w.LPWSTR), ('LastWritten', w.FILETIME),
+                ('CredentialBlobSize', w.DWORD), ('CredentialBlob', ctypes.POINTER(ctypes.c_byte)),
+                ('Persist', w.DWORD), ('AttributeCount', w.DWORD), ('Attributes', ctypes.c_void_p),
+                ('TargetAlias', w.LPWSTR), ('UserName', w.LPWSTR),
+            ]
+            CREDENTIAL = type('CREDENTIAL', (ctypes.Structure,), {'_fields_': fields})
+
+            # Read copilot-cli config to find the logged-in user
+            config_path = Path.home() / '.copilot' / 'config.json'
+            target_suffix = ''
+            if config_path.exists():
+                import json
+                cfg = json.loads(config_path.read_text(encoding='utf-8'))
+                user_info = cfg.get('last_logged_in_user', {})
+                host = user_info.get('host', 'https://github.com')
+                login = user_info.get('login', '')
+                if login:
+                    target_suffix = f'{host}:{login}'
+
+            # Try specific user target first, then generic
+            targets = []
+            if target_suffix:
+                targets.append(f'copilot-cli/{target_suffix}')
+            targets.append('copilot-cli/https://github.com')
+
+            for target in targets:
+                pcred = ctypes.POINTER(CREDENTIAL)()
+                if advapi32.CredReadW(target, 1, 0, ctypes.byref(pcred)):
+                    cred = pcred.contents
+                    blob = ctypes.string_at(cred.CredentialBlob, cred.CredentialBlobSize)
+                    advapi32.CredFree(pcred)
+                    return blob.decode('utf-8', errors='replace')
+
+        except Exception as e:
+            logger.debug(f"Could not read Copilot credential: {e}")
+
+        return None
+
+    @staticmethod
+    def _get_azure_access_token() -> Optional[str]:
+        """Extract an Azure DevOps access token from the host's Azure CLI.
+
+        On Windows the MSAL token cache is DPAPI-encrypted and cannot be
+        decrypted inside a Linux container.  This method calls
+        ``az account get-access-token`` on the **host** to obtain a fresh
+        token which is then forwarded to the container via env var.
+        """
+        # Check environment first
+        token = os.environ.get('AZURE_DEVOPS_EXT_PAT')
+        if token:
+            return token
+
+        az_bin = shutil.which('az')
+        if not az_bin:
+            # Common Azure CLI install location on Windows
+            candidate = Path(os.environ.get('ProgramFiles', '')) / 'Microsoft SDKs' / 'Azure' / 'CLI2' / 'wbin' / 'az.cmd'
+            if candidate.exists():
+                az_bin = str(candidate)
+        if not az_bin:
+            return None
+
+        try:
+            # Azure DevOps resource ID
+            result = subprocess.run(
+                [az_bin, 'account', 'get-access-token',
+                 '--resource', '499b84ac-1321-427f-aa17-267ca6975798',
+                 '--query', 'accessToken', '-o', 'tsv'],
+                capture_output=True, text=True, timeout=15,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip()
+        except Exception as e:
+            logger.debug(f"Could not get Azure DevOps token: {e}")
+
+        return None
+
+    def _build_docker_cmd(self, cmd: List[str], env: Optional[Dict] = None, agent: Optional['AgentDefinition'] = None) -> List[str]:
+        """
+        Wrap a command in `docker run` for container-isolated execution.
+
+        Maps host vault path to /vault inside the container, mounts auth
+        directories read-only, and translates any host vault paths in the
+        command arguments to their container equivalents.
+
+        Args:
+            cmd: Original command list (e.g., ['claude', '--print', ...])
+            env: Optional environment variables to pass via -e flags
+            agent: Optional agent definition for per-agent extra_mounts
+
+        Returns:
+            Wrapped command: ['docker', 'run', '--rm', '-i', '-v', ..., 'image', ...]
+        """
+        image = self._container_config.get('image', 'duckyai-agent:latest')
+        vault_mount = self._container_config.get('vault_mount', '/vault')
+        extra_mounts = list(self._container_config.get('extra_mounts', []))
+
+        # Merge per-agent extra_mounts
+        if agent and hasattr(agent, 'extra_mounts') and agent.extra_mounts:
+            extra_mounts.extend(agent.extra_mounts)
+
+        # Resolve ${services_path} and ${repo_cache} placeholders in mount sources
+        if extra_mounts:
+            try:
+                from ..services import get_services_path
+                services_path_str = str(get_services_path(self.vault_path))
+            except Exception:
+                services_path_str = None
+
+            repo_cache_path = self.vault_path / '.duckyai' / 'repo-cache'
+            repo_cache_path.mkdir(parents=True, exist_ok=True)
+            repo_cache_str = str(repo_cache_path)
+
+            for mount in extra_mounts:
+                src = mount.get('source', '')
+                if '${services_path}' in src:
+                    if services_path_str:
+                        mount['source'] = src.replace('${services_path}', services_path_str)
+                    else:
+                        logger.warning(f"Cannot resolve ${{services_path}} for mount: {mount}")
+                        mount['source'] = ''  # Will be skipped below
+                if '${repo_cache}' in src:
+                    mount['source'] = src.replace('${repo_cache}', repo_cache_str)
+
+        # Resolve docker CLI path (may not be in PATH on Windows)
+        docker_bin = shutil.which('docker')
+        if not docker_bin:
+            # Common Docker Desktop install locations
+            for candidate in [
+                Path(os.environ.get('ProgramFiles', '')) / 'Docker' / 'Docker' / 'resources' / 'bin' / 'docker.exe',
+                Path.home() / '.docker' / 'bin' / 'docker',
+            ]:
+                if candidate.exists():
+                    docker_bin = str(candidate)
+                    break
+        if not docker_bin:
+            raise FileNotFoundError(
+                "Docker CLI not found. Install Docker Desktop or add docker to PATH. "
+                "To run agents locally instead, set orchestrator.use_container: false in duckyai.yml"
+            )
+
+        docker_cmd = [
+            docker_bin, 'run', '--rm', '-i',
+            '-v', f'{self.vault_path}:{vault_mount}',
+            '-w', vault_mount,
+        ]
+
+        # Default auth mounts if no extra_mounts configured
+        if not extra_mounts:
+            home = Path.home()
+            default_mounts = [
+                (home / '.copilot', '/root/.copilot', False),  # SDK needs write for session-store.db
+                (home / '.claude', '/root/.claude', True),
+                (home / '.azure', '/root/.azure', True),
+            ]
+            for source, target, readonly in default_mounts:
+                if source.exists():
+                    mount_spec = f'{source}:{target}:ro' if readonly else f'{source}:{target}'
+                    docker_cmd.extend(['-v', mount_spec])
+        else:
+            for mount in extra_mounts:
+                source = Path(mount['source']).expanduser()
+                target = mount['target']
+                if source.exists():
+                    readonly = mount.get('readonly', False)
+                    mount_spec = f'{source}:{target}:ro' if readonly else f'{source}:{target}'
+                    docker_cmd.extend(['-v', mount_spec])
+
+        # Pass environment variables
+        if env:
+            for key, value in env.items():
+                docker_cmd.extend(['-e', f'{key}={value}'])
+
+        # Always pass DUCKYAI_VAULT_ROOT pointing to vault mount
+        docker_cmd.extend(['-e', f'DUCKYAI_VAULT_ROOT={vault_mount}'])
+
+        # Forward GitHub token for Copilot SDK authentication
+        github_token = self._get_copilot_token()
+        if github_token:
+            docker_cmd.extend(['-e', f'GITHUB_TOKEN={github_token}'])
+
+        # Forward Azure DevOps access token (DPAPI-encrypted cache can't be read in Linux)
+        azdo_token = self._get_azure_access_token()
+        if azdo_token:
+            docker_cmd.extend(['-e', f'AZURE_DEVOPS_EXT_PAT={azdo_token}'])
+
+        docker_cmd.append(image)
+
+        # Translate host vault paths in command arguments to container paths
+        vault_str = str(self.vault_path)
+        # Normalize both forward and backslash variants
+        vault_str_fwd = vault_str.replace('\\', '/')
+        translated_cmd = []
+        for arg in cmd:
+            new_arg = arg.replace(vault_str, vault_mount)
+            if vault_str_fwd != vault_str:
+                new_arg = new_arg.replace(vault_str_fwd, vault_mount)
+            translated_cmd.append(new_arg)
+
+        docker_cmd.extend(translated_cmd)
+        return docker_cmd
+
+    def _execute_subprocess(self, ctx: ExecutionContext, agent_name: str, cmd: List[str], timeout_seconds: int, stdin_input: Optional[str] = None, env: Optional[Dict] = None, use_container: Optional[bool] = None, agent: Optional['AgentDefinition'] = None):
+        # Resolve container flag: explicit param > global default
+        if use_container is None:
+            use_container = self._use_container_global
+
+        # Wrap in Docker container if container mode is enabled
+        if use_container:
+            cmd = self._build_docker_cmd(cmd, env=env, agent=agent)
+            env = None  # env vars are passed via -e flags in docker cmd
+            logger.info(f"[{agent_name}] Running in container: {self._container_config.get('image', 'duckyai-agent:latest')}")
+        elif platform.system() == 'Windows' and cmd:
+            # On Windows (local mode), resolve .cmd/.bat files to their full paths
             executable = cmd[0]
             # Try to find the executable (handles .cmd, .bat, .exe)
             resolved = shutil.which(executable)
@@ -654,81 +918,105 @@ class ExecutionManager:
                 if resolved_cmd:
                     cmd = [resolved_cmd] + cmd[1:]
 
-        logger.info(f"[{agent_name}] Executing in cwd={self.working_dir}")
+        cwd = None if use_container else str(self.working_dir)
+        logger.info(f"[{agent_name}] Executing{' in container' if use_container else f' in cwd={self.working_dir}'}")
 
-        process = subprocess.Popen(
+        completed = subprocess.run(
             cmd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            input=stdin_input,
+            capture_output=True,
             text=True,
             encoding='utf-8',
             errors='replace',
-            cwd=str(self.working_dir),
-            env=env
+            cwd=cwd,
+            env=env,
+            timeout=timeout_seconds,
         )
 
-        if ctx.task_file:
-            task_identifier = ctx.task_file.name
-        elif ctx.agent and ctx.agent.abbreviation:
-            task_identifier = f"task for {ctx.agent.abbreviation}"
+        combined_output_parts = []
+        if completed.stdout:
+            combined_output_parts.append(completed.stdout)
+        if completed.stderr:
+            combined_output_parts.append(completed.stderr)
+        combined_output = "\n".join(part.rstrip() for part in combined_output_parts if part).strip()
 
-        logs = []
-        def stream_stderr(proc):
-            for line in proc.stdout:
-                logs.append(f"[{agent_name}] {line.strip()}")
-                logger.info(logs[-1])
+        logs = [f"[{agent_name}] {line}" for line in combined_output.splitlines() if line.strip()]
+        for line in logs:
+            logger.info(line)
 
-        status_stop_event = threading.Event()
-        def print_status():
-            while not status_stop_event.is_set():
-                if process.poll() is None:
-                    logger.info(f"⏳ {agent_name} is running for {task_identifier}", console=True)
-                else:
-                    break
-                if status_stop_event.wait(5.0):
-                    break
+        if completed.returncode != 0:
+            error_detail = "\n".join(logs) if logs else f"Process exited with code {completed.returncode} (no output captured)"
+            ctx.error_message = error_detail
+            raise RuntimeError(f"{agent_name} execution failed (exit code {completed.returncode}): {error_detail[:500]}")
 
-        stderr_thread = threading.Thread(target=stream_stderr, args=(process,), daemon=True)
-        status_thread = threading.Thread(target=print_status, daemon=True)
-        
-        stderr_thread.start()
-        status_thread.start()
-        
-        # Write stdin input if provided (after starting output reading threads)
-        if stdin_input is not None:
-            try:
-                # Small delay to ensure process has started
-                time.sleep(0.05)
-                process.stdin.write(stdin_input)
-                process.stdin.flush()
-                process.stdin.close()
-            except (BrokenPipeError, OSError, ValueError) as e:
-                # Process may have already exited or stdin was closed
-                logger.warning(f"Failed to write to stdin: {e}")
-                # Check if process already failed
-                if process.poll() is not None:
-                    # Process already exited, we'll catch the error below
-                    pass
+        ctx.response = combined_output
+
+    def _build_scan_services(self) -> List[Dict]:
+        """Build scan_services list for the PRS agent.
+
+        Reads services.entries from duckyai.yml, filters by pr_scan: true,
+        and resolves repo remote URLs from the services directory.
+
+        Returns:
+            List of dicts: [{"name": "DEPA", "repos": [{"name": "repo", "remote_url": "...", "org": "...", "project": "...", "repo": "..."}]}]
+        """
+        import re
+
+        services_config = self.config.get("services", {})
+        entries = services_config.get("entries", [])
+        opted_in = [e for e in entries if e.get("pr_scan", False)]
+        if not opted_in:
+            return []
 
         try:
-            process.wait(timeout=timeout_seconds)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            raise RuntimeError(f"{agent_name} timed out after {timeout_seconds} seconds")
-        finally:
-            status_stop_event.set()
-            status_thread.join()
-            stderr_thread.join()
+            from ..services import get_services_path
+            services_path = get_services_path(self.vault_path)
+        except Exception:
+            return []
 
-        
-        if process.returncode != 0:
-            error_detail = "\n".join(logs) if logs else f"Process exited with code {process.returncode} (no output captured)"
-            ctx.error_message = error_detail
-            raise RuntimeError(f"{agent_name} execution failed (exit code {process.returncode}): {error_detail[:500]}")
-        else:
-            ctx.response = "\n".join(logs)
+        result = []
+        azdo_pattern = re.compile(
+            r'https://(?:dev\.azure\.com/([^/]+)/([^/]+)|([^.]+)\.visualstudio\.com/([^/]+))/_git/([^/\s]+)'
+        )
 
+        for entry in opted_in:
+            svc_name = entry.get("name", "")
+            svc_dir = services_path / svc_name
+            if not svc_dir.is_dir():
+                continue
+
+            repos = []
+            for repo_dir in sorted(svc_dir.iterdir()):
+                if not repo_dir.is_dir() or not (repo_dir / '.git').exists():
+                    continue
+                try:
+                    import subprocess as _sp
+                    result_proc = _sp.run(
+                        ['git', '-C', str(repo_dir), 'remote', 'get-url', 'origin'],
+                        capture_output=True, text=True, timeout=5
+                    )
+                    remote_url = result_proc.stdout.strip()
+                    if not remote_url:
+                        continue
+                    m = azdo_pattern.search(remote_url)
+                    if m:
+                        org = m.group(1) or m.group(3)
+                        project = m.group(2) or m.group(4)
+                        repo_name = m.group(5)
+                        repos.append({
+                            "name": repo_dir.name,
+                            "remote_url": remote_url,
+                            "org": org,
+                            "project": project,
+                            "repo": repo_name,
+                        })
+                except Exception:
+                    continue
+
+            if repos:
+                result.append({"name": svc_name, "repos": repos})
+
+        return result
 
     def _read_teams_watermark(self, agent_abbr: str) -> Optional[str]:
         """Read the lastSynced timestamp from the Teams agent's watermark file.
@@ -762,35 +1050,91 @@ class ExecutionManager:
     def _resolve_teams_fetch_window(self, agent: AgentDefinition) -> Dict:
         """Pre-resolve the fetch window for Teams agents (TCS/TMS).
 
-        Eliminates LLM decision-making by computing the exact fetch mode
-        and injecting explicit parameters. Returns a new dict of agent params
-        with fetch_mode and fetch_since set appropriately.
+        Computes explicit UTC datetime range(s) chunked into ≤6-hour windows.
+        Injects ``fetch_windows`` (list of {start, end} ISO-UTC pairs) so the
+        LLM never has to do time math.
 
         Priority: ignore_watermark+lookback > watermark > lookback fallback
         """
+        from datetime import datetime, timedelta, timezone
+
+        import os
+
         params = dict(agent.agent_params) if agent.agent_params else {}
 
         # Inject user timezone so the LLM can convert UTC timestamps to local dates
         params['user_timezone'] = self.config.get_user_timezone()
 
         # Inject today's date in user timezone so the LLM has an explicit anchor
-        params['today_date'] = self.config.user_now().strftime('%Y-%m-%d')
+        today = self.config.user_now().strftime('%Y-%m-%d')
+        params['today_date'] = today
 
-        # Mode A: Explicit ignore_watermark
+        # Compute relative path from the daily note to the vault root so the
+        # LLM can construct correct markdown links without hardcoded prefixes.
+        daily_note_dir = f"04-Periodic/Daily"
+        params['vault_root_rel'] = os.path.relpath('.', daily_note_dir).replace('\\', '/') + '/'
+
+        now_utc = datetime.now(timezone.utc)
+        # Provide the current UTC time so the LLM can validate meeting end times
+        params['current_utc'] = now_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        # Determine overall start time (UTC)
         if params.get('ignore_watermark'):
-            params['fetch_mode'] = 'lookback'
-            return params
-
-        # Mode B: Check watermark
-        watermark = self._read_teams_watermark(agent.abbreviation)
-        if watermark:
-            params['fetch_mode'] = 'watermark'
-            params['fetch_since'] = watermark
-            # Remove lookback_hours to prevent LLM confusion
-            params.pop('lookback_hours', None)
+            lookback = int(params.get('lookback_hours', 1))
+            range_start = now_utc - timedelta(hours=lookback)
         else:
-            # No watermark — first run, use lookback
-            params['fetch_mode'] = 'lookback'
+            watermark = self._read_teams_watermark(agent.abbreviation)
+            if watermark:
+                try:
+                    range_start = datetime.fromisoformat(watermark.replace('Z', '+00:00'))
+                    if range_start.tzinfo is None:
+                        range_start = range_start.replace(tzinfo=timezone.utc)
+                except ValueError:
+                    # Malformed watermark — fall back to lookback
+                    lookback = int(params.get('lookback_hours', 1))
+                    range_start = now_utc - timedelta(hours=lookback)
+            else:
+                # No watermark — first run
+                lookback = int(params.get('lookback_hours', 1))
+                range_start = now_utc - timedelta(hours=lookback)
+
+        range_end = now_utc
+        # For TMS: shift range_end back so we only query meetings that have
+        # fully ended.  Graph API returns events whose time range *overlaps*
+        # the query window, so a meeting ending at 3 PM would appear in a
+        # query at 2 PM.  A 5-minute buffer avoids picking up in-progress
+        # meetings and gives Graph indexing time to settle.
+        if agent.abbreviation == "TMS":
+            range_end = now_utc - timedelta(minutes=5)
+            if range_end <= range_start:
+                # Window too narrow — skip this cycle
+                range_end = range_start
+
+        # Chunk into ≤6-hour windows (oldest first)
+        chunk_hours = 6
+        windows = []
+        cursor = range_start
+        while cursor < range_end:
+            chunk_end = min(cursor + timedelta(hours=chunk_hours), range_end)
+            windows.append({
+                'start': cursor.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                'end': chunk_end.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            })
+            cursor = chunk_end
+
+        # If the range was zero-length (e.g. watermark == now), still provide one window
+        if not windows:
+            windows.append({
+                'start': range_start.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                'end': range_end.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            })
+
+        params['fetch_windows'] = windows
+
+        # Clean up legacy keys the LLM no longer needs
+        params.pop('fetch_mode', None)
+        params.pop('fetch_since', None)
+        params.pop('ignore_watermark', None)
 
         # Inject pending highlight dates from previous failed syncs
         pending = self._read_pending_highlight_dates(agent.abbreviation)
@@ -854,12 +1198,15 @@ class ExecutionManager:
         # Add task file path if available
         if ctx and ctx.task_file:
             try:
-                rel_task = ctx.task_file.relative_to(self.vault_path)
-                task_link = f"[[{rel_task.parent}/{rel_task.stem}]]"
-                prompt += f"- Task File: {task_link}\n"
+                if isinstance(ctx.task_file, Path):
+                    rel_task = ctx.task_file.relative_to(self.vault_path)
+                    task_ref = f"{rel_task.parent}/{rel_task.stem}"
+                else:
+                    task_ref = str(ctx.task_file)
+                prompt += f"- Task File: {task_ref}\n"
                 prompt += f"- **Update upon completion**: Set `status:` and `output:` fields\n"
             except ValueError:
-                # If relative path fails, use absolute path as fallback
+                # If relative path fails, use as-is
                 prompt += f"- Task File: {ctx.task_file}\n"
                 prompt += f"- **Update upon completion**: Set `status:` and `output:` fields\n"
 
@@ -900,6 +1247,12 @@ class ExecutionManager:
         if user_name:
             resolved_params['user_name'] = user_name
 
+        # Inject scan_services for the PR Scan agent (PRS)
+        if agent.abbreviation == 'PRS' and 'scan_services' not in resolved_params:
+            scan_services = self._build_scan_services()
+            if scan_services:
+                resolved_params['scan_services'] = scan_services
+
         if resolved_params:
             prompt += "\n# Agent Parameters\n"
             for key, value in resolved_params.items():
@@ -937,13 +1290,19 @@ class ExecutionManager:
         Returns:
             Tuple of (is_valid, output_link, error_message)
         """
-        # Extract file path from wiki link format [[path/to/file]]
+        # Extract file path from link format: [[path/to/file]] or [text](path/to/file.md)
         import re
-        match = re.search(r'\[\[([^\]]+)\]\]', agent_output)
-        if not match:
-            return False, None, f"Invalid output format: {agent_output}. Expected wiki link format [[path/to/file]]"
+        wiki_match = re.search(r'\[\[([^\]]+)\]\]', agent_output)
+        md_match = re.search(r'\[[^\]]*\]\(([^)]+)\)', agent_output)
+        if wiki_match:
+            file_path_str = wiki_match.group(1)
+        elif md_match:
+            from urllib.parse import unquote
+            file_path_str = unquote(md_match.group(1))
+        else:
+            return False, None, f"Invalid output format: {agent_output}. Expected link format [text](path) or [[path/to/file]]"
         
-        file_path_str = match.group(1)
+        file_path_str = file_path_str.split('|')[0] if '|' in file_path_str else file_path_str
         # Handle paths with or without .md extension
         if not file_path_str.endswith('.md'):
             file_path_str += '.md'
@@ -953,10 +1312,10 @@ class ExecutionManager:
         if output_path.exists():
             try:
                 rel_path = output_path.relative_to(self.vault_path)
-                output_link = f"[[{rel_path.parent}/{rel_path.stem}]]"
+                output_link = f"{rel_path.parent}/{rel_path.stem}"
                 return True, output_link, None
             except ValueError:
-                return True, f"[[{file_path_str}]]", None
+                return True, file_path_str, None
         else:
             return False, None, f"Output file not found: {file_path_str}"
 
@@ -985,7 +1344,7 @@ class ExecutionManager:
                 for out_file in output_dir.glob("*.md"):
                     if out_file.stat().st_mtime >= start_time:
                         rel_path = out_file.relative_to(self.vault_path)
-                        return True, f"[[{rel_path.parent}/{rel_path.stem}]]", None
+                        return True, f"{rel_path.parent}/{rel_path.stem}", None
                 if agent.output_optional:
                     return True, None, None
                 # Agent completed but we can't verify output — trust the agent's own output field
@@ -998,7 +1357,7 @@ class ExecutionManager:
         if not agent.output_path:
             # Verify input file still exists
             if input_path and input_path.exists():
-                return True, f"[[{input_path_str}]]", None
+                return True, input_path_str, None
             else:
                 return False, None, "Input file no longer exists"
 
@@ -1012,9 +1371,9 @@ class ExecutionManager:
             start_time = ctx.start_time.timestamp() - 5 if ctx.start_time else 0
 
             if file_mtime >= start_time:
-                return True, f"[[{input_path_str}]]", None
+                return True, input_path_str, None
             else:
-                return False, f"[[{input_path_str}]]", "Input file was not modified (update_file mode)"
+                return False, input_path_str, "Input file was not modified (update_file mode)"
 
         # For new_file: verify output directory has new files
         if agent.output_type == "new_file":
@@ -1053,11 +1412,11 @@ class ExecutionManager:
                 output_file = recent_files[0]
                 try:
                     rel_path = output_file.relative_to(self.vault_path)
-                    output_link = f"[[{rel_path.parent}/{rel_path.stem}]]"
+                    output_link = f"{rel_path.parent}/{rel_path.stem}"
                     logger.info(f"Found output file: {rel_path}")
                     return True, output_link, None
                 except ValueError:
-                    return True, f"[[{output_file}]]", None
+                    return True, str(output_file), None
             else:
                 # No output files found
                 if agent.output_optional:
@@ -1068,7 +1427,7 @@ class ExecutionManager:
                     return False, None, f"No new file found in {agent.output_path} (new_file mode)"
 
         # Default: no validation
-        return True, f"[[{input_path_str}]]" if input_path_str else None, None
+        return True, input_path_str if input_path_str else None, None
 
     def _prepare_log_path(self, agent: AgentDefinition, ctx: ExecutionContext) -> Path:
         """
@@ -1091,15 +1450,29 @@ class ExecutionManager:
             execution_id=ctx.execution_id
         )
 
-        # Get logs directory from config, with per-agent subdirectory
+        # Get logs directory from config. For bare temp vaults without duckyai.yml,
+        # keep the legacy test layout under _Settings_/Logs.
         logs_dir = self.config.get_orchestrator_logs_dir()
-        log_path = self.vault_path / logs_dir / agent.abbreviation / log_name
+        if not (self.vault_path / 'duckyai.yml').exists() and logs_dir.replace('\\', '/').endswith('.duckyai/logs'):
+            logs_dir = '_Settings_/Logs'
+
+        logs_root = self.vault_path / logs_dir
+        if Path(logs_dir).name.lower() == 'logs':
+            log_path = logs_root / log_name
+        else:
+            log_path = logs_root / agent.abbreviation / log_name
 
         # Try to reuse existing log path from frontmatter
         log_link = ctx.trigger_data.get('_generation_log', '')
-        if log_link and log_link.startswith('[[') and log_link.endswith(']]'):
+        if log_link and (log_link.startswith('[[') or '](' in log_link):
             try:
-                log_rel_path = log_link[2:-2]
+                # Extract path from [[path]] or [text](path) format
+                if log_link.startswith('[['):
+                    log_rel_path = log_link[2:-2]
+                else:
+                    import re as _re
+                    _m = _re.search(r'\]\(([^)]+)\)', log_link)
+                    log_rel_path = _m.group(1) if _m else log_link
                 log_path = self.vault_path / log_rel_path
                 logger.info(f"Reusing log file: {log_path.name}", console=True)
             except Exception as e:

@@ -2,14 +2,14 @@
 
 **AI-powered personal knowledge and task management for engineers.**
 
-DuckyAI is an Obsidian vault template with built-in GitHub Copilot integration — MCP server automation, Copilot skills, prompts, and structured workflows that give your AI assistant persistent context about your work.
+DuckyAI is an Obsidian vault template with built-in GitHub Copilot integration, Python-native vault automation, Copilot skills, prompts, and structured workflows that give your AI assistant persistent context about your work.
 
 ## Why DuckyAI?
 
 AI assistants forget everything between conversations. DuckyAI gives Copilot a **persistent brain** — your tasks, projects, people, decisions, and domain knowledge — so it can actually help you work instead of starting from scratch every time.
 
 - 📝 **Structured workflows** — tasks, investigations, meetings, daily notes with consistent frontmatter
-- 🤖 **MCP server** — 9 automation tools (create daily notes, log PR reviews, manage tasks, etc.)
+- 🤖 **Native vault tools** — 23 Python automation tools (daily notes, PR reviews, tasks, meetings, sync state, roundup, and more)
 - 💬 **Copilot prompts** — 7 ready-to-use prompts for common operations
 - 🧠 **Copilot skills** — code review, vault setup, vault updates, and a skill builder
 - 📂 **Repo syncing** — clone documentation repos for Copilot to reference
@@ -21,7 +21,6 @@ AI assistants forget everything between conversations. DuckyAI gives Copilot a *
 
 - [Obsidian](https://obsidian.md/) (free)
 - [VS Code](https://code.visualstudio.com/) with [GitHub Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot)
-- [Node.js](https://nodejs.org/) 18+ (for MCP server)
 - Git
 
 ### Setup
@@ -37,7 +36,7 @@ AI assistants forget everything between conversations. DuckyAI gives Copilot a *
    ```
    @workspace set up my vault
    ```
-   The OOBE skill will walk you through personalization, build the MCP server, and create your first daily note.
+   The OOBE skill will walk you through personalization, configure the Python tooling, and create your first daily note.
 
 4. **Open in Obsidian** — open the vault folder as an Obsidian vault
 
@@ -67,7 +66,7 @@ DuckyAI/
 │   └── Weekly/        # Weekly reviews
 ├── 05-Archive/        # Completed items
 ├── Templates/         # 9 Obsidian note templates
-├── mcp-server/        # MCP automation server
+├── cli/               # Python CLI, daemon, API, and auxiliary services
 ├── scripts/           # Repo sync and utilities
 └── .github/
     ├── copilot-instructions.md  # Your AI's context
@@ -105,7 +104,7 @@ When new template versions are released, update your vault safely:
 @workspace update my vault
 ```
 
-The update skill pulls infrastructure changes (templates, MCP server, prompts, skills) without touching your personal content.
+The update skill pulls infrastructure changes (Python vault tools, templates, prompts, skills) without touching your personal content.
 
 ## License
 

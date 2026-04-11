@@ -26,18 +26,12 @@ def _resolve_vault_root(ctx) -> Path:
     if vault_root:
         return Path(vault_root)
 
-    # Try CWD
-    cwd = Path.cwd()
-    if (cwd / "duckyai.yml").exists():
-        return cwd
+    from .vault import resolve_vault
+    resolved = resolve_vault(obj.get("working_dir"))
+    if (resolved / "duckyai.yml").exists():
+        return resolved
 
-    # Try vault registry
-    from ..vault_registry import list_vaults
-    vaults = [v for v in list_vaults() if Path(v["path"]).exists()]
-    if len(vaults) == 1:
-        return Path(vaults[0]["path"])
-
-    click.echo("Could not determine vault. Run from a vault directory or use --vault.", err=True)
+    click.echo("Could not determine the home vault. Run 'duckyai init' or 'duckyai setup'.", err=True)
     sys.exit(1)
 
 

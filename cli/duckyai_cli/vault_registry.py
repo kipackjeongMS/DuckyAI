@@ -1,107 +1,145 @@
-"""Global vault registry — tracks registered vaults in ~/.duckyai/vaults.json."""
+"""Home vault configuration stored in ~/.duckyai/config.json.
+
+Compatibility helpers still expose list/register/find semantics, but they now
+operate on a single configured home vault stored only in config.json.
+"""
 
 import json
+import os
+import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
-REGISTRY_PATH = Path.home() / ".duckyai" / "vaults.json"
+CONFIG_PATH = Path.home() / ".duckyai" / "config.json"
 
 
-def _load_registry() -> Dict[str, Any]:
-    """Load the registry file, returning empty structure if missing/corrupt."""
-    if not REGISTRY_PATH.exists():
-        return {"vaults": []}
-    try:
-        data = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
-        if isinstance(data, dict) and "vaults" in data:
-            # Strip legacy "default" key if present
-            data.pop("default", None)
-            return data
-    except (json.JSONDecodeError, OSError):
-        pass
-    return {"vaults": []}
+def _empty_config() -> Dict[str, Any]:
+    """Return the default home-vault configuration structure."""
+    return {"home_vault": None}
 
 
-def _save_registry(data: Dict[str, Any]) -> None:
-    """Write registry to disk."""
-    data.pop("default", None)  # never persist default
-    REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REGISTRY_PATH.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+def _normalize_entry(entry: Dict[str, Any]) -> Dict[str, str]:
+    """Normalize a vault entry to the public shape used by callers."""
+    normalized = {
+        "id": entry.get("id") or "default",
+        "name": entry.get("name") or Path(entry.get("path") or ".").name,
+        "path": str(Path(entry.get("path") or ".").resolve()),
+    }
+    if entry.get("last_used"):
+        normalized["last_used"] = entry["last_used"]
+    if entry.get("services_path"):
+        normalized["services_path"] = entry["services_path"]
+    return normalized
+
+
+def _load_config() -> Dict[str, Any]:
+    """Load the home-vault config from config.json."""
+    if not CONFIG_PATH.exists():
+        return _empty_config()
+
+    for attempt in range(3):
+        try:
+            data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                data.setdefault("home_vault", None)
+                return data
+        except (json.JSONDecodeError, OSError):
+            if attempt < 2:
+                time.sleep(0.05)
+                continue
+    return _empty_config()
+
+
+def _save_config(data: Dict[str, Any]) -> None:
+    """Write home-vault config to disk atomically.
+
+    Writes to a temp file in the same directory, then uses os.replace()
+    which is atomic on NTFS (Windows) and POSIX filesystems. This prevents
+    concurrent readers from seeing a truncated/empty file.
+    """
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    content = json.dumps(data, indent=2, ensure_ascii=False)
+    # Write to temp file in same directory, then atomic rename
+    fd, tmp_path = tempfile.mkstemp(
+        dir=str(CONFIG_PATH.parent), suffix=".tmp", prefix="config_"
     )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+        # On Windows, os.replace() fails if the target is held open by another
+        # process. Retry a few times with backoff to handle concurrent access.
+        last_err = None
+        for attempt in range(5):
+            try:
+                os.replace(tmp_path, str(CONFIG_PATH))
+                return
+            except PermissionError as e:
+                last_err = e
+                time.sleep(0.1 * (attempt + 1))
+        # All retries exhausted — fall back to direct write (non-atomic but
+        # better than crashing). The temp file is cleaned up below.
+        try:
+            CONFIG_PATH.write_text(content, encoding="utf-8")
+        except OSError:
+            if last_err:
+                raise last_err
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
 
 
-def list_vaults() -> List[Dict[str, str]]:
-    """Return list of registered vault entries."""
-    return _load_registry().get("vaults", [])
+def get_home_vault() -> Optional[Dict[str, str]]:
+    """Return the configured home vault, if any."""
+    entry = _load_config().get("home_vault")
+    if not entry:
+        return None
+    return _normalize_entry(entry)
 
 
-def find_vault_by_id(vault_id: str) -> Optional[Dict[str, str]]:
-    """Find a registered vault by its ID."""
-    for v in list_vaults():
-        if v["id"] == vault_id:
-            return v
-    return None
+def set_home_vault(vault_id: str, name: str, path: Path, services_path: str = None) -> Dict[str, str]:
+    """Persist the single home vault and return the normalized entry."""
+    entry = {
+        "id": vault_id,
+        "name": name,
+        "path": str(path.resolve()),
+        "last_used": datetime.now().isoformat(),
+    }
+    if services_path is not None:
+        entry["services_path"] = services_path
+
+    data = _load_config()
+    data["home_vault"] = entry
+    _save_config(data)
+    return _normalize_entry(entry)
 
 
-def find_vault_by_path(vault_path: Path) -> Optional[Dict[str, str]]:
-    """Find a registered vault whose path matches."""
-    resolved = str(vault_path.resolve())
-    for v in list_vaults():
-        if str(Path(v["path"]).resolve()) == resolved:
-            return v
-    return None
-
-
-def register_vault(
-    vault_id: str, name: str, path: Path, set_default: bool = False,
-    services_path: str = None,
-) -> None:
-    """Register a vault (or update if id already exists)."""
-    data = _load_registry()
-    resolved = str(path.resolve())
-
-    # Update existing or append
-    found = False
-    for v in data["vaults"]:
-        if v["id"] == vault_id:
-            v["name"] = name
-            v["path"] = resolved
-            v["last_used"] = datetime.now().isoformat()
-            if services_path is not None:
-                v["services_path"] = services_path
-            found = True
-            break
-    if not found:
-        entry = {
-            "id": vault_id,
-            "name": name,
-            "path": resolved,
-            "last_used": datetime.now().isoformat(),
-        }
-        if services_path is not None:
-            entry["services_path"] = services_path
-        data["vaults"].append(entry)
-
-    _save_registry(data)
+def clear_home_vault() -> bool:
+    """Clear the configured home vault. Returns True if one existed."""
+    data = _load_config()
+    existed = data.get("home_vault") is not None
+    data["home_vault"] = None
+    _save_config(data)
+    return existed
 
 
 def touch_vault(vault_id: str) -> None:
-    """Update last_used timestamp for a vault."""
-    data = _load_registry()
-    for v in data["vaults"]:
-        if v["id"] == vault_id:
-            v["last_used"] = datetime.now().isoformat()
-            break
-    _save_registry(data)
+    """Update last_used for the home vault if it matches the given ID."""
+    try:
+        home = get_home_vault()
+        if not home or home["id"] != vault_id:
+            return
+        set_home_vault(
+            vault_id=home["id"],
+            name=home["name"],
+            path=Path(home["path"]),
+            services_path=home.get("services_path"),
+        )
+    except (OSError, PermissionError):
+        pass
 
 
-def unregister_vault(vault_id: str) -> bool:
-    """Remove a vault from the registry. Returns True if found."""
-    data = _load_registry()
-    before = len(data["vaults"])
-    data["vaults"] = [v for v in data["vaults"] if v["id"] != vault_id]
-    _save_registry(data)
-    return len(data["vaults"]) < before

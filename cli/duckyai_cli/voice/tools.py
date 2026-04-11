@@ -54,18 +54,9 @@ def _find_vault_root() -> Path:
 
 def _get_copilot_sdk_python() -> str:
     """Find Python 3.10+ for the Copilot SDK."""
-    uv_dir = Path(os.environ.get("APPDATA", "")) / "uv" / "python"
-    if uv_dir.exists():
-        for ver_dir in sorted(uv_dir.iterdir(), reverse=True):
-            if "cpython-3.1" in ver_dir.name:
-                py = ver_dir / "python.exe" if os.name == "nt" else ver_dir / "bin" / "python3"
-                if py.exists():
-                    return str(py)
-    for ver in ["3.14", "3.13", "3.12", "3.11", "3.10"]:
-        py = shutil.which(f"python{ver}")
-        if py:
-            return py
-    return shutil.which("python3") or shutil.which("python") or "python"
+    from ..main.install_health import find_copilot_sdk_python
+
+    return find_copilot_sdk_python()
 
 
 async def handle_tool_call(name: str, arguments: Dict[str, Any]) -> str:

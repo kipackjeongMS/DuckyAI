@@ -9,6 +9,7 @@ from rich.panel import Panel
 from ..orchestrator.core import Orchestrator
 from ..config import Config
 from ..logger import Logger
+from .orch_cmd import _cleanup_orchestrator_processes
 
 logger = Logger(console_output=True)
 
@@ -33,6 +34,13 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
     )
     pid_file = vault_path / ".orchestrator.pid"
 
+    cleanup = _cleanup_orchestrator_processes(vault_path, fresh_start=True)
+    replaced_pids = cleanup["terminated_pids"] + cleanup["killed_pids"]
+    if replaced_pids:
+        logger.info(f"Cleaned existing orchestrator process(es): {', '.join(str(pid) for pid in replaced_pids)}")
+    for error in cleanup["errors"]:
+        logger.warning(f"Orchestrator startup cleanup: {error}")
+
     # Write PID file
     pid_file.write_text(str(os.getpid()), encoding="utf-8")
 
@@ -56,11 +64,27 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
         mcp_config=mcp_config,
         claude_settings=claude_settings
     )
+    # Test compatibility: patched Orchestrator mocks may not carry a real Path.
+    orch.vault_path = Path(vault_path)
 
-    # Setup signal handlers — clean up PID file on exit
+    # Start HTTP API server in background thread
+    from ..api.server import start_api_server, cleanup_discovery_file
+    api_thread = None
+    api_port = config.get("api.port", 52845)
+    try:
+        api_port = int(api_port)
+    except (TypeError, ValueError):
+        logger.debug("Skipping HTTP API startup because api.port is not a valid integer")
+        api_port = None
+
+    if api_port is not None:
+        api_thread = start_api_server(orch, config, port=api_port)
+
+    # Setup signal handlers — clean up PID file + discovery file on exit
     def signal_handler(sig, frame):
         logger.info("\n[yellow]Received interrupt signal, shutting down...[/yellow]")
         pid_file.unlink(missing_ok=True)
+        cleanup_discovery_file(vault_path)
         if orch:
             orch.stop()
         sys.exit(0)
@@ -129,6 +153,7 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
         orch.run_forever()
     finally:
         pid_file.unlink(missing_ok=True)
+        cleanup_discovery_file(vault_path)
 
 
 def execute_prompt_with_session(

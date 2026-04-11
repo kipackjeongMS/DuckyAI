@@ -29,9 +29,8 @@ Refer to that file for:
 ```
 Workflow: DIR - 2025-08-28
 
-Daily Ingestion and Roundup:
+Daily Ingestion:
 - Processed lifelog from Limitless
-- Updated daily roundup
 - Added topic knowledge updates
 
 🤖 Generated with [Claude Code](https://claude.ai/code)
