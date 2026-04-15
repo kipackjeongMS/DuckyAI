@@ -1,0 +1,73 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export interface DuckyAIConfig {
+  id: string;
+  name: string;
+  user: { name: string; timezone: string };
+  orchestrator: { max_concurrent: number };
+  nodes: Array<{
+    name: string;
+    type: string;
+    enabled?: boolean;
+    cron?: string;
+    input_path?: string;
+    output_path?: string;
+  }>;
+}
+
+/** Resolve the vault root path.
+ *
+ * Priority:
+ *   1. DUCKYAI_VAULT_ROOT env var
+ *   2. home_vault from ~/.duckyai/config.json
+ *   3. Walk up from this file's directory to find duckyai.yml
+ */
+export function resolveVaultPath(): string {
+  const fromEnv = process.env.DUCKYAI_VAULT_ROOT;
+  if (fromEnv && fs.existsSync(path.join(fromEnv, ".duckyai", "duckyai.yml"))) {
+    return fromEnv;
+  }
+
+  // Check global config for home_vault
+  const globalConfig = path.join(
+    process.env.USERPROFILE || process.env.HOME || "",
+    ".duckyai",
+    "config.json",
+  );
+  if (fs.existsSync(globalConfig)) {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(globalConfig, "utf-8"));
+      const homeVaultPath = cfg?.home_vault?.path;
+      if (homeVaultPath && fs.existsSync(path.join(homeVaultPath, ".duckyai", "duckyai.yml"))) {
+        return homeVaultPath;
+      }
+    } catch {
+      // Ignore malformed config
+    }
+  }
+
+  // Walk up from this file's directory to find .duckyai/duckyai.yml
+  let dir = path.resolve(__dirname, "../..");
+  for (let i = 0; i < 10; i++) {
+    if (fs.existsSync(path.join(dir, ".duckyai", "duckyai.yml"))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  throw new Error("Could not find duckyai.yml. Set DUCKYAI_VAULT_ROOT.");
+}
+
+export function readConfig(vaultPath: string): DuckyAIConfig {
+  const configPath = path.join(vaultPath, ".duckyai", "duckyai.yml");
+  const raw = fs.readFileSync(configPath, "utf-8");
+  return parseYaml(raw) as DuckyAIConfig;
+}

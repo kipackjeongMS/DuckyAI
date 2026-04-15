@@ -15,9 +15,7 @@ from duckyai_cli.api.vault_service import VaultService
 def _setup_vault(tmp_path: Path) -> Path:
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     return vault
 
 

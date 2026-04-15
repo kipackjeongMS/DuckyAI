@@ -520,6 +520,7 @@ Skills are located in `.github/skills/`. Each skill folder contains a `SKILL.md`
 - **Paragraph cohesion**: Write related sentences as a single paragraph (minimum 2-3 sentences)
   - Avoid paragraphs with only one sentence standing alone
   - Combine short sentences logically into one
+- **Summaries use bullet points, not paragraphs**: All summarization output (meeting highlights, chat highlights, PR review summaries, task summaries, daily roundups) must be written as concise bullet points — never as prose paragraphs. Each bullet should be one actionable or informational point.
 
 ### Table vs Diagram Selection
 - **Use tables for**: Attribute-value mappings, comparisons, option listings (structured data)
