@@ -29,9 +29,7 @@ def _write_task(vault: Path, title: str, content: str) -> Path:
 def test_get_current_date_formats_using_user_timezone(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text(
+    (vault / "duckyai.yml").write_text(
         'id: v1\nuser:\n  timezone: "America/Los_Angeles"\n',
         encoding="utf-8",
     )
@@ -52,9 +50,7 @@ def test_get_current_date_formats_using_user_timezone(monkeypatch, tmp_path):
 def test_convert_utc_to_local_date_converts_across_day_boundary(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text(
+    (vault / "duckyai.yml").write_text(
         'id: v1\nuser:\n  timezone: "America/Los_Angeles"\n',
         encoding="utf-8",
     )
@@ -69,9 +65,7 @@ def test_convert_utc_to_local_date_converts_across_day_boundary(tmp_path):
 def test_convert_utc_to_local_date_rejects_invalid_timestamp(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\n', encoding="utf-8")
 
     service = VaultService(vault)
 
@@ -83,9 +77,7 @@ def test_convert_utc_to_local_date_rejects_invalid_timestamp(tmp_path):
 def test_call_tool_rejects_unknown_tool(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\n', encoding="utf-8")
 
     service = VaultService(vault)
 
@@ -96,9 +88,7 @@ def test_call_tool_rejects_unknown_tool(tmp_path):
 def test_create_task_creates_task_file_from_template(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
 
     service = VaultService(vault)
     monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-26")
@@ -127,9 +117,7 @@ def test_create_task_creates_task_file_from_template(monkeypatch, tmp_path):
 def test_create_task_deduplicates_case_insensitive_and_fuzzy_titles(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\n', encoding="utf-8")
     _write_task(vault, "Write Tests", "existing")
 
     service = VaultService(vault)
@@ -148,9 +136,7 @@ def test_create_task_deduplicates_case_insensitive_and_fuzzy_titles(tmp_path):
 def test_update_task_status_updates_frontmatter(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_task(
         vault,
         "Write tests",
@@ -170,9 +156,7 @@ def test_update_task_status_updates_frontmatter(monkeypatch, tmp_path):
 def test_archive_task_moves_file_and_updates_frontmatter(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_task(
         vault,
         "Write tests",
@@ -195,9 +179,7 @@ def test_archive_task_moves_file_and_updates_frontmatter(monkeypatch, tmp_path):
 def test_log_pr_review_creates_pr_note_updates_daily_note_and_contact(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-26",
@@ -234,9 +216,7 @@ def test_log_pr_review_creates_pr_note_updates_daily_note_and_contact(monkeypatc
 def test_log_pr_review_empty_pr_url_accepted(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-26",
@@ -269,9 +249,7 @@ def test_log_pr_review_empty_pr_url_accepted(monkeypatch, tmp_path):
 def test_log_pr_review_no_pr_number_uses_description_as_title(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-27",
@@ -308,9 +286,7 @@ def test_log_pr_review_no_pr_number_uses_description_as_title(monkeypatch, tmp_p
 def test_log_pr_review_completed_adds_tasks_completed_and_reuses_existing_pr_file(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-26",
@@ -346,9 +322,7 @@ def test_log_pr_review_completed_adds_tasks_completed_and_reuses_existing_pr_fil
 def test_create_meeting_creates_note_and_contacts(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
 
     service = VaultService(vault)
     monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-26")
@@ -381,9 +355,7 @@ def test_create_meeting_creates_note_and_contacts(monkeypatch, tmp_path):
 def test_create_1on1_creates_note_and_contact(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
 
     service = VaultService(vault)
     monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-26")
@@ -403,9 +375,7 @@ def test_create_1on1_creates_note_and_contact(monkeypatch, tmp_path):
 def test_prepare_daily_note_creates_note_with_carry_forward(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-25",
@@ -424,9 +394,7 @@ def test_prepare_daily_note_creates_note_with_carry_forward(monkeypatch, tmp_pat
 def test_prepare_daily_note_reports_existing_file(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(vault, "2026-03-26", "existing")
 
     service = VaultService(vault)
@@ -439,9 +407,7 @@ def test_prepare_daily_note_reports_existing_file(tmp_path):
 def test_log_action_appends_completed_and_carry_forward(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-26",
@@ -460,9 +426,7 @@ def test_log_action_appends_completed_and_carry_forward(monkeypatch, tmp_path):
 def test_log_task_appends_and_deduplicates(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-26",
@@ -483,9 +447,7 @@ def test_log_task_appends_and_deduplicates(monkeypatch, tmp_path):
 def test_update_daily_note_section_creates_note_and_replaces_section(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
 
     service = VaultService(vault)
     result = service.call_tool(
@@ -507,9 +469,7 @@ def test_update_daily_note_section_creates_note_and_replaces_section(tmp_path):
 def test_get_teams_chat_sync_state_defaults_to_empty(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
 
     service = VaultService(vault)
     result = service.call_tool("getTeamsChatSyncState", {})
@@ -521,9 +481,7 @@ def test_get_teams_chat_sync_state_defaults_to_empty(tmp_path):
 def test_update_teams_chat_sync_state_tracks_pending_dates(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(vault, "2026-03-26", "## Teams Chat Highlights\n### Chat A\n- hello\n")
 
     service = VaultService(vault)
@@ -549,9 +507,7 @@ def test_update_teams_chat_sync_state_tracks_pending_dates(monkeypatch, tmp_path
 def test_append_teams_chat_highlights_merges_and_updates_contacts(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-26",
@@ -585,9 +541,7 @@ def test_append_teams_chat_highlights_merges_and_updates_contacts(monkeypatch, t
 def test_get_teams_meeting_sync_state_defaults_to_empty(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
 
     service = VaultService(vault)
     result = service.call_tool("getTeamsMeetingSyncState", {})
@@ -599,9 +553,7 @@ def test_get_teams_meeting_sync_state_defaults_to_empty(tmp_path):
 def test_update_teams_meeting_sync_state_tracks_pending_dates(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(vault, "2026-03-26", "## Teams Meeting Highlights\n### Meeting A\n- summary\n")
 
     service = VaultService(vault)
@@ -627,9 +579,7 @@ def test_update_teams_meeting_sync_state_tracks_pending_dates(monkeypatch, tmp_p
 def test_append_teams_meeting_highlights_merges_and_updates_contacts(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-26",
@@ -662,9 +612,7 @@ def test_append_teams_meeting_highlights_merges_and_updates_contacts(monkeypatch
 def test_prepare_weekly_review_aggregates_completed_tasks(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-23",
@@ -698,9 +646,7 @@ def test_prepare_weekly_review_aggregates_completed_tasks(monkeypatch, tmp_path)
 def test_prepare_weekly_review_reports_existing_file(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     weekly_dir = vault / "04-Periodic" / "Weekly"
     weekly_dir.mkdir(parents=True, exist_ok=True)
     (weekly_dir / "2026-W13.md").write_text("existing", encoding="utf-8")
@@ -714,9 +660,7 @@ def test_prepare_weekly_review_reports_existing_file(tmp_path):
 def test_prepare_weekly_review_defaults_to_current_week(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
 
     service = VaultService(vault)
     monkeypatch.setattr(service, "_get_current_week_id", lambda: "2026-W13")
@@ -729,9 +673,7 @@ def test_prepare_weekly_review_defaults_to_current_week(monkeypatch, tmp_path):
 def test_generate_roundup_appends_summary_and_uses_modified_tasks(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-26",
@@ -764,9 +706,7 @@ def test_generate_roundup_appends_summary_and_uses_modified_tasks(tmp_path):
 def test_generate_roundup_replaces_existing_roundup(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-26",
@@ -784,9 +724,7 @@ def test_generate_roundup_replaces_existing_roundup(tmp_path):
 def test_generate_roundup_reports_missing_daily_note(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
 
     service = VaultService(vault)
     result = service.call_tool("generateRoundup", {"date": "2026-03-26"})
@@ -799,9 +737,7 @@ def test_generate_roundup_reports_missing_daily_note(tmp_path):
 def test_triage_inbox_preview_and_move(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     inbox = vault / "00-Inbox"
     inbox.mkdir(parents=True, exist_ok=True)
     (inbox / "Fix bug.md").write_text("Implement bug fix", encoding="utf-8")
@@ -822,9 +758,7 @@ def test_triage_inbox_preview_and_move(tmp_path):
 def test_enrich_note_adds_frontmatter_and_summary(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     doc_dir = vault / "03-Knowledge" / "Documentation"
     doc_dir.mkdir(parents=True, exist_ok=True)
     note = doc_dir / "Runbook.md"
@@ -845,9 +779,7 @@ def test_enrich_note_adds_frontmatter_and_summary(monkeypatch, tmp_path):
 def test_update_topic_index_creates_topic_file(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     tasks_dir = vault / "01-Work" / "Tasks"
     tasks_dir.mkdir(parents=True, exist_ok=True)
     (tasks_dir / "Managed Identity Task.md").write_text("Managed Identity rollout", encoding="utf-8")

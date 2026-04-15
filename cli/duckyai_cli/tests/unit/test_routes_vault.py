@@ -15,17 +15,10 @@ def _make_app(vault_path: Path):
     return app
 
 
-def _setup_vault(tmp_path: Path) -> Path:
+def test_vault_tool_uses_native_service_for_implemented_tool(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    duckyai_dir = vault / ".duckyai"
-    duckyai_dir.mkdir()
-    (duckyai_dir / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
-    return vault
-
-
-def test_vault_tool_uses_native_service_for_implemented_tool(tmp_path):
-    vault = _setup_vault(tmp_path)
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     app = _make_app(vault)
 
     with app.test_client() as client:
@@ -39,7 +32,9 @@ def test_vault_tool_uses_native_service_for_implemented_tool(tmp_path):
 
 
 def test_vault_tool_uses_native_service_for_create_task(tmp_path):
-    vault = _setup_vault(tmp_path)
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     app = _make_app(vault)
 
     with app.test_client() as client:
@@ -53,7 +48,9 @@ def test_vault_tool_uses_native_service_for_create_task(tmp_path):
 
 
 def test_vault_tool_uses_native_service_for_create_meeting(tmp_path):
-    vault = _setup_vault(tmp_path)
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     app = _make_app(vault)
 
     with app.test_client() as client:
@@ -67,7 +64,9 @@ def test_vault_tool_uses_native_service_for_create_meeting(tmp_path):
 
 
 def test_vault_tool_uses_native_service_for_chat_sync_state(tmp_path):
-    vault = _setup_vault(tmp_path)
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     app = _make_app(vault)
 
     with app.test_client() as client:
@@ -83,7 +82,9 @@ def test_vault_tool_uses_native_service_for_chat_sync_state(tmp_path):
 
 
 def test_vault_tool_uses_native_service_for_weekly_review(tmp_path):
-    vault = _setup_vault(tmp_path)
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     app = _make_app(vault)
 
     with app.test_client() as client:
@@ -99,7 +100,9 @@ def test_vault_tool_uses_native_service_for_weekly_review(tmp_path):
 
 
 def test_vault_tool_uses_native_service_for_generate_roundup(tmp_path):
-    vault = _setup_vault(tmp_path)
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     daily_dir = vault / "04-Periodic" / "Daily"
     daily_dir.mkdir(parents=True, exist_ok=True)
     (daily_dir / "2026-03-26.md").write_text("## Tasks\n- [x] shipped feature\n", encoding="utf-8")
@@ -118,7 +121,9 @@ def test_vault_tool_uses_native_service_for_generate_roundup(tmp_path):
 
 
 def test_vault_tool_uses_native_service_for_triage_inbox(tmp_path):
-    vault = _setup_vault(tmp_path)
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     inbox = vault / "00-Inbox"
     inbox.mkdir(parents=True, exist_ok=True)
     (inbox / "Fix bug.md").write_text("bug", encoding="utf-8")
@@ -137,7 +142,9 @@ def test_vault_tool_uses_native_service_for_triage_inbox(tmp_path):
 
 
 def test_vault_tool_rejects_unknown_tool(tmp_path):
-    vault = _setup_vault(tmp_path)
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     app = _make_app(vault)
 
     with app.test_client() as client:
@@ -151,7 +158,9 @@ def test_vault_tool_rejects_unknown_tool(tmp_path):
 
 
 def test_vault_tool_rejects_non_object_arguments(tmp_path):
-    vault = _setup_vault(tmp_path)
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     app = _make_app(vault)
 
     with app.test_client() as client:

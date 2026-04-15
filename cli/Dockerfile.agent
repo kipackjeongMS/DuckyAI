@@ -51,5 +51,4 @@ ENV DUCKYAI_CONTAINER=1
 # Default working directory (vault mount point)
 WORKDIR /vault
 
-# No entrypoint — secret loading is handled by the host orchestrator
-# via inline `sh -c` wrapper at docker run time.
+# No entrypoint — command is passed per `docker run`
