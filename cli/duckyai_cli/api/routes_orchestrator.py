@@ -1,6 +1,7 @@
-"""Orchestrator API routes — status, trigger, agents."""
+"""Orchestrator API routes — status, trigger, agents, history."""
 
 import threading
+from pathlib import Path
 from flask import Blueprint, current_app, jsonify, request
 
 bp = Blueprint("orchestrator", __name__)
@@ -152,3 +153,109 @@ def shutdown():
     exit_thread.start()
 
     return response
+
+
+@bp.route("/history")
+def history():
+    """GET /api/orchestrator/history — execution history for a given day.
+
+    Query params:
+      date   — YYYY-MM-DD (defaults to today)
+      agent  — filter by agent abbreviation (optional)
+      status — filter by status (optional)
+    """
+    orch = current_app.config["orchestrator"]
+    config = current_app.config["duckyai_config"]
+    vault_path = Path(current_app.config["vault_path"])
+
+    date_str = request.args.get("date")
+    if not date_str:
+        date_str = config.user_now().strftime("%Y-%m-%d")
+
+    # Validate date format
+    import re
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+
+    task_mgr = orch.execution_manager.task_manager
+    if task_mgr is None:
+        return jsonify([])
+
+    daily_log = task_mgr._get_daily_log(date_str)
+    entries = daily_log._read_entries()
+
+    # Apply filters
+    agent_filter = request.args.get("agent")
+    status_filter = request.args.get("status")
+    if agent_filter:
+        entries = [e for e in entries if e.get("agent") == agent_filter]
+    if status_filter:
+        status_upper = status_filter.upper()
+        entries = [e for e in entries if e.get("status", "").upper() == status_upper]
+
+    return jsonify(entries)
+
+
+@bp.route("/log/<execution_id>")
+def execution_log(execution_id: str):
+    """GET /api/orchestrator/log/<execution_id> — detailed log for one execution.
+
+    Looks up the log_path from today's (or specified date's) entries,
+    then reads and returns the log file content.
+
+    Query params:
+      date — YYYY-MM-DD (defaults to today)
+    """
+    import re
+
+    config = current_app.config["duckyai_config"]
+    orch = current_app.config["orchestrator"]
+    vault_path = Path(current_app.config["vault_path"])
+
+    date_str = request.args.get("date")
+    if not date_str:
+        date_str = config.user_now().strftime("%Y-%m-%d")
+
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+
+    # Validate execution_id format (alphanumeric, max 64 chars)
+    if not re.match(r"^[a-zA-Z0-9_-]{1,64}$", execution_id):
+        return jsonify({"error": "Invalid execution_id format."}), 400
+
+    task_mgr = orch.execution_manager.task_manager
+    if task_mgr is None:
+        return jsonify({"error": "Task manager not available."}), 404
+
+    daily_log = task_mgr._get_daily_log(date_str)
+    entries = daily_log._read_entries()
+
+    # Find the entry with matching execution_id
+    entry = None
+    for e in entries:
+        if e.get("id") == execution_id:
+            entry = e
+            break
+
+    if entry is None:
+        return jsonify({"error": f"Execution '{execution_id}' not found."}), 404
+
+    log_path_str = entry.get("log_path", "")
+    if not log_path_str:
+        return jsonify({"error": "No log file recorded for this execution."}), 404
+
+    # Resolve and validate path is under vault/.duckyai/logs/
+    log_path = (vault_path / log_path_str).resolve()
+    logs_dir = (vault_path / ".duckyai" / "logs").resolve()
+    if not str(log_path).startswith(str(logs_dir)):
+        return jsonify({"error": "Log path outside allowed directory."}), 403
+
+    if not log_path.exists():
+        return jsonify({"error": "Log file no longer exists."}), 404
+
+    content = log_path.read_text(encoding="utf-8", errors="replace")
+    return jsonify({
+        "execution_id": execution_id,
+        "log_path": log_path_str,
+        "content": content,
+    })

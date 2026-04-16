@@ -102,6 +102,22 @@ export class DuckyAIClient {
     return this.post("/api/orchestrator/trigger", body);
   }
 
+  async history(opts?: { date?: string; agent?: string; status?: string }): Promise<any[]> {
+    const params = new URLSearchParams();
+    if (opts?.date) params.set("date", opts.date);
+    if (opts?.agent) params.set("agent", opts.agent);
+    if (opts?.status) params.set("status", opts.status);
+    const qs = params.toString();
+    return this.get(`/api/orchestrator/history${qs ? `?${qs}` : ""}`);
+  }
+
+  async executionLog(executionId: string, date?: string): Promise<any> {
+    const params = new URLSearchParams();
+    if (date) params.set("date", date);
+    const qs = params.toString();
+    return this.get(`/api/orchestrator/log/${encodeURIComponent(executionId)}${qs ? `?${qs}` : ""}`);
+  }
+
   // ── Vault Tools ──────────────────────────────────────────────
 
   async listTools(): Promise<string[]> {

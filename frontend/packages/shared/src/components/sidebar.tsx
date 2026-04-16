@@ -8,8 +8,11 @@ import {
   FileText,
   Loader2,
   Code2,
+  Activity,
 } from "lucide-react";
 import type { Agent } from "../hooks/use-orchestrator";
+import type { ExecutionEntry, ExecutionLogDetail } from "../types/duckyai";
+import { AgentActivityLog } from "./agent-activity-log";
 
 type AgentStatus = "idle" | "running" | "offline" | "queued";
 
@@ -44,6 +47,13 @@ export interface SidebarProps {
   onToggleOrchestrator: () => void;
   onTriggerAgent: (abbreviation: string) => void;
   onOpenWorkspace?: () => void;
+  // Activity log
+  activityEntries?: ExecutionEntry[];
+  activityLoading?: boolean;
+  activityAgentFilter?: string | null;
+  onActivityFilterChange?: (agent: string | null) => void;
+  onActivityRefresh?: () => void;
+  onFetchLog?: (id: string) => Promise<ExecutionLogDetail>;
 }
 
 export function Sidebar({
@@ -53,6 +63,12 @@ export function Sidebar({
   onToggleOrchestrator,
   onTriggerAgent,
   onOpenWorkspace,
+  activityEntries,
+  activityLoading,
+  activityAgentFilter,
+  onActivityFilterChange,
+  onActivityRefresh,
+  onFetchLog,
 }: SidebarProps) {
 
   const runningCount = agents.filter((a) => a.status === "running").length;
@@ -270,6 +286,34 @@ export function Sidebar({
           })}
         </div>
       </div>
+
+      {/* Recent Activity */}
+      {activityEntries !== undefined && onActivityRefresh && onFetchLog && (
+        <div className="mb-6">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Activity size={11} style={{ color: "#666" }} />
+            <h3
+              className="text-muted-foreground"
+              style={{
+                fontSize: "0.65rem",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+              }}
+            >
+              Activity Log
+            </h3>
+          </div>
+          <AgentActivityLog
+            entries={activityEntries}
+            loading={activityLoading ?? false}
+            agentFilter={activityAgentFilter ?? null}
+            agents={agents.map((a) => a.id)}
+            onSetAgentFilter={onActivityFilterChange ?? (() => {})}
+            onRefresh={onActivityRefresh}
+            onFetchLog={onFetchLog}
+          />
+        </div>
+      )}
 
       {/* Recent Conversations */}
       <div className="flex-1">

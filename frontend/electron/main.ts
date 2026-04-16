@@ -246,6 +246,12 @@ function registerIpcHandlers(api: DuckyAIClient, vaultPath: string): void {
   ipcMain.handle("orch:trigger", (_, abbr: string, opts?: Record<string, unknown>) =>
     triggerOrchestratorAgent(api, vaultPath, abbr, opts as TriggerOptions),
   );
+  ipcMain.handle("orch:history", (_, opts?: { date?: string; agent?: string; status?: string }) =>
+    api.history(opts),
+  );
+  ipcMain.handle("orch:log", (_, executionId: string, date?: string) =>
+    api.executionLog(executionId, date),
+  );
   ipcMain.handle("orch:start", async () => {
     userStoppedDaemon = false;
 

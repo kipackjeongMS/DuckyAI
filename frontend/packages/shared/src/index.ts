@@ -9,6 +9,8 @@ export type {
   OrchestratorStatus,
   AgentInfo,
   VaultEntry,
+  ExecutionEntry,
+  ExecutionLogDetail,
 } from "./types/duckyai";
 
 // Hooks
@@ -16,6 +18,7 @@ export { useOrchestrator } from "./hooks/use-orchestrator";
 export type { Agent } from "./hooks/use-orchestrator";
 export { useVaultExplorer } from "./hooks/use-vault-explorer";
 export type { FileTreeNode } from "./hooks/use-vault-explorer";
+export { useAgentHistory } from "./hooks/use-agent-history";
 
 // App component
 export { default as DuckyAIApp } from "./components/App";
@@ -32,3 +35,5 @@ export { VaultExplorer } from "./components/vault-explorer";
 export { NoteViewer } from "./components/note-viewer";
 export { LoginScreen } from "./components/login-screen";
 export { ToastContainer, useToasts } from "./components/toast";
+export { AgentActivityLog } from "./components/agent-activity-log";
+export type { AgentActivityLogProps } from "./components/agent-activity-log";

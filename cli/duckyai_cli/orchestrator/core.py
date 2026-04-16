@@ -665,7 +665,9 @@ class Orchestrator:
                 # Post-execution hooks
                 self._run_post_execution(agent, ctx, event_data)
                 # Dispatch dependent agents (trigger_wait_for)
-                self._dispatch_dependents(agent, ctx)
+                # Skip for dequeued tasks — the original cron run handles dependents
+                if not event_data.get('_from_queue'):
+                    self._dispatch_dependents(agent, ctx)
             else:
                 duration_str = f"{ctx.duration:.1f}s" if ctx.duration else "unknown"
                 error_msg = f"{agent.abbreviation} failed: {ctx.status} ({duration_str})"
@@ -881,58 +883,52 @@ class Orchestrator:
             self._queue_processing_lock.release()
 
     def _process_queued_tasks_inner(self):
-        """Inner implementation of queue processing (caller holds lock)."""
+        """Inner implementation of queue processing (caller holds lock).
+
+        Uses TaskFileManagerV2.find_queued_entries() to read QUEUED entries
+        from the v2 daily log format (entries array inside YYYY-MM-DD.md).
+        """
         import json
-        from ..markdown_utils import read_frontmatter
 
         try:
-            # Find all task files (sorted for FIFO ordering)
-            task_files = sorted(self.execution_manager.task_manager.tasks_dir.glob("*.md"))
+            queued = self.execution_manager.task_manager.find_queued_entries()
+            if not queued:
+                return
 
-            for task_path in task_files:
-                # Parse frontmatter using existing utils
-                fm = read_frontmatter(task_path)
+            # Sort by created time (FIFO)
+            queued.sort(key=lambda e: e.get('created', ''))
 
-                # Skip non-queued tasks
-                if fm.get('status') != 'QUEUED':
-                    continue
-
-                # Extract agent abbreviation, worker label, executor, and trigger data
-                agent_abbr = fm.get('task_type')
-                worker_label = fm.get('worker_label', '')
-                worker_executor = fm.get('worker')  # Executor stored in task file
-                trigger_data_json = fm.get('trigger_data_json')
+            for entry in queued:
+                exec_id = entry.get('id', '')
+                agent_abbr = entry.get('task_type') or entry.get('agent', '')
+                worker_label = entry.get('worker_label', '')
+                worker_executor = entry.get('worker')
+                trigger_data_json = entry.get('trigger_data_json', '')
 
                 if not agent_abbr:
-                    logger.warning(f"Malformed QUEUED task: missing task_type: {task_path.name}")
+                    logger.warning(f"Malformed QUEUED entry: missing task_type (id={exec_id})")
                     continue
 
-                # If trigger_data_json is missing, enrich the task with trigger data
                 if not trigger_data_json:
-                    logger.debug(f"QUEUED task missing trigger_data_json, enriching: {task_path.name}")
-                    trigger_data_json = self._enrich_queued_task_with_trigger_data(task_path, fm)
-                    if not trigger_data_json:
-                        logger.warning(f"Failed to enrich QUEUED task: {task_path.name}")
-                        continue
+                    logger.warning(f"QUEUED entry missing trigger_data_json (id={exec_id})")
+                    continue
 
                 # Look up base agent definition
                 base_agent = self.agent_registry.agents.get(agent_abbr)
                 if not base_agent:
                     logger.warning(
-                        f"Agent '{agent_abbr}' not found for QUEUED task: {task_path.name}. "
+                        f"Agent '{agent_abbr}' not found for QUEUED entry [{exec_id}]. "
                         "Agent may have been removed in configuration reload."
                     )
                     self.execution_manager.task_manager.update_task_status(
-                        task_path,
+                        exec_id,
                         "FAILED",
                         error_message=f"Agent '{agent_abbr}' not found after configuration reload"
                     )
-                    logger.info(f"Marked QUEUED task as FAILED: {task_path.name}")
                     continue
 
                 # Reconstruct worker agent variant if this was a multi-worker task
                 if worker_label and base_agent.workers:
-                    # Find the matching worker config
                     worker_config = None
                     for w in base_agent.workers:
                         if w.label == worker_label:
@@ -942,7 +938,6 @@ class Orchestrator:
                     if worker_config:
                         agent = self._create_worker_agent_variant(base_agent, worker_config)
                     elif worker_executor:
-                        # Worker config changed but task has stored executor - use it
                         from dataclasses import replace
                         logger.info(f"Worker '{worker_label}' not in current config, using stored executor '{worker_executor}'")
                         agent = replace(
@@ -956,45 +951,46 @@ class Orchestrator:
                 else:
                     agent = base_agent
 
-                # Apply agent_params overrides from task file frontmatter (e.g., lookback_hours)
-                task_agent_params = fm.get('agent_params')
-                if task_agent_params and isinstance(task_agent_params, dict):
-                    import copy
-                    agent = copy.copy(agent)
-                    agent.agent_params = {**agent.agent_params, **task_agent_params}
+                # Apply agent_params overrides from the entry
+                task_agent_params = entry.get('agent_params')
+                if task_agent_params:
+                    if isinstance(task_agent_params, str):
+                        try:
+                            task_agent_params = json.loads(task_agent_params)
+                        except json.JSONDecodeError:
+                            task_agent_params = None
+                    if isinstance(task_agent_params, dict):
+                        import copy
+                        agent = copy.copy(agent)
+                        agent.agent_params = {**agent.agent_params, **task_agent_params}
 
                 # Try to reserve a slot atomically
                 if not self.execution_manager.reserve_slot(agent):
                     break  # Still no capacity, wait for next iteration
 
-                # Reconstruct trigger data
-                # Handle both formats:
-                # 1. Old format: escaped quotes in quoted string "{\\"path\\": ...}"
-                # 2. New format: literal block scalar (already unescaped by YAML parser)
+                # Reconstruct trigger data from JSON string
                 try:
-                    # Try parsing directly first (works for literal block scalar format)
                     event_data = json.loads(trigger_data_json)
                 except json.JSONDecodeError:
-                    # Fall back to unescaping (for old quoted string format)
                     try:
                         event_data = json.loads(trigger_data_json.replace('\\"', '"'))
                     except json.JSONDecodeError as e:
-                        logger.error(f"Failed to parse trigger_data_json: {e}")
-                        # Release the reserved slot since we can't process this task
+                        logger.error(f"Failed to parse trigger_data_json for [{exec_id}]: {e}")
+                        # Release the reserved slot
                         with self.execution_manager._count_lock:
                             self.execution_manager._running_count -= 1
                         with self.execution_manager._agent_lock:
                             self.execution_manager._agent_counts[agent.abbreviation] -= 1
                         continue
 
-                # Execute agent (slot already reserved)
                 event_path = event_data.get('path', '')
-                logger.debug(f"Starting queued {agent.abbreviation}: {event_path}")
+                logger.debug(f"Starting queued {agent.abbreviation} [{exec_id}]: {event_path}")
 
-                # Inject existing task file path into event_data
-                event_data['_existing_task_file'] = str(task_path)
-                # Also inject generation_log to avoid re-reading frontmatter
-                event_data['_generation_log'] = fm.get('generation_log', '')
+                # Inject existing execution id so execute() reuses the entry
+                event_data['_existing_task_id'] = exec_id
+                # Mark as dequeued so _execute_agent skips dependent dispatch
+                # (the original run already dispatched dependents)
+                event_data['_from_queue'] = True
 
                 execution_thread = threading.Thread(
                     target=self._execute_agent,

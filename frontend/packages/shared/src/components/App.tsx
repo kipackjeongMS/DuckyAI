@@ -11,6 +11,7 @@ import { VaultExplorer } from "./vault-explorer";
 import { NoteViewer } from "./note-viewer";
 import { useOrchestrator } from "../hooks/use-orchestrator";
 import { useVaultExplorer } from "../hooks/use-vault-explorer";
+import { useAgentHistory } from "../hooks/use-agent-history";
 import { ToastContainer, useToasts } from "./toast";
 import { useDuckyAI } from "../context/duckyai-provider";
 
@@ -56,6 +57,7 @@ export default function DuckyAIApp({
   const orch = useOrchestrator();
   const { toasts, addToast, dismissToast } = useToasts();
   const vault = useVaultExplorer();
+  const activity = useAgentHistory();
   const [sidebarTab, setSidebarTab] = useState<"files" | "agents">("files");
 
   // Listen for background notifications
@@ -187,6 +189,12 @@ export default function DuckyAIApp({
                   onToggleOrchestrator={orch.toggleOrchestrator}
                   onTriggerAgent={orch.triggerAgent}
                   onOpenWorkspace={onOpenWorkspace}
+                  activityEntries={activity.entries}
+                  activityLoading={activity.loading}
+                  activityAgentFilter={activity.agentFilter}
+                  onActivityFilterChange={activity.setAgentFilter}
+                  onActivityRefresh={activity.refresh}
+                  onFetchLog={activity.fetchLog}
                 />
               </div>
             ) : (
@@ -257,6 +265,12 @@ export default function DuckyAIApp({
                     onToggleOrchestrator={orch.toggleOrchestrator}
                     onTriggerAgent={orch.triggerAgent}
                     onOpenWorkspace={onOpenWorkspace}
+                    activityEntries={activity.entries}
+                    activityLoading={activity.loading}
+                    activityAgentFilter={activity.agentFilter}
+                    onActivityFilterChange={activity.setAgentFilter}
+                    onActivityRefresh={activity.refresh}
+                    onFetchLog={activity.fetchLog}
                   />
                 )}
               </div>
@@ -312,6 +326,12 @@ export default function DuckyAIApp({
                       onToggleOrchestrator={orch.toggleOrchestrator}
                       onTriggerAgent={orch.triggerAgent}
                       onOpenWorkspace={onOpenWorkspace}
+                      activityEntries={activity.entries}
+                      activityLoading={activity.loading}
+                      activityAgentFilter={activity.agentFilter}
+                      onActivityFilterChange={activity.setAgentFilter}
+                      onActivityRefresh={activity.refresh}
+                      onFetchLog={activity.fetchLog}
                     />
                   </motion.div>
                 </>
