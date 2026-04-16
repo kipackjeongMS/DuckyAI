@@ -940,6 +940,28 @@ class ExecutionManager:
             combined_output_parts.append(completed.stderr)
         combined_output = "\n".join(part.rstrip() for part in combined_output_parts if part).strip()
 
+        # Auto-start Docker Desktop on connection failure and retry once
+        if use_container and completed.returncode != 0 and 'dockerDesktopLinuxEngine' in combined_output:
+            logger.info(f"[{agent_name}] Docker not running — starting Docker Desktop and retrying...", console=True)
+            if self._ensure_docker_running():
+                completed = subprocess.run(
+                    cmd,
+                    input=stdin_input,
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace',
+                    cwd=cwd,
+                    env=env,
+                    timeout=timeout_seconds,
+                )
+                combined_output_parts = []
+                if completed.stdout:
+                    combined_output_parts.append(completed.stdout)
+                if completed.stderr:
+                    combined_output_parts.append(completed.stderr)
+                combined_output = "\n".join(part.rstrip() for part in combined_output_parts if part).strip()
+
         logs = [f"[{agent_name}] {line}" for line in combined_output.splitlines() if line.strip()]
         for line in logs:
             logger.info(line)
@@ -950,6 +972,62 @@ class ExecutionManager:
             raise RuntimeError(f"{agent_name} execution failed (exit code {completed.returncode}): {error_detail[:500]}")
 
         ctx.response = combined_output
+
+    def _ensure_docker_running(self, timeout: int = 90) -> bool:
+        """Start Docker Desktop and wait until the Docker daemon is responsive.
+
+        Returns True if Docker became reachable within the timeout.
+        """
+        import time
+
+        # Try to start Docker Desktop (Windows)
+        docker_desktop_paths = [
+            os.path.expandvars(r"%ProgramFiles%\Docker\Docker\Docker Desktop.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\Docker\Docker\Docker Desktop.exe"),
+        ]
+        started = False
+        for path in docker_desktop_paths:
+            if os.path.exists(path):
+                try:
+                    subprocess.Popen(
+                        [path],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        creationflags=subprocess.DETACHED_PROCESS if platform.system() == 'Windows' else 0,
+                    )
+                    started = True
+                    logger.info(f"Launched Docker Desktop: {path}", console=True)
+                    break
+                except Exception as e:
+                    logger.warning(f"Failed to launch Docker Desktop from {path}: {e}")
+
+        if not started:
+            logger.error("Could not find Docker Desktop executable")
+            return False
+
+        # Poll docker info until it responds
+        deadline = time.monotonic() + timeout
+        interval = 3
+        while time.monotonic() < deadline:
+            time.sleep(interval)
+            try:
+                result = subprocess.run(
+                    ["docker", "info"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if result.returncode == 0:
+                    logger.info("Docker Desktop is ready", console=True)
+                    return True
+            except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+                pass
+            remaining = int(deadline - time.monotonic())
+            if remaining > 0:
+                logger.info(f"Waiting for Docker Desktop... ({remaining}s remaining)")
+
+        logger.error(f"Docker Desktop did not become ready within {timeout}s")
+        return False
 
     def _build_scan_services(self) -> List[Dict]:
         """Build scan_services list for the PRS agent.

@@ -172,12 +172,12 @@ async function triggerOrchestratorAgent(
 }
 
 function createWindow(): void {
-  const preloadPath = path.join(__dirname, "..", "electron", "preload.cjs");
+  const preloadPath = path.join(__dirname, "..", "packages", "electron", "preload.cjs");
   const preloadExists = fs.existsSync(preloadPath);
   console.log(`[main] preload path: ${preloadPath}`);
   console.log(`[main] preload exists: ${preloadExists}`);
 
-  const iconPath = path.join(__dirname, "..", "electron", "icon.png");
+  const iconPath = path.join(__dirname, "..", "packages", "electron", "icon.png");
 
   mainWindow = new BrowserWindow({
     width: 1200,

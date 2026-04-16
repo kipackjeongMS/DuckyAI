@@ -93,7 +93,7 @@ function EntryRow({ entry, onFetchLog }: EntryRowProps) {
   };
 
   return (
-    <div>
+    <div className="w-full">
       <motion.button
         className="w-full text-left px-3 py-2.5 rounded-lg transition-colors"
         style={{
@@ -283,7 +283,7 @@ export function AgentActivityLog({
   });
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 w-full">
       {/* Header with filter and refresh */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -339,10 +339,11 @@ export function AgentActivityLog({
           No executions today
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-1 w-full">
           {sorted.map((entry, i) => (
             <motion.div
               key={entry.id}
+              className="w-full"
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.02 }}
