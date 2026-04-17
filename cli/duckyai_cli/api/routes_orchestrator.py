@@ -242,8 +242,8 @@ def execution_log(execution_id: str):
 
     log_path_str = entry.get("log_path", "")
 
-    # Fallback: construct log path from agent + created timestamp
-    # Pattern: YYYY-MM-DD-HHMMSS-{AGENT}.log
+    # Fallback: find log file by matching agent + date, closest to created time
+    # Log filenames use start_time (HHMMSS) which may differ from entry created time
     if not log_path_str:
         agent = entry.get("agent", "")
         created = entry.get("created", "")
@@ -251,13 +251,32 @@ def execution_log(execution_id: str):
             try:
                 from datetime import datetime
                 dt = datetime.fromisoformat(created)
-                filename = f"{dt.strftime('%Y-%m-%d-%H%M%S')}-{agent}.log"
-                # Check .duckyai/logs/ first, then legacy _Settings_/Logs/
+                date_prefix = dt.strftime('%Y-%m-%d')
+                target_seconds = dt.hour * 3600 + dt.minute * 60 + dt.second
+
+                # Check both log directories
+                best_match = None
+                best_diff = float('inf')
                 for logs_dir in [".duckyai/logs", "_Settings_/Logs"]:
-                    candidate = vault_path / logs_dir / filename
-                    if candidate.exists():
-                        log_path_str = str(candidate.relative_to(vault_path))
-                        break
+                    logs_path = vault_path / logs_dir
+                    if not logs_path.exists():
+                        continue
+                    for candidate in logs_path.glob(f"{date_prefix}-*-{agent}.log"):
+                        # Extract HHMMSS from filename: YYYY-MM-DD-HHMMSS-AGENT.log
+                        parts = candidate.stem.split('-')
+                        if len(parts) >= 4:
+                            hhmmss = parts[3]
+                            if len(hhmmss) == 6 and hhmmss.isdigit():
+                                h, m, s = int(hhmmss[:2]), int(hhmmss[2:4]), int(hhmmss[4:6])
+                                file_seconds = h * 3600 + m * 60 + s
+                                diff = abs(file_seconds - target_seconds)
+                                if diff < best_diff:
+                                    best_diff = diff
+                                    best_match = candidate
+
+                # Accept if within 10 minutes of created time
+                if best_match and best_diff < 600:
+                    log_path_str = str(best_match.relative_to(vault_path))
             except (ValueError, TypeError):
                 pass
 
