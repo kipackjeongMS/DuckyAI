@@ -188,6 +188,8 @@ export default function DuckyAIApp({
                   triggeringId={orch.triggeringId}
                   onToggleOrchestrator={orch.toggleOrchestrator}
                   onTriggerAgent={orch.triggerAgent}
+                  restarting={orch.restarting}
+                  onRestartDaemon={orch.restartDaemon}
                   onOpenWorkspace={onOpenWorkspace}
                   activityEntries={activity.entries}
                   activityLoading={activity.loading}
@@ -264,6 +266,8 @@ export default function DuckyAIApp({
                     triggeringId={orch.triggeringId}
                     onToggleOrchestrator={orch.toggleOrchestrator}
                     onTriggerAgent={orch.triggerAgent}
+                    restarting={orch.restarting}
+                    onRestartDaemon={orch.restartDaemon}
                     onOpenWorkspace={onOpenWorkspace}
                     activityEntries={activity.entries}
                     activityLoading={activity.loading}
@@ -325,6 +329,8 @@ export default function DuckyAIApp({
                       triggeringId={orch.triggeringId}
                       onToggleOrchestrator={orch.toggleOrchestrator}
                       onTriggerAgent={orch.triggerAgent}
+                      restarting={orch.restarting}
+                      onRestartDaemon={orch.restartDaemon}
                       onOpenWorkspace={onOpenWorkspace}
                       activityEntries={activity.entries}
                       activityLoading={activity.loading}

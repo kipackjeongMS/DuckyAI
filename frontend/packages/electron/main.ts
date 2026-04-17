@@ -308,6 +308,29 @@ function registerIpcHandlers(api: DuckyAIClient, vaultPath: string): void {
       return { status: "shutdown" };
     }
   });
+  ipcMain.handle("orch:restart", async () => {
+    // Kill the daemon, then spawn a fresh one
+    try {
+      await api.post("/api/orchestrator/shutdown");
+    } catch {
+      // Daemon may already be dead
+    }
+    api.clearDiscovery();
+    userStoppedDaemon = false;
+
+    // Spawn new daemon
+    await spawnDaemon(vaultPath);
+
+    // Wait for it to become healthy
+    for (let i = 0; i < 15; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      api.refreshDiscovery();
+      if (await api.quickHealth()) {
+        return { status: "restarted" };
+      }
+    }
+    throw new Error("Daemon did not become healthy after restart");
+  });
 
   // --- Vault tools (via HTTP API) ---
   ipcMain.handle("vault:call-tool", (_, name: string, args: Record<string, unknown>) =>

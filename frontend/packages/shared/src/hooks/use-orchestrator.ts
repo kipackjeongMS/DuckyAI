@@ -133,11 +133,37 @@ export function useOrchestrator() {
     }
   }, [api]);
 
+  const [restarting, setRestarting] = useState(false);
+
+  const restartDaemon = useCallback(async () => {
+    if (restarting) return;
+    setRestarting(true);
+    try {
+      await api.orchestrator.restart();
+      // Poll until orchestrator is back
+      for (let i = 0; i < 10; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        try {
+          const status = await api.orchestrator.status();
+          if (status.running) break;
+        } catch { /* retry */ }
+      }
+      await refresh();
+    } catch (err) {
+      console.error("Failed to restart daemon:", err);
+      await refresh();
+    } finally {
+      setRestarting(false);
+    }
+  }, [restarting, refresh, api]);
+
   return {
     running,
     agents,
     triggeringId,
+    restarting,
     toggleOrchestrator,
     triggerAgent,
+    restartDaemon,
   };
 }

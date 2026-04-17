@@ -6,6 +6,7 @@ export interface DuckyAIApi {
     start: () => Promise<Record<string, unknown>>;
     stop: () => Promise<Record<string, unknown>>;
     shutdown?: () => Promise<Record<string, unknown>>;
+    restart: () => Promise<Record<string, unknown>>;
     history: (opts?: { date?: string; agent?: string; status?: string }) => Promise<ExecutionEntry[]>;
     executionLog: (executionId: string, date?: string) => Promise<ExecutionLogDetail>;
   };
@@ -70,4 +71,5 @@ export interface ExecutionLogDetail {
   execution_id: string;
   log_path: string;
   content: string;
+  response: string;
 }

@@ -254,6 +254,26 @@ export function createObsidianBridge(obsidianApp: App): DuckyAIApi {
           return { status: "shutdown" };
         }
       },
+      restart: async () => {
+        // Kill daemon, clear stale discovery, spawn fresh
+        try {
+          await post("/api/orchestrator/shutdown", {});
+        } catch {
+          // Daemon may already be dead
+        }
+        clearDiscovery();
+        await spawnDaemon(vaultPath);
+
+        // Wait for it to become healthy
+        for (let attempt = 0; attempt < 15; attempt++) {
+          await sleep(1000);
+          discoverSync();
+          if (await quickHealth()) {
+            return { status: "restarted" };
+          }
+        }
+        throw new Error("Daemon did not become healthy after restart");
+      },
       history: async (opts?: { date?: string; agent?: string; status?: string }) => {
         const params = new URLSearchParams();
         if (opts?.date) params.set("date", opts.date);

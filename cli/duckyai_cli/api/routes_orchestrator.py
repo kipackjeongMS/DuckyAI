@@ -277,8 +277,20 @@ def execution_log(execution_id: str):
         return jsonify({"error": "Log file no longer exists."}), 404
 
     content = log_path.read_text(encoding="utf-8", errors="replace")
+
+    # Extract just the ## Response section for cleaner display
+    response = content
+    resp_marker = "\n## Response\n"
+    resp_idx = content.find(resp_marker)
+    if resp_idx >= 0:
+        after = content[resp_idx + len(resp_marker):]
+        # Find next ## heading or end of file
+        next_heading = after.find("\n## ")
+        response = after[:next_heading].strip() if next_heading >= 0 else after.strip()
+
     return jsonify({
         "execution_id": execution_id,
         "log_path": log_path_str,
         "content": content,
+        "response": response,
     })

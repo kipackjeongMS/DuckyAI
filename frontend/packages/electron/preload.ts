@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("duckyai", {
       ipcRenderer.invoke("orch:trigger", abbr, opts),
     start: () => ipcRenderer.invoke("orch:start"),
     stop: () => ipcRenderer.invoke("orch:stop"),
+    restart: () => ipcRenderer.invoke("orch:restart"),
     history: (opts?: { date?: string; agent?: string; status?: string }) =>
       ipcRenderer.invoke("orch:history", opts),
     executionLog: (executionId: string, date?: string) =>

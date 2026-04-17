@@ -80,7 +80,7 @@ function EntryRow({ entry, onFetchLog }: EntryRowProps) {
       setLogError(null);
       try {
         const detail = await onFetchLog(entry.id);
-        setLogContent(detail.content);
+        setLogContent(detail.response || detail.content);
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Failed to load log";

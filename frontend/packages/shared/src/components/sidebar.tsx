@@ -9,6 +9,7 @@ import {
   Loader2,
   Code2,
   Activity,
+  RotateCcw,
 } from "lucide-react";
 import type { Agent } from "../hooks/use-orchestrator";
 import type { ExecutionEntry, ExecutionLogDetail } from "../types/duckyai";
@@ -44,8 +45,10 @@ export interface SidebarProps {
   orchestratorRunning: boolean;
   agents: Agent[];
   triggeringId: string | null;
+  restarting?: boolean;
   onToggleOrchestrator: () => void;
   onTriggerAgent: (abbreviation: string) => void;
+  onRestartDaemon?: () => void;
   onOpenWorkspace?: () => void;
   // Activity log
   activityEntries?: ExecutionEntry[];
@@ -60,8 +63,10 @@ export function Sidebar({
   orchestratorRunning,
   agents,
   triggeringId,
+  restarting,
   onToggleOrchestrator,
   onTriggerAgent,
+  onRestartDaemon,
   onOpenWorkspace,
   activityEntries,
   activityLoading,
@@ -89,23 +94,45 @@ export function Sidebar({
           >
             Orchestrator
           </h3>
-          <motion.button
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors"
-            style={{
-              fontSize: "0.65rem",
-              letterSpacing: "0.05em",
-              background: orchestratorRunning
-                ? "rgba(0,255,163,0.08)"
-                : "rgba(255,68,102,0.08)",
-              border: `1px solid ${orchestratorRunning ? "rgba(0,255,163,0.2)" : "rgba(255,68,102,0.2)"}`,
-              color: orchestratorRunning ? "#00ffa3" : "#ff4466",
-            }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onToggleOrchestrator}
-          >
-            {orchestratorRunning ? <Pause size={10} /> : <Play size={10} />}
-            {orchestratorRunning ? "Running" : "Stopped"}
-          </motion.button>
+          <div className="flex items-center gap-1.5">
+            <motion.button
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors"
+              style={{
+                fontSize: "0.65rem",
+                letterSpacing: "0.05em",
+                background: orchestratorRunning
+                  ? "rgba(0,255,163,0.08)"
+                  : "rgba(255,68,102,0.08)",
+                border: `1px solid ${orchestratorRunning ? "rgba(0,255,163,0.2)" : "rgba(255,68,102,0.2)"}`,
+                color: orchestratorRunning ? "#00ffa3" : "#ff4466",
+              }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onToggleOrchestrator}
+            >
+              {orchestratorRunning ? <Pause size={10} /> : <Play size={10} />}
+              {orchestratorRunning ? "Running" : "Stopped"}
+            </motion.button>
+            {onRestartDaemon && (
+              <motion.button
+                className="p-1 rounded-md transition-colors"
+                style={{
+                  background: "rgba(0,212,255,0.06)",
+                  border: "1px solid rgba(0,212,255,0.12)",
+                  color: restarting ? "#ffbe0b" : "#00d4ff",
+                }}
+                whileHover={{ background: "rgba(0,212,255,0.14)" }}
+                whileTap={{ scale: 0.9 }}
+                onClick={onRestartDaemon}
+                title="Restart daemon (picks up code changes)"
+              >
+                {restarting ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <RotateCcw size={12} />
+                )}
+              </motion.button>
+            )}
+          </div>
         </div>
 
         {/* Orchestrator summary bar */}
