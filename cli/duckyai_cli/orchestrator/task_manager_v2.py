@@ -336,6 +336,19 @@ class TaskFileManagerV2:
 
         logger.warning(f"Execution {exec_id} not found in recent daily logs")
 
+    def update_task_log_path(self, task_handle, log_path: str):
+        """Backfill the log_path field after the log file is written."""
+        exec_id = str(task_handle)
+        updates = {'log_path': log_path}
+
+        for days_back in range(7):
+            from datetime import timedelta
+            d = self.config.user_now() - timedelta(days=days_back)
+            date_str = d.strftime('%Y-%m-%d')
+            daily_log = self._get_daily_log(date_str)
+            if daily_log.update_entry(exec_id, updates, date_str):
+                return
+
     def update_task_status_with_trigger_data(
         self,
         task_handle,

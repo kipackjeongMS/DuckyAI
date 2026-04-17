@@ -384,6 +384,14 @@ class ExecutionManager:
                         f.write(f"## Response\n\n{ctx.response or '(no output)'}\n\n")
                         if ctx.error_message:
                             f.write(f"## Error\n\n```\n{ctx.error_message}\n```\n")
+
+                    # Backfill log_path in the task entry now that the file exists
+                    if ctx.task_file:
+                        try:
+                            log_rel = str(ctx.log_file.relative_to(self.vault_path))
+                        except ValueError:
+                            log_rel = str(ctx.log_file)
+                        self.task_manager.update_task_log_path(ctx.task_file, log_rel)
             except Exception as log_err:
                 logger.error(f"Failed to write execution log: {log_err}")
 
