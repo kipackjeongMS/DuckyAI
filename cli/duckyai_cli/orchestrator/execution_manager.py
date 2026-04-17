@@ -271,6 +271,13 @@ class ExecutionManager:
         finally:
             ctx.end_time = self.config.user_now()
 
+            # Log token usage summary to console
+            if ctx.token_usage:
+                total_in = sum(u.get('input_tokens', 0) for u in ctx.token_usage.values() if isinstance(u, dict))
+                total_out = sum(u.get('output_tokens', 0) for u in ctx.token_usage.values() if isinstance(u, dict))
+                if total_in or total_out:
+                    logger.info(f"[{agent.abbreviation}] tokens: {total_in:,} in / {total_out:,} out ({total_in + total_out:,} total)")
+
             # Update execution log with final status
             if ctx.task_file:
                 # Determine final status
@@ -365,6 +372,7 @@ class ExecutionManager:
                         "duration_seconds": round(ctx.duration, 1) if ctx.duration else None,
                         "error": ctx.error_message if ctx.error_message else None,
                         "task_file": str(ctx.task_file) if ctx.task_file else None,
+                        "token_usage": ctx.token_usage if ctx.token_usage else None,
                     }
 
                     with open(ctx.log_file, 'w', encoding='utf-8') as f:
@@ -381,17 +389,57 @@ class ExecutionManager:
                             f.write(f"\n```\n{prompt_text[trigger_idx:]}\n```\n\n")
                         else:
                             f.write("\n(no trigger context)\n\n")
+
+                        # Token usage summary
+                        if ctx.token_usage:
+                            f.write("## Token Usage\n\n")
+                            for model_id, usage in ctx.token_usage.items():
+                                if model_id.startswith('_'):
+                                    f.write(f"- {model_id[1:]}: {usage}\n")
+                                elif isinstance(usage, dict):
+                                    inp = usage.get('input_tokens', 0)
+                                    out = usage.get('output_tokens', 0)
+                                    cache_r = usage.get('cache_read_tokens', 0)
+                                    reqs = usage.get('requests', 0)
+                                    f.write(f"- **{model_id}**: {inp:,} in / {out:,} out")
+                                    if cache_r:
+                                        f.write(f" / {cache_r:,} cache-read")
+                                    if reqs:
+                                        f.write(f" ({reqs} requests)")
+                                    f.write("\n")
+                            f.write("\n")
+
                         f.write(f"## Response\n\n{ctx.response or '(no output)'}\n\n")
                         if ctx.error_message:
                             f.write(f"## Error\n\n```\n{ctx.error_message}\n```\n")
 
-                    # Backfill log_path in the task entry now that the file exists
+                    # Backfill log_path and token_usage in the task entry
                     if ctx.task_file:
                         try:
                             log_rel = str(ctx.log_file.relative_to(self.vault_path))
                         except ValueError:
                             log_rel = str(ctx.log_file)
-                        self.task_manager.update_task_log_path(ctx.task_file, log_rel)
+                        updates = {'log_path': log_rel}
+                        if ctx.token_usage:
+                            # Flatten to a compact summary for the task entry
+                            total_in = 0
+                            total_out = 0
+                            total_cache_read = 0
+                            total_requests = 0
+                            for k, v in ctx.token_usage.items():
+                                if isinstance(v, dict):
+                                    total_in += v.get('input_tokens', 0)
+                                    total_out += v.get('output_tokens', 0)
+                                    total_cache_read += v.get('cache_read_tokens', 0)
+                                    total_requests += v.get('requests', 0)
+                            updates['token_usage'] = {
+                                'input_tokens': total_in,
+                                'output_tokens': total_out,
+                                'cache_read_tokens': total_cache_read,
+                                'total_tokens': total_in + total_out,
+                                'requests': total_requests,
+                            }
+                        self.task_manager.update_task_log_path(ctx.task_file, updates)
             except Exception as log_err:
                 logger.error(f"Failed to write execution log: {log_err}")
 
@@ -846,19 +894,22 @@ class ExecutionManager:
             '-w', vault_mount,
         ]
 
-        # Default auth mounts if no extra_mounts configured
-        if not extra_mounts:
-            home = Path.home()
-            default_mounts = [
-                (home / '.copilot', '/root/.copilot', False),  # SDK needs write for session-store.db
-                (home / '.claude', '/root/.claude', True),
-                (home / '.azure', '/root/.azure', True),
-            ]
-            for source, target, readonly in default_mounts:
-                if source.exists():
-                    mount_spec = f'{source}:{target}:ro' if readonly else f'{source}:{target}'
-                    docker_cmd.extend(['-v', mount_spec])
-        else:
+        # Auth credential mounts — always included regardless of extra_mounts.
+        # .azure is read-only (DPAPI cache can't be decrypted in Linux but
+        # az login --identity and service principal auth still work).
+        home = Path.home()
+        auth_mounts = [
+            (home / '.copilot', '/root/.copilot', False),  # SDK needs write for session-store.db
+            (home / '.claude', '/root/.claude', True),
+            (home / '.azure', '/root/.azure', True),
+        ]
+        for source, target, readonly in auth_mounts:
+            if source.exists():
+                mount_spec = f'{source}:{target}:ro' if readonly else f'{source}:{target}'
+                docker_cmd.extend(['-v', mount_spec])
+
+        # Extra mounts (per-agent or global)
+        if extra_mounts:
             for mount in extra_mounts:
                 source = Path(mount['source']).expanduser()
                 target = mount['target']
@@ -980,6 +1031,24 @@ class ExecutionManager:
             raise RuntimeError(f"{agent_name} execution failed (exit code {completed.returncode}): {error_detail[:500]}")
 
         ctx.response = combined_output
+
+        # Extract token_usage from __COPILOT_SDK_RESULT__ and strip the marker from response
+        sdk_marker = '__COPILOT_SDK_RESULT__'
+        if sdk_marker in combined_output:
+            try:
+                import json as _json
+                marker_idx = combined_output.rindex(sdk_marker)
+                json_str = combined_output[marker_idx + len(sdk_marker):].strip()
+                nl = json_str.find('\n')
+                if nl >= 0:
+                    json_str = json_str[:nl]
+                sdk_result = _json.loads(json_str)
+                if 'token_usage' in sdk_result and sdk_result['token_usage']:
+                    ctx.token_usage = sdk_result['token_usage']
+                # Strip the __COPILOT_SDK_RESULT__ line from the stored response
+                ctx.response = combined_output[:marker_idx].rstrip()
+            except (ValueError, _json.JSONDecodeError):
+                pass  # Best-effort extraction
 
     def _ensure_docker_running(self, timeout: int = 90) -> bool:
         """Start Docker Desktop and wait until the Docker daemon is responsive.
@@ -1126,6 +1195,268 @@ class ExecutionManager:
                 result.append({"name": svc_name, "repos": repos})
 
         return result
+
+    def _prefetch_pr_list(self, scan_services: List[Dict]) -> List[Dict]:
+        """Pre-fetch active non-draft PRs assigned to the user on the host.
+
+        Runs ``az repos pr list`` per repo on the host, filters out drafts,
+        and returns a flat list of PR dicts. This is deterministic — no LLM
+        needed for the fetch + filter step.
+
+        Args:
+            scan_services: Output of ``_build_scan_services()``.
+
+        Returns:
+            List of PR dicts with keys: pr_id, title, author, org, project,
+            repo, source_branch, target_branch, url, is_draft, reviewers.
+        """
+        import json as _json
+        import fnmatch
+
+        az_bin = shutil.which('az')
+        if not az_bin:
+            candidate = Path(os.environ.get('ProgramFiles', '')) / 'Microsoft SDKs' / 'Azure' / 'CLI2' / 'wbin' / 'az.cmd'
+            if candidate.exists():
+                az_bin = str(candidate)
+        if not az_bin:
+            logger.warning("[PRS] az CLI not found on host — skipping prefetch")
+            return []
+
+        user_name = self.config.get_user_name()
+        all_prs: List[Dict] = []
+
+        for svc in scan_services:
+            svc_name = svc.get("name", "")
+            for repo_entry in svc.get("repos", []):
+                org = repo_entry.get("org", "")
+                project = repo_entry.get("project", "")
+                repo_pattern = repo_entry.get("repo", "")
+
+                if not org or not project:
+                    continue
+
+                # Resolve glob patterns (e.g., "*", "ServiceLinker*") to actual repo names
+                if '*' in repo_pattern or '?' in repo_pattern:
+                    repos_to_scan = self._resolve_repo_pattern(az_bin, org, project, repo_pattern)
+                else:
+                    repos_to_scan = [repo_pattern]
+
+                for repo_name in repos_to_scan:
+                    prs = self._fetch_prs_for_repo(az_bin, org, project, repo_name, user_name)
+                    for pr in prs:
+                        pr["_service"] = svc_name
+                    all_prs.extend(prs)
+
+        logger.info(f"[PRS] Pre-fetched {len(all_prs)} active non-draft PRs across {sum(len(s.get('repos', [])) for s in scan_services)} repo patterns")
+        return all_prs
+
+    def _resolve_repo_pattern(self, az_bin: str, org: str, project: str, pattern: str) -> List[str]:
+        """Resolve a glob repo pattern to actual repo names via az repos list."""
+        import json as _json
+        import fnmatch
+
+        try:
+            result = subprocess.run(
+                [az_bin, 'repos', 'list',
+                 '--org', f'https://dev.azure.com/{org}',
+                 '--project', project,
+                 '--output', 'json'],
+                capture_output=True, text=True, timeout=30,
+            )
+        except (subprocess.TimeoutExpired, Exception) as e:
+            logger.warning(f"[PRS] az repos list failed for {org}/{project}: {e}")
+            return []
+
+        if result.returncode != 0:
+            logger.warning(f"[PRS] az repos list returned {result.returncode} for {org}/{project}")
+            return []
+
+        try:
+            repos = _json.loads(result.stdout)
+        except _json.JSONDecodeError:
+            return []
+
+        return [r["name"] for r in repos if fnmatch.fnmatch(r.get("name", ""), pattern)]
+
+    def _fetch_prs_for_repo(self, az_bin: str, org: str, project: str, repo: str, user_name: str) -> List[Dict]:
+        """Fetch active non-draft PRs for a single repo where user is a reviewer."""
+        import json as _json
+
+        try:
+            result = subprocess.run(
+                [az_bin, 'repos', 'pr', 'list',
+                 '--repository', repo,
+                 '--project', project,
+                 '--org', f'https://dev.azure.com/{org}',
+                 '--status', 'active',
+                 '--output', 'json'],
+                capture_output=True, text=True, timeout=30,
+            )
+        except subprocess.TimeoutExpired:
+            logger.warning(f"[PRS] az repos pr list timed out for {org}/{project}/{repo}")
+            return []
+        except Exception as e:
+            logger.warning(f"[PRS] az repos pr list failed for {org}/{project}/{repo}: {e}")
+            return []
+
+        if result.returncode != 0:
+            stderr = result.stderr.strip()[:200]
+            logger.warning(f"[PRS] az repos pr list error for {org}/{project}/{repo}: {stderr}")
+            return []
+
+        try:
+            prs_json = _json.loads(result.stdout)
+        except _json.JSONDecodeError:
+            return []
+
+        def _strip_refs(ref: str) -> str:
+            return ref.replace('refs/heads/', '') if ref else ''
+
+        filtered = []
+        for pr in prs_json:
+            # Skip drafts
+            if pr.get("isDraft", False):
+                continue
+
+            # Skip if user is the author
+            author_name = pr.get("createdBy", {}).get("displayName", "")
+            if user_name and author_name.lower() == user_name.lower():
+                continue
+
+            # Check if user is a reviewer
+            reviewers = pr.get("reviewers", [])
+            is_reviewer = any(
+                user_name.lower() in (r.get("displayName", "").lower(), r.get("uniqueName", "").lower())
+                for r in reviewers
+            )
+            if not is_reviewer:
+                continue
+
+            pr_id = str(pr.get("pullRequestId", ""))
+            filtered.append({
+                "pr_id": pr_id,
+                "title": pr.get("title", ""),
+                "author": author_name,
+                "org": org,
+                "project": project,
+                "repo": repo,
+                "source_branch": _strip_refs(pr.get("sourceRefName", "")),
+                "target_branch": _strip_refs(pr.get("targetRefName", "")),
+                "url": f"https://dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{pr_id}",
+                "is_draft": False,
+                "reviewers": [
+                    {"name": r.get("displayName", ""), "vote": r.get("vote", 0)}
+                    for r in reviewers
+                ],
+            })
+
+        return filtered
+
+    def _prefetch_pr_metadata(self, trigger_data: Dict) -> Optional[Dict]:
+        """Pre-fetch PR metadata from Azure DevOps on the host.
+
+        Parses the trigger file to extract PR URL, then runs
+        ``az repos pr show`` on the host so the container/LLM doesn't
+        need to run ``az`` at all (avoids quoting, auth, and hang issues).
+
+        Returns:
+            Dict with PR metadata, or None if extraction/fetch fails.
+        """
+        import json as _json
+        import re
+
+        trigger_path_str = trigger_data.get('path', '')
+        if not trigger_path_str:
+            return None
+
+        trigger_file = self.vault_path / trigger_path_str
+        if not trigger_file.exists():
+            return None
+
+        try:
+            content = trigger_file.read_text(encoding='utf-8')
+        except Exception:
+            return None
+
+        # Extract PR URL: https://dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{id}
+        azdo_pr_pattern = re.compile(
+            r'https://dev\.azure\.com/([^/]+)/([^/]+)/_git/([^/]+)/pullrequest/(\d+)'
+        )
+        match = azdo_pr_pattern.search(content)
+        if not match:
+            fn_match = re.search(r'Review PR (\d+)', trigger_file.name)
+            if fn_match:
+                return {"pr_number": fn_match.group(1), "error": "No PR URL found in file"}
+            return None
+
+        org = match.group(1)
+        project = match.group(2)
+        repo = match.group(3)
+        pr_id = match.group(4)
+
+        az_bin = shutil.which('az')
+        if not az_bin:
+            candidate = Path(os.environ.get('ProgramFiles', '')) / 'Microsoft SDKs' / 'Azure' / 'CLI2' / 'wbin' / 'az.cmd'
+            if candidate.exists():
+                az_bin = str(candidate)
+        if not az_bin:
+            return {"pr_number": pr_id, "org": org, "project": project, "repo": repo,
+                    "error": "az CLI not found on host"}
+
+        try:
+            result = subprocess.run(
+                [az_bin, 'repos', 'pr', 'show',
+                 '--id', pr_id,
+                 '--org', f'https://dev.azure.com/{org}',
+                 '--project', project,
+                 '--output', 'json'],
+                capture_output=True, text=True, timeout=30,
+            )
+        except subprocess.TimeoutExpired:
+            return {"pr_number": pr_id, "org": org, "project": project, "repo": repo,
+                    "error": "az repos pr show timed out (30s)"}
+        except Exception as e:
+            return {"pr_number": pr_id, "org": org, "project": project, "repo": repo,
+                    "error": f"az repos pr show failed: {e}"}
+
+        if result.returncode != 0:
+            stderr = result.stderr.strip()[:500]
+            return {"pr_number": pr_id, "org": org, "project": project, "repo": repo,
+                    "error": f"az repos pr show returned {result.returncode}: {stderr}"}
+
+        try:
+            pr_json = _json.loads(result.stdout)
+        except _json.JSONDecodeError:
+            return {"pr_number": pr_id, "org": org, "project": project, "repo": repo,
+                    "error": "az repos pr show returned invalid JSON"}
+
+        def _strip_refs(ref: str) -> str:
+            return ref.replace('refs/heads/', '') if ref else ''
+
+        reviewers = []
+        for r in pr_json.get('reviewers', []):
+            vote_map = {10: 'Approved', 5: 'Approved with suggestions', 0: 'No vote', -5: 'Waiting', -10: 'Rejected'}
+            reviewers.append({
+                'name': r.get('displayName', r.get('uniqueName', 'Unknown')),
+                'vote': vote_map.get(r.get('vote', 0), str(r.get('vote', 0))),
+            })
+
+        return {
+            "pr_number": pr_id,
+            "org": org,
+            "project": project,
+            "repo": repo,
+            "title": pr_json.get('title', ''),
+            "description": (pr_json.get('description') or '')[:2000],
+            "status": pr_json.get('status', ''),
+            "author": pr_json.get('createdBy', {}).get('displayName', ''),
+            "creation_date": pr_json.get('creationDate', ''),
+            "source_branch": _strip_refs(pr_json.get('sourceRefName', '')),
+            "target_branch": _strip_refs(pr_json.get('targetRefName', '')),
+            "merge_status": pr_json.get('mergeStatus', ''),
+            "reviewers": reviewers,
+            "pr_url": match.group(0),
+        }
 
     def _read_teams_watermark(self, agent_abbr: str) -> Optional[str]:
         """Read the lastSynced timestamp from the Teams agent's watermark file.
@@ -1361,6 +1692,23 @@ class ExecutionManager:
             scan_services = self._build_scan_services()
             if scan_services:
                 resolved_params['scan_services'] = scan_services
+                # Pre-fetch PR list on the host — deterministic, no LLM running az
+                prefetched = self._prefetch_pr_list(scan_services)
+                resolved_params['prefetched_prs'] = prefetched
+
+        # Pre-fetch PR metadata on the host for the PR Review agent (PR)
+        # so the LLM never needs to run `az repos pr show` inside the container
+        # (avoids shell-quoting, auth, and hang issues).
+        pr_metadata = None
+        if agent.abbreviation == 'PR':
+            pr_metadata = self._prefetch_pr_metadata(trigger_data)
+            if pr_metadata:
+                resolved_params['pr_metadata'] = pr_metadata
+                if pr_metadata.get('error'):
+                    logger.warning(f"[PR] Prefetch partial — LLM will see error: {pr_metadata['error']}")
+                else:
+                    logger.info(f"[PR] Pre-fetched metadata for PR #{pr_metadata.get('pr_number')}: "
+                                f"{pr_metadata.get('title', '')[:60]}")
 
         if resolved_params:
             prompt += "\n# Agent Parameters\n"

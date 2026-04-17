@@ -884,6 +884,10 @@ main.add_command(service_group)
 from .doctor import doctor_command
 main.add_command(doctor_command)
 
+# Chat server
+from .chat_cmd import chat_group
+main.add_command(chat_group)
+
 
 if __name__ == "__main__":
     main()

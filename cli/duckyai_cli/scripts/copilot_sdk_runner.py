@@ -215,6 +215,8 @@ async def run_agent(prompt: str, model: str = None, mcp_config: str | list[str] 
     done = asyncio.Event()
     final_content = []
     errors = []
+    usage_records = []
+    session_usage = {}
 
     def on_event(event):
         event_type = event.type.value if hasattr(event.type, 'value') else str(event.type)
@@ -222,6 +224,35 @@ async def run_agent(prompt: str, model: str = None, mcp_config: str | list[str] 
             if hasattr(event.data, 'content') and event.data.content:
                 final_content.append(event.data.content)
                 _safe_print(event.data.content)
+        elif event_type == "assistant.usage":
+            d = event.data
+            record = {
+                "input_tokens": int(getattr(d, 'input_tokens', 0) or 0),
+                "output_tokens": int(getattr(d, 'output_tokens', 0) or 0),
+                "cache_read_tokens": int(getattr(d, 'cache_read_tokens', 0) or 0),
+                "cache_write_tokens": int(getattr(d, 'cache_write_tokens', 0) or 0),
+                "cost": getattr(d, 'cost', 0) or 0,
+                "model": getattr(d, 'model', '') or '',
+                "duration_ms": int(getattr(d, 'duration', 0) or 0),
+            }
+            usage_records.append(record)
+        elif event_type == "session.shutdown":
+            d = event.data
+            model_metrics = getattr(d, 'model_metrics', None)
+            if model_metrics and isinstance(model_metrics, dict):
+                for model_id, metric in model_metrics.items():
+                    u = getattr(metric, 'usage', None)
+                    r = getattr(metric, 'requests', None)
+                    session_usage[model_id] = {
+                        "input_tokens": int(getattr(u, 'input_tokens', 0) or 0) if u else 0,
+                        "output_tokens": int(getattr(u, 'output_tokens', 0) or 0) if u else 0,
+                        "cache_read_tokens": int(getattr(u, 'cache_read_tokens', 0) or 0) if u else 0,
+                        "cache_write_tokens": int(getattr(u, 'cache_write_tokens', 0) or 0) if u else 0,
+                        "requests": int(getattr(r, 'count', 0) or 0) if r else 0,
+                        "cost": getattr(r, 'cost', 0) or 0 if r else 0,
+                    }
+            session_usage["_total_api_duration_ms"] = int(getattr(d, 'total_api_duration_ms', 0) or 0)
+            session_usage["_total_premium_requests"] = int(getattr(d, 'total_premium_requests', 0) or 0)
         elif event_type in {"error", "session.error"}:
             err_msg = str(event.data) if hasattr(event, 'data') else str(event)
             errors.append(err_msg)
@@ -246,11 +277,27 @@ async def run_agent(prompt: str, model: str = None, mcp_config: str | list[str] 
         if killed:
             _safe_print(f"[cleanup] terminated lingering process ids: {', '.join(str(pid) for pid in killed)}", stream=sys.stderr)
 
+    # Build aggregated usage from per-call records (fallback if session.shutdown missed)
+    if usage_records and not session_usage:
+        totals = {"input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "cost": 0, "duration_ms": 0, "requests": 0}
+        for r in usage_records:
+            totals["input_tokens"] += r["input_tokens"]
+            totals["output_tokens"] += r["output_tokens"]
+            totals["cache_read_tokens"] += r["cache_read_tokens"]
+            totals["cache_write_tokens"] += r["cache_write_tokens"]
+            totals["cost"] += r["cost"]
+            totals["duration_ms"] += r["duration_ms"]
+            totals["requests"] += 1
+        token_usage = {"_aggregated": totals}
+    else:
+        token_usage = session_usage if session_usage else {}
+
     # Output summary as JSON on the last line for the execution_manager to parse
     result = {
         "status": "error" if errors else "completed",
         "output": "\n".join(final_content),
         "errors": errors,
+        "token_usage": token_usage,
     }
     print(f"\n__COPILOT_SDK_RESULT__{json.dumps(result)}", flush=True)
 

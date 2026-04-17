@@ -136,6 +136,7 @@ class ExecutionContext:
     prompt: Optional[str] = None
     error_message: Optional[str] = None
     response: Optional[str] = None
+    token_usage: Optional[Dict[str, Any]] = None  # Per-model token usage from SDK
 
     # File paths
     log_file: Optional[Path] = None

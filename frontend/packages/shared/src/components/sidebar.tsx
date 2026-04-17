@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
+import { useMemo } from "react";
 import {
-  Clock,
-  ChevronRight,
   Play,
   Pause,
   Zap,
@@ -12,20 +11,11 @@ import {
   RotateCcw,
 } from "lucide-react";
 import type { Agent } from "../hooks/use-orchestrator";
-import type { ExecutionEntry, ExecutionLogDetail } from "../types/duckyai";
+import type { ExecutionEntry, ExecutionLogDetail, TokenUsage } from "../types/duckyai";
 import { AgentActivityLog } from "./agent-activity-log";
+import { ChatPanel } from "./chat-panel";
 
 type AgentStatus = "idle" | "running" | "offline" | "queued";
-
-interface ConversationItem {
-  id: string;
-  title: string;
-  time: string;
-  preview: string;
-}
-
-// Placeholder until chat persistence is implemented
-const recentConversations: ConversationItem[] = [];
 
 const agentStatusColors: Record<AgentStatus, string> = {
   idle: "#00d4ff",
@@ -50,6 +40,8 @@ export interface SidebarProps {
   onTriggerAgent: (abbreviation: string) => void;
   onRestartDaemon?: () => void;
   onOpenWorkspace?: () => void;
+  // Chat
+  onChatSend?: (text: string) => Promise<string>;
   // Activity log
   activityEntries?: ExecutionEntry[];
   activityLoading?: boolean;
@@ -68,6 +60,7 @@ export function Sidebar({
   onTriggerAgent,
   onRestartDaemon,
   onOpenWorkspace,
+  onChatSend,
   activityEntries,
   activityLoading,
   activityAgentFilter,
@@ -79,8 +72,38 @@ export function Sidebar({
   const runningCount = agents.filter((a) => a.status === "running").length;
   const queuedCount = agents.filter((a) => a.status === "queued").length;
 
+  // Aggregate token usage from today's activity entries
+  const tokenSummary = useMemo(() => {
+    if (!activityEntries?.length) return null;
+    const byAgent: Record<string, { input: number; output: number; requests: number }> = {};
+    let totalIn = 0, totalOut = 0, totalReqs = 0;
+    for (const entry of activityEntries) {
+      const u = entry.token_usage;
+      if (!u) continue;
+      const inp = u.input_tokens || 0;
+      const out = u.output_tokens || 0;
+      totalIn += inp;
+      totalOut += out;
+      totalReqs += u.requests || 0;
+      const agent = entry.agent || "?";
+      if (!byAgent[agent]) byAgent[agent] = { input: 0, output: 0, requests: 0 };
+      byAgent[agent].input += inp;
+      byAgent[agent].output += out;
+      byAgent[agent].requests += (u.requests || 0);
+    }
+    if (totalIn + totalOut === 0) return null;
+    return { totalIn, totalOut, totalReqs, byAgent };
+  }, [activityEntries]);
+
   return (
     <div className="h-full flex flex-col py-6 px-5 overflow-y-auto">
+      {/* Chat Panel */}
+      {onChatSend && (
+        <div className="mb-6">
+          <ChatPanel onSend={onChatSend} />
+        </div>
+      )}
+
       {/* Orchestrator Status */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -186,6 +209,58 @@ export function Sidebar({
             </span>
           </div>
         </div>
+
+        {/* Token usage summary */}
+        {tokenSummary && (
+          <div
+            className="flex flex-col gap-1.5 px-3 py-2 rounded-lg mb-3"
+            style={{
+              background: "rgba(13,18,32,0.6)",
+              border: "1px solid rgba(0,212,255,0.05)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground" style={{ fontSize: "0.6rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Today&apos;s Tokens
+              </span>
+              <span style={{ fontSize: "0.65rem", color: "#00d4ff" }}>
+                {((tokenSummary.totalIn + tokenSummary.totalOut) / 1000).toFixed(1)}K
+                <span className="text-muted-foreground" style={{ fontSize: "0.58rem" }}> ({tokenSummary.totalReqs} calls)</span>
+              </span>
+            </div>
+            {/* Stacked bar */}
+            <div className="flex rounded-full overflow-hidden" style={{ height: 4 }}>
+              {Object.entries(tokenSummary.byAgent).map(([agent, data], i) => {
+                const total = tokenSummary.totalIn + tokenSummary.totalOut;
+                const pct = total > 0 ? ((data.input + data.output) / total) * 100 : 0;
+                const colors = ["#00d4ff", "#00ffa3", "#ffbe0b", "#ff4466", "#a78bfa", "#f472b6"];
+                return (
+                  <div
+                    key={agent}
+                    title={`${agent}: ${((data.input + data.output) / 1000).toFixed(1)}K tokens`}
+                    style={{
+                      width: `${pct}%`,
+                      backgroundColor: colors[i % colors.length],
+                      opacity: 0.7,
+                      minWidth: pct > 0 ? 2 : 0,
+                    }}
+                  />
+                );
+              })}
+            </div>
+            {/* Agent breakdown */}
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+              {Object.entries(tokenSummary.byAgent).map(([agent, data], i) => {
+                const colors = ["#00d4ff", "#00ffa3", "#ffbe0b", "#ff4466", "#a78bfa", "#f472b6"];
+                return (
+                  <span key={agent} style={{ fontSize: "0.58rem", color: colors[i % colors.length], opacity: 0.8 }}>
+                    {agent} {((data.input + data.output) / 1000).toFixed(1)}K
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Agent list */}
         <div className="space-y-1.5">
@@ -341,60 +416,6 @@ export function Sidebar({
           />
         </div>
       )}
-
-      {/* Recent Conversations */}
-      <div className="flex-1">
-        <h3
-          className="text-muted-foreground mb-4"
-          style={{
-            fontSize: "0.65rem",
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-          }}
-        >
-          Recent Conversations
-        </h3>
-        <div className="space-y-2">
-          {recentConversations.map((conv, i) => (
-            <motion.button
-              key={conv.id}
-              className="w-full text-left p-3 rounded-lg bg-[#0d1220] border border-[rgba(0,212,255,0.05)] hover:border-[rgba(0,212,255,0.15)] transition-colors group"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.06 }}
-              whileHover={{ x: 2 }}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span
-                  className="text-foreground"
-                  style={{ fontSize: "0.8rem" }}
-                >
-                  {conv.title}
-                </span>
-                <ChevronRight
-                  size={12}
-                  className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                />
-              </div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Clock size={10} className="text-muted-foreground" />
-                <span
-                  className="text-muted-foreground"
-                  style={{ fontSize: "0.65rem" }}
-                >
-                  {conv.time}
-                </span>
-              </div>
-              <p
-                className="text-muted-foreground truncate"
-                style={{ fontSize: "0.72rem" }}
-              >
-                {conv.preview}
-              </p>
-            </motion.button>
-          ))}
-        </div>
-      </div>
 
       {/* Quick Actions */}
       {onOpenWorkspace && (

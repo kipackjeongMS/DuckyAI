@@ -336,10 +336,18 @@ class TaskFileManagerV2:
 
         logger.warning(f"Execution {exec_id} not found in recent daily logs")
 
-    def update_task_log_path(self, task_handle, log_path: str):
-        """Backfill the log_path field after the log file is written."""
+    def update_task_log_path(self, task_handle, updates_or_log_path):
+        """Backfill log_path (and optionally token_usage) after the log file is written.
+
+        Args:
+            task_handle: Execution ID (UUID string or Path)
+            updates_or_log_path: Either a str (log_path) or dict of fields to update
+        """
         exec_id = str(task_handle)
-        updates = {'log_path': log_path}
+        if isinstance(updates_or_log_path, str):
+            updates = {'log_path': updates_or_log_path}
+        else:
+            updates = updates_or_log_path
 
         for days_back in range(7):
             from datetime import timedelta

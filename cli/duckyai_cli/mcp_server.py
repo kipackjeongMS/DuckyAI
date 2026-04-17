@@ -245,6 +245,85 @@ def convert_utc_to_local_date(utcTimestamp: str) -> str:
     return _call("convertUtcToLocalDate", {"utcTimestamp": utcTimestamp})
 
 
+# ── Orchestrator tools (proxy to daemon HTTP API) ──────────────
+
+_DAEMON_URL = "http://127.0.0.1:52845"
+
+
+def _daemon_get(path: str) -> str:
+    """GET request to the daemon API."""
+    import urllib.request
+    import json
+    try:
+        req = urllib.request.Request(f"{_DAEMON_URL}{path}", headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.read().decode("utf-8")
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+def _daemon_post(path: str, data: dict | None = None) -> str:
+    """POST request to the daemon API."""
+    import urllib.request
+    import json
+    try:
+        body = json.dumps(data or {}).encode("utf-8")
+        req = urllib.request.Request(
+            f"{_DAEMON_URL}{path}",
+            data=body,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.read().decode("utf-8")
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool(
+    name="orchestratorStatus",
+    description="Check if the DuckyAI orchestrator daemon is running and get agent counts.",
+)
+def orchestrator_status() -> str:
+    return _daemon_get("/api/orchestrator/status")
+
+
+@mcp.tool(
+    name="listAgents",
+    description="List all available DuckyAI orchestrator agents with their abbreviations, schedules, and status.",
+)
+def list_agents() -> str:
+    return _daemon_get("/api/orchestrator/agents")
+
+
+@mcp.tool(
+    name="triggerAgent",
+    description=(
+        "Trigger a DuckyAI agent by abbreviation (e.g. TCS, TMS, PRS, EIC, TM). "
+        "The agent runs in the background via the orchestrator daemon. "
+        "For TCS/TMS: set lookback_hours for a time window, or omit for since-last-sync."
+    ),
+)
+def trigger_agent(
+    agent: str,
+    file: str | None = None,
+    lookback_hours: int | None = None,
+    sinceLastSync: bool | None = None,
+) -> str:
+    import json
+    body: dict = {"agent": agent}
+    agent_params: dict = {}
+    if file:
+        body["input_file"] = file
+    if lookback_hours is not None:
+        agent_params["lookback_hours"] = lookback_hours
+    if sinceLastSync is not None:
+        agent_params["sinceLastSync"] = sinceLastSync
+    if agent_params:
+        body["agent_params"] = agent_params
+    return _daemon_post("/api/orchestrator/trigger", body)
+
+
 def main() -> None:
     mcp.run(transport="stdio")
 

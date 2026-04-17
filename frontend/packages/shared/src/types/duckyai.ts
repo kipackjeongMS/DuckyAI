@@ -53,6 +53,14 @@ export interface VaultEntry {
   relativePath: string;
 }
 
+export interface TokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  total_tokens: number;
+  requests: number;
+}
+
 export interface ExecutionEntry {
   id: string;
   agent: string;
@@ -65,6 +73,7 @@ export interface ExecutionEntry {
   created: string;
   updated: string;
   priority: string;
+  token_usage?: TokenUsage;
 }
 
 export interface ExecutionLogDetail {
