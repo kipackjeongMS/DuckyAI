@@ -93,9 +93,9 @@ function EntryRow({ entry, onFetchLog }: EntryRowProps) {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0">
       <motion.button
-        className="w-full text-left px-3 py-2.5 rounded-lg transition-colors"
+        className="w-full text-left px-3 py-2 rounded-lg transition-colors overflow-hidden"
         style={{
           background: expanded
             ? "rgba(13,18,32,0.9)"
@@ -105,26 +105,19 @@ function EntryRow({ entry, onFetchLog }: EntryRowProps) {
         onClick={handleExpand}
         whileHover={{ background: "rgba(13,18,32,0.8)" }}
       >
-        <div className="flex items-center gap-2">
-          {/* Expand chevron */}
-          <span style={{ color: "#666" }}>
-            {expanded ? (
-              <ChevronDown size={12} />
-            ) : (
-              <ChevronRight size={12} />
-            )}
+        {/* Row 1: fixed-width columns */}
+        <div className="flex items-center w-full min-w-0" style={{ gap: "6px" }}>
+          {/* Chevron — fixed 14px */}
+          <span className="shrink-0" style={{ color: "#666", width: 14 }}>
+            {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           </span>
 
-          {/* Status icon */}
-          <span style={{ color: info.color }}>
+          {/* Status icon — fixed 14px */}
+          <span className="shrink-0" style={{ color: info.color, width: 14 }}>
             {entry.status === "IN_PROGRESS" ? (
               <motion.span
                 animate={{ rotate: 360 }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 style={{ display: "inline-block" }}
               >
                 <StatusIcon size={13} />
@@ -134,39 +127,36 @@ function EntryRow({ entry, onFetchLog }: EntryRowProps) {
             )}
           </span>
 
-          {/* Agent name */}
+          {/* Agent name — fixed 36px */}
           <span
-            className="text-foreground font-medium"
-            style={{ fontSize: "0.74rem", minWidth: "2.5rem" }}
+            className="shrink-0 text-foreground font-medium"
+            style={{ fontSize: "0.74rem", width: 36 }}
           >
             {entry.agent}
           </span>
 
-          {/* Time */}
+          {/* Time — fixed 62px */}
           <span
-            className="text-muted-foreground"
-            style={{ fontSize: "0.62rem" }}
+            className="shrink-0 text-muted-foreground"
+            style={{ fontSize: "0.62rem", width: 62 }}
           >
             {time}
           </span>
 
-          {/* Duration */}
-          {duration && (
-            <span
-              className="text-muted-foreground"
-              style={{ fontSize: "0.6rem", opacity: 0.7 }}
-            >
-              {duration}
-            </span>
-          )}
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Status label */}
+          {/* Duration — fixed 40px */}
           <span
+            className="shrink-0 text-muted-foreground"
+            style={{ fontSize: "0.6rem", width: 40, opacity: 0.7 }}
+          >
+            {duration || ""}
+          </span>
+
+          {/* Status label — fixed 72px */}
+          <span
+            className="shrink-0"
             style={{
               fontSize: "0.58rem",
+              width: 72,
               color: info.color,
               opacity: 0.8,
               textTransform: "uppercase",
@@ -175,37 +165,15 @@ function EntryRow({ entry, onFetchLog }: EntryRowProps) {
           >
             {info.label}
           </span>
-        </div>
 
-        {/* Input/output summary */}
-        {(entry.input_path || entry.output || entry.error) && (
-          <div
-            className="mt-1 ml-7 flex flex-wrap gap-x-3"
-            style={{ fontSize: "0.6rem" }}
+          {/* Output/input — fills remaining space, single line truncated */}
+          <span
+            className="truncate min-w-0 flex-1"
+            style={{ fontSize: "0.58rem", color: "#00d4ff", opacity: 0.7 }}
           >
-            {entry.input_path && (
-              <span className="text-muted-foreground truncate max-w-[180px]">
-                in: {entry.input_path.split("/").pop()}
-              </span>
-            )}
-            {entry.output && (
-              <span
-                className="truncate max-w-[180px]"
-                style={{ color: "#00d4ff", opacity: 0.7 }}
-              >
-                {entry.output}
-              </span>
-            )}
-            {entry.error && (
-              <span
-                className="truncate max-w-[200px]"
-                style={{ color: "#ff4466", opacity: 0.8 }}
-              >
-                {entry.error}
-              </span>
-            )}
-          </div>
-        )}
+            {entry.output || entry.input_path || entry.error || ""}
+          </span>
+        </div>
       </motion.button>
 
       {/* Expanded log detail */}

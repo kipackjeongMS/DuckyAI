@@ -1578,7 +1578,8 @@ class ExecutionManager:
         # Get logs directory from config. For bare temp vaults without duckyai.yml,
         # keep the legacy test layout under _Settings_/Logs.
         logs_dir = self.config.get_orchestrator_logs_dir()
-        if not (self.vault_path / 'duckyai.yml').exists() and logs_dir.replace('\\', '/').endswith('.duckyai/logs'):
+        has_config = (self.vault_path / '.duckyai' / 'duckyai.yml').exists() or (self.vault_path / 'duckyai.yml').exists()
+        if not has_config and logs_dir.replace('\\', '/').endswith('.duckyai/logs'):
             logs_dir = '_Settings_/Logs'
 
         logs_root = self.vault_path / logs_dir

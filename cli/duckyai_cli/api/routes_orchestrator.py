@@ -241,13 +241,36 @@ def execution_log(execution_id: str):
         return jsonify({"error": f"Execution '{execution_id}' not found."}), 404
 
     log_path_str = entry.get("log_path", "")
+
+    # Fallback: construct log path from agent + created timestamp
+    # Pattern: YYYY-MM-DD-HHMMSS-{AGENT}.log
+    if not log_path_str:
+        agent = entry.get("agent", "")
+        created = entry.get("created", "")
+        if agent and created:
+            try:
+                from datetime import datetime
+                dt = datetime.fromisoformat(created)
+                filename = f"{dt.strftime('%Y-%m-%d-%H%M%S')}-{agent}.log"
+                # Check .duckyai/logs/ first, then legacy _Settings_/Logs/
+                for logs_dir in [".duckyai/logs", "_Settings_/Logs"]:
+                    candidate = vault_path / logs_dir / filename
+                    if candidate.exists():
+                        log_path_str = str(candidate.relative_to(vault_path))
+                        break
+            except (ValueError, TypeError):
+                pass
+
     if not log_path_str:
         return jsonify({"error": "No log file recorded for this execution."}), 404
 
-    # Resolve and validate path is under vault/.duckyai/logs/
+    # Resolve and validate path is under vault/.duckyai/logs/ or vault/_Settings_/Logs/
     log_path = (vault_path / log_path_str).resolve()
-    logs_dir = (vault_path / ".duckyai" / "logs").resolve()
-    if not str(log_path).startswith(str(logs_dir)):
+    allowed_dirs = [
+        (vault_path / ".duckyai" / "logs").resolve(),
+        (vault_path / "_Settings_" / "Logs").resolve(),
+    ]
+    if not any(str(log_path).startswith(str(d)) for d in allowed_dirs):
         return jsonify({"error": "Log path outside allowed directory."}), 403
 
     if not log_path.exists():
