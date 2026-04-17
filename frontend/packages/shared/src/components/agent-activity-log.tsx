@@ -75,7 +75,7 @@ function EntryRow({ entry, onFetchLog }: EntryRowProps) {
   const time = formatTime(entry.created);
 
   const handleExpand = async () => {
-    if (!expanded && logContent === null && entry.log_path) {
+    if (!expanded && logContent === null) {
       setLogLoading(true);
       setLogError(null);
       try {
@@ -211,7 +211,7 @@ function EntryRow({ entry, onFetchLog }: EntryRowProps) {
                   {logContent}
                 </pre>
               )}
-              {!logLoading && !logError && !logContent && !entry.log_path && (
+              {!logLoading && !logError && !logContent && (
                 <div className="text-muted-foreground py-1">
                   No log file for this execution.
                 </div>
