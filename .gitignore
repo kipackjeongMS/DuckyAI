@@ -50,12 +50,14 @@ dist/
 dist-electron/
 
 # Python
-__pycache__/
-*.pyc
-*.egg-info/
-*.egg
-.venv/
-venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.egg-info/
+**/*.egg
+**/.venv/
+**/venv/
 
 # Build artifacts
 *.vsix
