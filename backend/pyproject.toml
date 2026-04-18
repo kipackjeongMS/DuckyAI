@@ -48,8 +48,8 @@ duckyai = "duckyai_cli.main.cli:main"
 duckyai-vault-mcp = "duckyai_cli.mcp_server:main"
 
 [project.urls]
-Homepage = "https://github.com/rbx-labs/duckyai-cli"
-Repository = "https://github.com/rbx-labs/duckyai-cli"
+Homepage = "https://github.com/kipackjeongMS/DuckyAI"
+Repository = "https://github.com/kipackjeongMS/DuckyAI"
 
 [tool.setuptools.packages.find]
 where = ["."]
