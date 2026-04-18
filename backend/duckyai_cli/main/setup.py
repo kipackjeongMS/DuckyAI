@@ -70,8 +70,24 @@ def _prompt_teams_schedule() -> str:
     return cron
 
 
+def _ensure_utf8_stdout():
+    """Reconfigure stdout/stderr to UTF-8 so emojis render on Windows cp1252 consoles."""
+    import io
+    for stream_name in ('stdout', 'stderr'):
+        stream = getattr(sys, stream_name)
+        if hasattr(stream, 'reconfigure'):
+            try:
+                stream.reconfigure(encoding='utf-8', errors='replace')
+            except Exception:
+                pass
+        elif hasattr(stream, 'buffer'):
+            new_stream = io.TextIOWrapper(stream.buffer, encoding='utf-8', errors='replace')
+            setattr(sys, stream_name, new_stream)
+
+
 def run_onboarding(vault_root: Path = None):
     """Run the full onboarding wizard."""
+    _ensure_utf8_stdout()
     click.echo("")
     click.echo("👋 Welcome to DuckyAI!")
     click.echo("=" * 50)
