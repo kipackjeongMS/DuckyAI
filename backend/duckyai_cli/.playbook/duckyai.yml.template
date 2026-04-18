@@ -111,3 +111,26 @@ nodes:
     enabled: true
     agent_params:
       model: ${model}
+  - type: agent
+    name: PR Review (PR)
+    input_path: 01-Work/PRReviews
+    input_type: file_content_change
+    input_pattern: "*.md"
+    trigger_content_pattern: "^status:\\s*todo"
+    output_type: update_file
+    requires_input_file: true
+    executor: copilot_cli
+    max_parallel: 2
+    timeout_minutes: 30
+    use_container: true
+    # /repo-cache persists cloned PR repos across runs (git fetch on hit → ~1-3s vs. 30-120s cold clone).
+    # Orchestrator auto-creates and resolves ${repo_cache} to <vault>/.duckyai/repo-cache/.
+    extra_mounts:
+      - source: "${repo_cache}"
+        target: /repo-cache
+      - source: "${services_path}"
+        target: /services
+        readonly: true
+    enabled: true
+    agent_params:
+      model: ${model}

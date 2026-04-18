@@ -135,6 +135,30 @@ Ask the user to confirm: "Apply these updates?" (Yes / No)
    Pop-Location
    ```
 
+### Step 5.5: Patch `duckyai.yml` Agent Nodes (Config Migration)
+
+Some infrastructure features are wired via the user's `duckyai.yml` agent node config (not copied files). Patch these in-place, preserving the user's other edits.
+
+#### PR Review (PR) — `/repo-cache` mount
+
+Ensures the PR Review agent reuses cloned repos across runs (avoids 30-120s re-clones).
+
+1. Load `duckyai.yml` as YAML (use `Get-Content duckyai.yml | ConvertFrom-Yaml` via the `powershell-yaml` module, or `python -c "import yaml; ..."`).
+2. Find the `nodes[]` entry where `name == "PR Review (PR)"`.
+   - If missing → append the full node from `duckyai.yml.template` (the `PR Review (PR)` block).
+   - If present → ensure `extra_mounts` contains both of:
+     - `{ source: "${repo_cache}", target: "/repo-cache" }`
+     - `{ source: "${services_path}", target: "/services", readonly: true }`
+3. Write back, preserving YAML comments and ordering where possible (prefer `ruamel.yaml` round-trip mode over `PyYAML` dump).
+
+Report each change in the Step 4 diff summary as:
+
+```
+🔧 duckyai.yml: PR Review (PR) node — added /repo-cache mount
+```
+
+Skip silently if the node already has both mounts.
+
 ### Step 6: Update Version
 
 Write the new version to `version.json`:

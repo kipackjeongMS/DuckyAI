@@ -48,17 +48,28 @@ For exact repo names, use them directly in `az repos pr list`.
 
 ## Step 3: Query assigned PRs
 
+**The orchestrator pre-fetches PRs on the host and injects them as `prefetched_prs` in Agent Parameters.**
+
+Check for `prefetched_prs` in Agent Parameters:
+- If `prefetched_prs` is present → use it directly as the list of PRs to process. **Do NOT run `az repos pr list`.** Drafts and author-owned PRs are already filtered out.
+- If `prefetched_prs` is missing → fall back to running `az repos pr list` manually per repo (legacy path):
+
 For each repo, run:
 ```bash
 az repos pr list \
-  --repository {repo} \
-  --project {project} \
-  --org https://dev.azure.com/{org} \
+  --repository "{repo}" \
+  --project "{project}" \
+  --org "https://dev.azure.com/{org}" \
   --status active \
   --output json
 ```
 
-From the results, filter PRs where the current user is listed as a reviewer. Match by `user_name` against `reviewers[].displayName` or `reviewers[].uniqueName`.
+**IMPORTANT**: Always quote `--project` and `--repository` values — they may contain spaces.
+
+From the results, filter PRs where:
+- The current user is listed as a reviewer (match `user_name` against `reviewers[].displayName` or `reviewers[].uniqueName`)
+- The user is NOT the author (`createdBy.displayName` ≠ `user_name`)
+- The PR is NOT a draft (`isDraft` ≠ `true`)
 
 If `az repos pr list` fails for a repo (auth issues, repo not found), log a warning and continue to the next repo. Do not abort the entire scan.
 
@@ -112,3 +123,4 @@ New PRs:
 - **Handle auth failures gracefully** — if a repo fails, log it and continue
 - **Use `logPRReview` MCP tool** for creating files — do not create files manually
 - **Respect the `scan_services` parameter** — only scan repos listed there
+- **Do NOT write to the daily note** — PRS is a system task. Do not call `logAction`, `logTask`, or `updateDailyNoteSection` to report scan results. The execution log captures everything needed. Only `logPRReview` is allowed (for creating PR review entries under `## PRs & Code Reviews`).

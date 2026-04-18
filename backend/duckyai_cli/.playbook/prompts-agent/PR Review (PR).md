@@ -52,14 +52,20 @@ If no URL is available but a PR number exists, you cannot determine the org/proj
 
 ## Step 3: Fetch PR metadata
 
-Run:
+**The orchestrator pre-fetches PR metadata on the host and injects it into Agent Parameters as `pr_metadata`.**
+
+Check for `pr_metadata` in Agent Parameters:
+- If `pr_metadata` is present AND has no `error` field → use it directly. **Do NOT run `az repos pr show`.**
+- If `pr_metadata` has an `error` field → the pre-fetch failed. Add a `## Review Error` section with the error, **set `status: done`**, and exit.
+- If `pr_metadata` is missing entirely → fall back to running `az repos pr show` manually (legacy path):
+
 ```bash
-az repos pr show --id {pull_request_id} --org https://dev.azure.com/{organization} --project {project} --output json
+az repos pr show --id {pull_request_id} --org "https://dev.azure.com/{organization}" --project "{project}" --output json
 ```
 
-If this fails (auth issues, PR not found), add a `## Review Error` section with the error, **set `status: done`**, and exit.
+**IMPORTANT**: Always quote `--project` and `--org` values in bash — project names may contain spaces (e.g., `"Azure AppConfig"`).
 
-From the JSON response, extract:
+From the metadata (whether pre-fetched or manual), extract:
 - `title`: PR title
 - `description`: PR description/body
 - `status`: active, completed, abandoned
@@ -332,6 +338,7 @@ tags:
 - Include **Impact** notes from codebase cross-reference for critical/warning findings
 - If no issues found, write "No issues found — PR looks clean and ready to merge" under `## Code Review`
 - Add an empty `## Review Notes` section at the end for the user's personal notes
+- **Do NOT write to the daily note** — PR Review is a system task. Do not call `logAction`, `logTask`, or `updateDailyNoteSection`. The review is written to the PR file itself; the execution log captures the rest.
 
 ## Step 9: Report
 
