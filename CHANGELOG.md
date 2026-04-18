@@ -2,6 +2,12 @@
 
 All notable changes to the DuckyAI Template will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **PR Review agent**: `/repo-cache` mount in `duckyai.yml.template` so cloned PR repos persist across runs. Warm `git fetch` (~1-3s) replaces cold `git clone` (~30-120s). Orchestrator auto-resolves `${repo_cache}` to `<vault>/.duckyai/repo-cache/`.
+- **`vault-update` skill**: Step 5.5 patches existing users' `duckyai.yml` — adds the `/repo-cache` mount to the `PR Review (PR)` node (or inserts the node if missing).
+
 ## [1.0.0] — 2026-03-07
 
 ### Initial Release
