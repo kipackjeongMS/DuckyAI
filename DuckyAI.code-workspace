@@ -1,0 +1,14 @@
+{
+  "folders": [
+    {
+      "name": "DuckyAI",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "chat.tools.terminal.autoApprove": {
+      "git push": true,
+      "az": true
+    }
+  }
+}

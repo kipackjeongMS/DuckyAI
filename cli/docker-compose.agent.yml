@@ -1,0 +1,13 @@
+# DuckyAI Agent Runtime - Build convenience file
+# Build:  docker compose -f docker-compose.agent.yml build
+# Test:   docker compose -f docker-compose.agent.yml run --rm agent claude --version
+#
+# This file is NOT used at runtime. The orchestrator spawns ephemeral
+# containers via `docker run` directly (see execution_manager.py).
+
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    image: duckyai-agent:latest

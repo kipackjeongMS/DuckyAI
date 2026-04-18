@@ -1,0 +1,63 @@
+# This repo is NOT a vault — prevent vault marker files from being created
+duckyai.yml
+Home.md
+
+# Vault-local runtime data (tasks, logs, state, watermarks)
+.duckyai/
+04-Periodic/**/*.md
+01-Work/**/*.md
+01-Work/**/*.md
+01-Work/**/*.md
+01-Work/**/*.md
+02-People/**/*.md
+02-People/**/*.md
+02-People/**/*.md
+05-Archive/**/*.md
+00-Inbox/**/*.md
+**/logs/**/*.md
+
+# Keep .gitkeep files
+!**/.gitkeep
+
+# User configuration
+.env
+scripts/repos.json
+
+# Orchestrator runtime
+.orchestrator.pid
+
+# Synced repos (local only)
+.repos/*/
+
+# Obsidian
+.obsidian/
+
+# MCP server build artifacts
+mcp-server/node_modules/
+mcp-server/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Services directory junction (points outside vault)
+.services/
+
+# Node.js
+node_modules/
+dist/
+dist-electron/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.egg-info/
+**/*.egg
+**/.venv/
+**/venv/
+
+# Build artifacts
+*.vsix

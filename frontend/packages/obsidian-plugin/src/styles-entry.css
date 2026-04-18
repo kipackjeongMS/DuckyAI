@@ -1,0 +1,82 @@
+/*
+ * DuckyAI Obsidian Plugin — CSS entry point.
+ * Compiled by Tailwind CLI to produce styles.css.
+ */
+
+/* Shared fonts */
+@import '../../shared/src/styles/fonts.css';
+
+/* Tailwind v4 base — scan shared + plugin sources for utility classes */
+@import 'tailwindcss' source(none);
+@source '../../shared/src/**/*.{js,ts,jsx,tsx}';
+@source '../src/**/*.{js,ts,jsx,tsx}';
+
+/* Tailwind animation utilities */
+@import 'tw-animate-css';
+
+/* Shared theme (CSS variables + @theme inline + @layer base) */
+@import '../../shared/src/styles/theme.css';
+
+/* ── Obsidian-specific overrides ── */
+
+/* Remove Obsidian's default padding from the leaf content */
+.workspace-leaf-content[data-type="duckyai-panel"] {
+  padding: 0;
+  overflow: hidden;
+}
+
+.workspace-leaf-content[data-type="duckyai-panel"] .view-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Root container — match the Electron app's dark theme */
+.duckyai-root {
+  font-family: "Inter", var(--font-interface), system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Override Obsidian's default heading/paragraph styles inside our panel */
+.duckyai-root h1,
+.duckyai-root h2,
+.duckyai-root h3,
+.duckyai-root h4,
+.duckyai-root p,
+.duckyai-root span,
+.duckyai-root div,
+.duckyai-root button,
+.duckyai-root input {
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+/* Prevent Obsidian's button styles from leaking in */
+.duckyai-root button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Ensure scrollbar matches the dark theme */
+.duckyai-root ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.duckyai-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.duckyai-root ::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.15);
+  border-radius: 3px;
+}
+
+.duckyai-root ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.3);
+}

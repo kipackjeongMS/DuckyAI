@@ -1,0 +1,12 @@
+views:
+  - type: table
+    name: Table
+    filters:
+      and:
+        - file.path.startsWith("Personal/")
+        - file.path.contains("/Prompts/")
+    order:
+      - participant
+      - file.name
+      - category
+      - abbreviation

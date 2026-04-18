@@ -1,0 +1,17 @@
+{
+  "servers": {
+    "duckyai-vault": {
+      "type": "stdio",
+      "command": "duckyai-vault-mcp",
+      "args": [],
+      "env": {
+        "DUCKYAI_VAULT_ROOT": "${workspaceFolder}"
+      }
+    },
+    "workiq": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@microsoft/workiq", "mcp"]
+    }
+  }
+}
