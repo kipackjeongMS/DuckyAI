@@ -73,11 +73,32 @@ def _prompt_teams_schedule() -> str:
 def run_onboarding(vault_root: Path = None):
     """Run the full onboarding wizard."""
     click.echo("")
-    click.echo("👋 Welcome to DuckyAI! Let's set up your vault.")
+    click.echo("👋 Welcome to DuckyAI!")
     click.echo("=" * 50)
 
+    # ─── Step 0: Prerequisites ───────────────────────────
+    from ..prereqs import check_all, auto_fix, print_report
+
+    report = check_all()
+    print_report(report)
+
+    # Auto-fix what we can
+    if report.fixable:
+        if click.confirm("  Auto-install missing optional tools?", default=True):
+            click.echo("  Installing...")
+            actions = auto_fix(report)
+            for a in actions:
+                click.echo(f"    ✓ {a}")
+            if actions:
+                click.echo("")
+
+    # Block on critical failures
+    if report.has_blocking_failures:
+        click.echo("  Please install the missing tools above and re-run `duckyai setup`.")
+        raise SystemExit(1)
+
     # ─── Step 1: Vault Location ─────────────────────────
-    click.echo("\n📁 Step 1/10 — Vault Location")
+    click.echo("\n📁 Step 1/8 — Vault Location")
     vault_name = click.prompt("  What would you like to name your vault?", default="MyVault")
     default_location = str(vault_root) if vault_root else str(Path.cwd())
     vault_location = Path(click.prompt("  Where should your vault be created?", default=default_location))
@@ -86,7 +107,7 @@ def run_onboarding(vault_root: Path = None):
     click.echo(f"  ✓ Vault: {vault_path}")
 
     # ─── Step 2: About You ──────────────────────────────
-    click.echo("\n👤 Step 2/10 — About You")
+    click.echo("\n👤 Step 2/8 — About You")
     user_name = click.prompt("  Your full name")
     primary_lang = click.prompt(
         "  Primary language",
@@ -95,38 +116,8 @@ def run_onboarding(vault_root: Path = None):
     )
     timezone = click.prompt("  Timezone", default=_detect_timezone())
 
-    # ─── Step 3: GitHub Copilot Auth ────────────────────
-    click.echo("\n🔑 Step 3/10 — GitHub Copilot")
-    copilot_path = shutil.which("copilot")
-    if copilot_path:
-        click.echo(f"  ✓ Copilot CLI found: {copilot_path}")
-        # Check auth
-        try:
-            result = subprocess.run(
-                ["copilot", "--version"],
-                capture_output=True, text=True, timeout=10
-            )
-            if result.returncode == 0:
-                click.echo(f"  ✓ Version: {result.stdout.strip().splitlines()[0]}")
-        except Exception:
-            pass
-    else:
-        click.echo("  ⚠️  Copilot CLI not found.")
-        if click.confirm("  Install GitHub Copilot CLI?", default=True):
-            click.echo("  → Visit: https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli")
-            webbrowser.open("https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli")
-            click.echo("  Install and re-run `duckyai` when ready.")
-
-    # ─── Step 4: Vault MCP Tooling ─────────────────────
-    click.echo("\n🔧 Step 4/10 — Vault MCP Tooling")
-    duckyai_vault_mcp = shutil.which("duckyai-vault-mcp")
-    if duckyai_vault_mcp:
-        click.echo(f"  ✓ Native vault MCP server found: {duckyai_vault_mcp}")
-    else:
-        click.echo("  ℹ️  Native vault MCP server will be available once the CLI package is installed into your Python environment")
-
-    # ─── Step 5: WorkIQ EULA ────────────────────────────
-    click.echo("\n📋 Step 5/10 — WorkIQ (Teams Data)")
+    # ─── Step 3: WorkIQ EULA ─────────────────────────────
+    click.echo("\n📋 Step 3/8 — WorkIQ (Teams Data)")
     eula_url = "https://github.com/microsoft/work-iq-mcp"
     click.echo(f"  EULA: {eula_url}")
     if click.confirm("  Accept WorkIQ EULA to enable Teams sync?", default=True):
@@ -135,7 +126,7 @@ def run_onboarding(vault_root: Path = None):
         click.echo("  ℹ️  Skipped — Teams sync agents will prompt later")
 
     # ─── Step 6: Vault Structure ────────────────────────
-    click.echo("\n📂 Step 6/10 — Vault Structure")
+    click.echo("\n📂 Step 4/8 — Vault Structure")
     folders = [
         "00-Inbox",
         "01-Work",
@@ -286,7 +277,7 @@ tags:
         click.echo(f"  · {today_str}.md (exists)")
 
     # ─── Step 7: IDE Selection ─────────────────────────────
-    click.echo("\n🖥️  Step 7/10 — IDE")
+    click.echo("\n🖥️  Step 5/8 — IDE")
     from .cli import _detect_ides
     available_ides = _detect_ides()
     selected_ide = None
@@ -300,7 +291,7 @@ tags:
         click.echo("  Install from: https://code.visualstudio.com/")
 
     # ─── Step 8: Model Preference ───────────────────────
-    click.echo("\n🤖 Step 8/10 — Default Model")
+    click.echo("\n🤖 Step 6/8 — Default Model")
     click.echo("  Select the default AI model for orchestrator agents (↑/↓ navigate, Enter select)\n")
     from .vault import _interactive_select
     model_choices = [
@@ -327,11 +318,11 @@ tags:
     click.echo(f"  Selected: {model}")
 
     # ─── Step 9: Teams Sync Schedule ────────────────────
-    click.echo("\n🔄 Step 9/10 — Teams Sync Schedule")
+    click.echo("\n🔄 Step 7/8 — Teams Sync Schedule")
     teams_cron = _prompt_teams_schedule()
 
     # ─── Step 10: Services (Code Repos) ──────────────────
-    click.echo("\n🛠️  Step 10/10 — Services (Code Repos)")
+    click.echo("\n🛠️  Step 8/8 — Services (Code Repos)")
     click.echo("  Services are code projects you work on (each can contain git repos).")
     click.echo("  They live outside your vault in a sibling directory.\n")
     service_names = []
