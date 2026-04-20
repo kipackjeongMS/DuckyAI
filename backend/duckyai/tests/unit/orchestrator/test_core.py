@@ -375,3 +375,76 @@ Test prompt body
         orch._execute_agent.assert_called_once()
         called_agent = orch._execute_agent.call_args.args[0]
         assert called_agent.abbreviation == "TM"
+
+    def test_dispatch_dependents_skips_when_require_parent_output_unmet(self, temp_vault):
+        """TM should NOT dispatch when require_parent_output=True and no parent produced output."""
+        vault_path, agents_dir = temp_vault
+
+        orch = Orchestrator(vault_path, agents_dir)
+        orch.agent_registry.agents = {
+            "TCS": AgentDefinition(
+                name="Teams Chat Summary",
+                abbreviation="TCS",
+                category="cron",
+                trigger_event="manual",
+                prompt_body="TCS",
+            ),
+            "TM": AgentDefinition(
+                name="Task Manager",
+                abbreviation="TM",
+                category="cron",
+                trigger_event="manual",
+                trigger_wait_for=["TCS"],
+                require_parent_output=True,
+                requires_input_file=False,
+                prompt_body="TM",
+            ),
+        }
+
+        orch._execute_agent = Mock()
+        parent_ctx = Mock(start_time=datetime.now(), end_time=datetime.now(), output_produced=False)
+
+        orch.execution_manager.get_agent_running_count = Mock(return_value=0)
+
+        with patch("duckyai_cli.orchestrator.core.time.sleep", return_value=None):
+            orch._dispatch_dependents(orch.agent_registry.agents["TCS"], parent_ctx)
+
+        orch._execute_agent.assert_not_called()
+
+    def test_dispatch_dependents_fires_when_require_parent_output_met(self, temp_vault):
+        """TM should dispatch when require_parent_output=True and a parent produced output."""
+        vault_path, agents_dir = temp_vault
+
+        orch = Orchestrator(vault_path, agents_dir)
+        orch.agent_registry.agents = {
+            "TCS": AgentDefinition(
+                name="Teams Chat Summary",
+                abbreviation="TCS",
+                category="cron",
+                trigger_event="manual",
+                prompt_body="TCS",
+            ),
+            "TM": AgentDefinition(
+                name="Task Manager",
+                abbreviation="TM",
+                category="cron",
+                trigger_event="manual",
+                trigger_wait_for=["TCS"],
+                require_parent_output=True,
+                requires_input_file=False,
+                prompt_body="TM",
+            ),
+        }
+
+        dependent_ctx = Mock(success=True, duration=0.1)
+        orch._execute_agent = Mock(return_value=dependent_ctx)
+        parent_ctx = Mock(start_time=datetime.now(), end_time=datetime.now(), output_produced=True)
+
+        orch.execution_manager.get_agent_running_count = Mock(return_value=0)
+
+        with patch("duckyai_cli.orchestrator.core.time.sleep", return_value=None):
+            orch._dispatch_dependents(orch.agent_registry.agents["TCS"], parent_ctx)
+
+        orch._execute_agent.assert_called_once()
+        called_agent = orch._execute_agent.call_args.args[0]
+        assert called_agent.abbreviation == "TM"

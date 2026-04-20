@@ -9,6 +9,7 @@ import subprocess
 import time
 import os
 import shutil
+import shlex
 import platform
 from pathlib import Path
 from typing import Dict, List, Optional, TYPE_CHECKING
@@ -296,6 +297,13 @@ class ExecutionManager:
                         ctx.error_message = validation_error
                     elif output_valid and output_link is None and agent.output_optional:
                         final_status = 'ignored'
+
+                    ctx.output_produced = output_valid and output_link is not None
+
+                # For agents where validation wasn't run (e.g., scheduled with empty path),
+                # infer output from response content.
+                if ctx.status == 'completed' and not ctx.output_produced and ctx.response:
+                    ctx.output_produced = bool(ctx.response.strip())
 
                 self.task_manager.update_task_status(
                     task_handle=ctx.task_file,
@@ -591,10 +599,29 @@ class ExecutionManager:
         use_container = self._should_use_container(agent)
 
         if use_container:
-            # In container mode, use the container's Python and installed runner script
-            sdk_python = 'python3'
-            runner_path = '/app/duckyai/scripts/copilot_sdk_runner.py'
+            # In container mode, use a shell wrapper to resolve the runner path
+            # since the Docker image may use either /app/duckyai/ (new) or
+            # /app/duckyai_cli/ (legacy pre-rename).
             cwd_path = self._container_config.get('vault_mount', '/vault')
+            runner_resolve = (
+                'RUNNER=/app/duckyai/scripts/copilot_sdk_runner.py; '
+                '[ -f "$RUNNER" ] || RUNNER=/app/duckyai_cli/scripts/copilot_sdk_runner.py; '
+            )
+            # Build the inner python command args
+            inner_args = ['python3', '"$RUNNER"', '--prompt', shlex.quote(ctx.prompt), '--cwd', cwd_path]
+
+            if agent.agent_params and agent.agent_params.get('model'):
+                inner_args.extend(['--model', agent.agent_params['model']])
+
+            if self.mcp_config:
+                for config in self.mcp_config:
+                    config = self._adapt_mcp_config_for_container(config)
+                    inner_args.extend(['--mcp-config', shlex.quote(config)])
+
+            shell_cmd = runner_resolve + ' '.join(inner_args)
+            cmd = ['sh', '-c', shell_cmd]
+            self._execute_subprocess(ctx, 'Copilot SDK', cmd, agent.timeout_minutes * 60, use_container=use_container, agent=agent)
+            return
         else:
             # Find Python 3.10+ for the SDK (requires union type syntax)
             sdk_python = self._find_sdk_python()
@@ -610,8 +637,6 @@ class ExecutionManager:
         # MCP config
         if self.mcp_config:
             for config in self.mcp_config:
-                if use_container:
-                    config = self._adapt_mcp_config_for_container(config)
                 cmd.extend(['--mcp-config', config])
 
         self._execute_subprocess(ctx, 'Copilot SDK', cmd, agent.timeout_minutes * 60, use_container=use_container, agent=agent)

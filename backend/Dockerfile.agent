@@ -38,7 +38,7 @@ RUN npm install -g @anthropic-ai/copilot@latest 2>/dev/null || true
 # ── MCP servers (npm global) ──
 RUN npm install -g @microsoft/workiq
 
-# ── Python dependencies (duckyai-cli + SDK deps) ──
+# ── Python dependencies (duckyai + SDK deps) ──
 COPY pyproject.toml /app/pyproject.toml
 COPY duckyai/ /app/duckyai/
 
