@@ -302,10 +302,11 @@ def _is_junction(path: Path) -> bool:
 
 
 def ensure_init(vault_root: Path):
-    """Auto-init user directories: .github/skills/ and ~/.duckyai/ global runtime dirs.
+    """Auto-init user directories: .github/skills/, prompts-agent/, and runtime dirs.
 
-    System files (prompts-agent, bases, templates, etc.) live in the
-    CLI package's .playbook/ and are NOT exposed in .github/.
+    Syncs built-in agent prompt files from the CLI package's .playbook/ into
+    .github/prompts-agent/ so the orchestrator daemon can always find them
+    regardless of how the editable install resolves at startup time.
     """
     github_dir = vault_root / '.github'
 
@@ -337,6 +338,19 @@ def ensure_init(vault_root: Path):
     if playbook_ci.exists():
         import shutil as _shutil
         _shutil.copy2(str(playbook_ci), str(ci_file))
+
+    # Sync built-in agent prompt files into .github/prompts-agent/
+    # This ensures the orchestrator can find them even if the playbook path
+    # is unreachable (e.g., editable install points to a stale worktree).
+    playbook_prompts = Path(__file__).resolve().parent.parent / '.playbook' / 'prompts-agent'
+    if playbook_prompts.is_dir():
+        import shutil as _shutil2
+        prompts_dir = github_dir / 'prompts-agent'
+        prompts_dir.mkdir(parents=True, exist_ok=True)
+        for prompt_file in playbook_prompts.glob('*.md'):
+            target = prompts_dir / prompt_file.name
+            # Always sync built-in prompts (overwrite with latest version)
+            _shutil2.copy2(str(prompt_file), str(target))
 
     # Create user customizations stub if it doesn't exist (never overwritten)
     user_ci_file = github_dir / 'copilot-instructions-user.md'

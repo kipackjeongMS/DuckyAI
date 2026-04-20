@@ -45,6 +45,13 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
     # Write PID file
     pid_file.write_text(str(os.getpid()), encoding="utf-8")
 
+    # Sync built-in prompt files to vault before loading agents
+    from .cli import ensure_init
+    try:
+        ensure_init(vault_path)
+    except Exception as e:
+        logger.warning(f"ensure_init failed (non-critical): {e}")
+
     max_concurrent = config.get_orchestrator_max_concurrent()
 
     debug_mode = "[yellow](DEBUG)[/yellow]" if debug else ""
