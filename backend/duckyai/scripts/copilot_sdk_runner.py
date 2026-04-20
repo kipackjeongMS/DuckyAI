@@ -187,7 +187,10 @@ def _create_client(cwd: str | None):
 
 
 async def _create_session(client, *, model: str | None, mcp_servers: dict[str, dict[str, Any]]):
-    from copilot import PermissionHandler
+    try:
+        from copilot import PermissionHandler
+    except ImportError:
+        from copilot.session import PermissionHandler
 
     session_opts: dict[str, Any] = {
         "on_permission_request": PermissionHandler.approve_all,
