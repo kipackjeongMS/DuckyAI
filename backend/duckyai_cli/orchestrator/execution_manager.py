@@ -298,6 +298,13 @@ class ExecutionManager:
                     elif output_valid and output_link is None and agent.output_optional:
                         final_status = 'ignored'
 
+                    ctx.output_produced = output_valid and output_link is not None
+
+                # For agents where validation wasn't run (e.g., scheduled with empty path),
+                # infer output from response content.
+                if ctx.status == 'completed' and not ctx.output_produced and ctx.response:
+                    ctx.output_produced = bool(ctx.response.strip())
+
                 self.task_manager.update_task_status(
                     task_handle=ctx.task_file,
                     status="IGNORE" if final_status == 'ignored' else

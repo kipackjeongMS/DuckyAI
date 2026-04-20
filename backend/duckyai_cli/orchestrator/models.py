@@ -41,6 +41,7 @@ class AgentDefinition:
     trigger_content_pattern: Optional[str] = None  # Regex pattern to match in file content
     trigger_schedule: Optional[str] = None
     trigger_wait_for: List[str] = field(default_factory=list)
+    require_parent_output: bool = False  # If True, skip dispatch when no parent produced output
 
     # Input/output
     input_path: List[str] = field(default_factory=list)
@@ -133,6 +134,7 @@ class ExecutionContext:
 
     # Execution results
     status: str = "pending"  # pending, completed, failed, timeout
+    output_produced: bool = False  # Whether the execution produced output (set during validation)
     prompt: Optional[str] = None
     error_message: Optional[str] = None
     response: Optional[str] = None

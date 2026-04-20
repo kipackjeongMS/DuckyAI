@@ -137,6 +137,10 @@ class Orchestrator:
         self._dependent_cooldown: Dict[str, float] = {}  # agent_abbr → last_dispatch_timestamp
         self._dependent_cooldown_lock = threading.Lock()
 
+        # Track parent output for require_parent_output.
+        # Key: dependent_abbr → {parent_abbr: bool (had output)}
+        self._parent_output_tracker: Dict[str, Dict[str, bool]] = {}
+
         logger.info(f"Orchestrator initialized for vault: {self.vault_path}")
         logger.info(f"Loaded {len(self.agent_registry.agents)} agents")
         logger.info(f"Loaded {len(self.poller_manager.pollers)} poller(s)")
@@ -796,6 +800,11 @@ class Orchestrator:
                     )
                     continue
 
+                # Record parent output status for require_parent_output check
+                if dep_key not in self._parent_output_tracker:
+                    self._parent_output_tracker[dep_key] = {}
+                self._parent_output_tracker[dep_key][completed_abbr] = ctx.output_produced
+
                 # Check if any sibling parents are still running
                 siblings_running = []
                 for parent_abbr in dep_agent.trigger_wait_for:
@@ -811,6 +820,23 @@ class Orchestrator:
                         console=True
                     )
                     continue
+
+                # All parents done — check require_parent_output
+                if dep_agent.require_parent_output:
+                    tracker = self._parent_output_tracker.get(dep_key, {})
+                    any_output = any(tracker.values())
+                    if not any_output:
+                        logger.info(
+                            f"⛓️ {dep_key} skipped — require_parent_output is set "
+                            f"but no parent produced output: {tracker}",
+                            console=True
+                        )
+                        # Clean up tracker for next cycle
+                        self._parent_output_tracker.pop(dep_key, None)
+                        continue
+
+                # Clean up tracker after decision
+                self._parent_output_tracker.pop(dep_key, None)
 
                 # No siblings running — dispatch
                 self._dependent_cooldown[dep_key] = now
