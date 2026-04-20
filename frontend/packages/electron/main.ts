@@ -128,14 +128,14 @@ function getCliCandidates(vaultPath: string): CliCandidate[] {
   const candidates: CliCandidate[] = [];
   const repoCliDir = path.join(vaultPath, "cli");
   const hasRepoCli = fs.existsSync(path.join(repoCliDir, "pyproject.toml"))
-    && fs.existsSync(path.join(repoCliDir, "duckyai_cli"));
+    && fs.existsSync(path.join(repoCliDir, "duckyai"));
 
   const addCandidates = (cwd: string) => {
     if (process.platform === "win32") {
-      candidates.push({ command: "py", baseArgs: ["-m", "duckyai_cli"], cwd });
+      candidates.push({ command: "py", baseArgs: ["-m", "duckyai"], cwd });
     }
-    candidates.push({ command: "python", baseArgs: ["-m", "duckyai_cli"], cwd });
-    candidates.push({ command: "python3", baseArgs: ["-m", "duckyai_cli"], cwd });
+    candidates.push({ command: "python", baseArgs: ["-m", "duckyai"], cwd });
+    candidates.push({ command: "python3", baseArgs: ["-m", "duckyai"], cwd });
   };
 
   if (hasRepoCli) {

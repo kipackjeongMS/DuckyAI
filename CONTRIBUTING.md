@@ -19,8 +19,8 @@ These files are synced to users when they run `vault-update`:
 
 | Path | What it is |
 |------|-----------|
-| `cli/duckyai_cli/api/vault_service.py` | Native Python vault tool implementations |
-| `cli/duckyai_cli/api/routes_vault.py` | Native vault API routing |
+| `cli/duckyai/api/vault_service.py` | Native Python vault tool implementations |
+| `cli/duckyai/api/routes_vault.py` | Native vault API routing |
 | `Templates/*.md` | Obsidian note templates |
 | `.github/prompts/*.prompt.md` | Copilot prompts |
 | `.github/skills/*/SKILL.md` | Copilot skill definitions |
@@ -65,7 +65,7 @@ git checkout -b users/yourname/description
 
 - **New skill:** Create `.github/skills/your-skill/SKILL.md`
 - **New prompt:** Create `.github/prompts/your-prompt.prompt.md`
-- **Vault tool change:** Edit `cli/duckyai_cli/api/vault_service.py` and add or update tests under `cli/duckyai_cli/tests/unit/`
+- **Vault tool change:** Edit `cli/duckyai/api/vault_service.py` and add or update tests under `cli/duckyai/tests/unit/`
 - **Template change:** Edit files in `Templates/`
 - **Instructions change:** Edit structural sections in `.github/copilot-instructions.md` (don't touch placeholder sections)
 
@@ -77,7 +77,7 @@ git checkout -b users/yourname/description
 
 ### 4. Test your changes
 
-- Verify the vault tool tests pass: `cd cli && python -m pytest duckyai_cli/tests/unit/test_vault_service.py duckyai_cli/tests/unit/test_routes_vault.py -q`
+- Verify the vault tool tests pass: `cd cli && python -m pytest duckyai/tests/unit/test_vault_service.py duckyai/tests/unit/test_routes_vault.py -q`
 - Check for accidental personal content: no hardcoded usernames, paths, or team-specific references
 - If you added a skill, test it in your own vault first
 

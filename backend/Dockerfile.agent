@@ -40,7 +40,7 @@ RUN npm install -g @microsoft/workiq
 
 # ── Python dependencies (duckyai-cli + SDK deps) ──
 COPY pyproject.toml /app/pyproject.toml
-COPY duckyai_cli/ /app/duckyai_cli/
+COPY duckyai/ /app/duckyai/
 
 WORKDIR /app
 RUN pip install --no-cache-dir -e .

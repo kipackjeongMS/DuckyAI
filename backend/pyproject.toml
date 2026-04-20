@@ -44,8 +44,8 @@ dev = [
 ]
 
 [project.scripts]
-duckyai = "duckyai_cli.main.cli:main"
-duckyai-vault-mcp = "duckyai_cli.mcp_server:main"
+duckyai = "duckyai.main.cli:main"
+duckyai-vault-mcp = "duckyai.mcp_server:main"
 
 [project.urls]
 Homepage = "https://github.com/kipackjeongMS/DuckyAI"
@@ -53,9 +53,9 @@ Repository = "https://github.com/kipackjeongMS/DuckyAI"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["duckyai_cli*"]
+include = ["duckyai*"]
 
 [tool.setuptools.package-data]
 
 [tool.pytest.ini_options]
-testpaths = ["duckyai_cli/tests"]
+testpaths = ["duckyai/tests"]

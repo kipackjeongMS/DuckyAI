@@ -711,7 +711,7 @@ DuckyAI/
 ├── 05-Archive/                        # Completed items
 ├── Templates/                         # 9 Obsidian templates
 ├── cli/
-│   ├── duckyai_cli/                   # Python CLI + Orchestrator
+│   ├── duckyai/                   # Python CLI + Orchestrator
 │   │   ├── main/                      # CLI commands (Click)
 │   │   ├── mcp_server.py              # Python MCP wrapper over VaultService
 │   │   ├── orchestrator/              # Daemon subsystem

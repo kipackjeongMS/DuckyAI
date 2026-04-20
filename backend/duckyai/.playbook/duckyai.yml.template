@@ -1,0 +1,136 @@
+version: "0.0.18"
+id: ${vault_id}
+name: ${vault_name}
+
+user:
+  name: "${user_name}"
+  primaryLanguage: ${primary_language}
+  timezone: "${timezone}"
+
+services:
+  path: "../${vault_name}-Services"
+  entries: []
+
+orchestrator:
+  auto_start: true
+  prompts_dir: .github/prompts-agent
+  skills_dir: .github/skills
+
+  max_concurrent: 3
+  poll_interval: 1
+  file_extensions:
+    - .md
+    - .pdf
+    - .docx
+    - .doc
+    - .txt
+defaults:
+  executor: copilot_sdk
+  timeout_minutes: 30
+  max_parallel: 3
+  task_create: true
+  task_priority: medium
+  task_archived: false
+  agent_params:
+    model: ${model}
+nodes:
+  - type: agent
+    name: Enrich Ingested Content (EIC)
+    input_path: 00-Inbox
+    output_path: 03-Knowledge/Documentation
+    output_type: new_file
+    input_type: new_file
+    input_pattern: "*.md"
+    requires_input_file: true
+    max_parallel: 1
+    enabled: true
+  - type: agent
+    name: Extract Document to Markdown (EDM)
+    input_path: 00-Inbox
+    output_path: 03-Knowledge/Documentation
+    output_type: new_file
+    input_type: new_file
+    input_pattern: "*.pdf|*.docx|*.doc|*.txt"
+    trigger_exclude_pattern: "*.md"
+    output_naming: "{title}.md"
+    requires_input_file: true
+    max_parallel: 1
+    enabled: true
+  - type: agent
+    name: Topic Index Update (TIU)
+    cron: 30 18 * * 5
+    input_path: 04-Periodic/Daily
+    output_path: 03-Knowledge/Topics
+    output_type: new_file
+    requires_input_file: false
+    max_parallel: 1
+    enabled: true
+  - type: agent
+    name: Teams Chat Summary (TCS)
+    cron: "${tcs_cron}"
+    output_path: 04-Periodic/Daily
+    output_type: update_file
+    requires_input_file: false
+    max_parallel: 1
+    enabled: ${tcs_enabled}
+    agent_params:
+      model: claude-haiku-4.5
+      lookback_hours: 24
+  - type: agent
+    name: Teams Meeting Summary (TMS)
+    cron: "${tms_cron}"
+    output_path: 04-Periodic/Daily
+    output_type: update_file
+    requires_input_file: false
+    max_parallel: 1
+    enabled: ${tms_enabled}
+    agent_params:
+      model: claude-haiku-4.5
+      lookback_hours: 24
+  - type: agent
+    name: Task Manager (TM)
+    trigger_wait_for: [TCS, TMS]
+    output_path: 04-Periodic/Daily
+    output_type: update_file
+    requires_input_file: false
+    enabled: true
+    agent_params:
+      model: claude-haiku-4.5
+  - type: agent
+    name: Task Planner (TP)
+    input_type: manual
+    output_type: update_file
+    output_optional: true
+    executor: copilot_cli
+    max_parallel: 1
+    timeout_minutes: 30
+    use_container: true
+    extra_mounts:
+      - source: "${services_path}"
+        target: /services
+    enabled: true
+    agent_params:
+      model: ${model}
+  - type: agent
+    name: PR Review (PR)
+    input_path: 01-Work/PRReviews
+    input_type: file_content_change
+    input_pattern: "*.md"
+    trigger_content_pattern: "^status:\\s*todo"
+    output_type: update_file
+    requires_input_file: true
+    executor: copilot_cli
+    max_parallel: 2
+    timeout_minutes: 30
+    use_container: true
+    # /repo-cache persists cloned PR repos across runs (git fetch on hit → ~1-3s vs. 30-120s cold clone).
+    # Orchestrator auto-creates and resolves ${repo_cache} to <vault>/.duckyai/repo-cache/.
+    extra_mounts:
+      - source: "${repo_cache}"
+        target: /repo-cache
+      - source: "${services_path}"
+        target: /services
+        readonly: true
+    enabled: true
+    agent_params:
+      model: ${model}
