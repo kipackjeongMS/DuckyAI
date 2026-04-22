@@ -218,3 +218,4 @@ class TriggerEvent:
     is_directory: bool
     timestamp: datetime
     frontmatter: Dict[str, Any] = field(default_factory=dict)
+    target_agent: Optional[str] = None  # If set, only dispatch to this agent (abbreviation)

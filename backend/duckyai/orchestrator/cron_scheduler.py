@@ -141,7 +141,8 @@ class CronScheduler:
             event_type="scheduled",
             is_directory=False,
             timestamp=self.config.user_now(),
-            frontmatter={}
+            frontmatter={},
+            target_agent=agent.abbreviation
         )
 
         # Queue the event for processing

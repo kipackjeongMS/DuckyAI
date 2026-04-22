@@ -13,7 +13,7 @@ import click
 import requests
 
 # GitHub repository configuration
-GITHUB_REPO = "jykim/DuckyAI"
+GITHUB_REPO = "kipackjeongMS/DuckyAI"
 GITHUB_API_BASE = f"https://api.github.com/repos/{GITHUB_REPO}"
 
 

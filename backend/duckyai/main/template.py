@@ -14,7 +14,7 @@ import requests
 # Template registry: maps template names to GitHub repos and vault folders
 TEMPLATE_REGISTRY = {
     "duckyai": {
-        "repo": "jykim/duckyai-vault",
+        "repo": "kipackjeongMS/DuckyAI",
         "description": "DuckyAI starter vault with default configuration",
         "vault_folder": ".",
     },

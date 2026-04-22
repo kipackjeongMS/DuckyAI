@@ -269,9 +269,9 @@ pollers:
 **Update Flow** (agent-driven, step by step):
 
 1. **Read current version** from `duckyai.yml` `version` field
-2. **Check latest release** via `gh release list --repo jykim/duckyai-vault --limit 1`
+2. **Check latest release** via `gh release list --repo kipackjeongMS/DuckyAI --limit 1`
 3. **List releases** between current and latest, present summary to user
-4. **Get changed files** via `gh api repos/jykim/duckyai-vault/compare/v{CURRENT}...{LATEST}` — group by status:
+4. **Get changed files** via `gh api repos/kipackjeongMS/DuckyAI/compare/v{CURRENT}...{LATEST}` — group by status:
    - Added files
    - Modified files
    - Removed files
@@ -280,7 +280,7 @@ pollers:
    - Accept remote (overwrite local)
    - Keep local (skip this file)
    - Show diff (display both versions)
-7. **Apply changes** — fetch files via `gh api repos/jykim/duckyai-vault/contents/{path}?ref={tag}`, decode base64, write locally; delete removed files
+7. **Apply changes** — fetch files via `gh api repos/kipackjeongMS/DuckyAI/contents/{path}?ref={tag}`, decode base64, write locally; delete removed files
 8. **Update version** in `duckyai.yml`
 9. **Summary** — report applied/skipped files, offer to commit
 
