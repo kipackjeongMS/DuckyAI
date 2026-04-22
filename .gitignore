@@ -39,6 +39,9 @@ scripts/repos.json
 
 # Obsidian (user-specific)
 .obsidian/
+# But include bundled Obsidian config in vault templates
+!vault-template/.obsidian/
+!backend/duckyai/.vault-template/.obsidian/
 
 # Services directory junction (points outside vault)
 .services/

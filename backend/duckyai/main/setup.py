@@ -365,8 +365,20 @@ tags:
     # ─── Generate Config Files ──────────────────────────
     click.echo("\n⚙️  Generating configuration...")
 
-    # duckyai.yml (single unified config)
-    duckyai_yml_path = vault_path / "duckyai.yml"
+    # duckyai.yml (single unified config) — lives inside .duckyai/
+    duckyai_dir = vault_path / ".duckyai"
+    duckyai_dir.mkdir(parents=True, exist_ok=True)
+    duckyai_yml_path = duckyai_dir / "duckyai.yml"
+
+    # Migrate legacy root-level duckyai.yml into .duckyai/
+    legacy_yml = vault_path / "duckyai.yml"
+    if legacy_yml.exists() and not duckyai_yml_path.exists():
+        shutil.move(str(legacy_yml), str(duckyai_yml_path))
+        click.echo(f"  ✓ Migrated duckyai.yml → .duckyai/duckyai.yml")
+    elif legacy_yml.exists() and duckyai_yml_path.exists():
+        legacy_yml.unlink()
+        click.echo(f"  ✓ Removed stale root duckyai.yml")
+
     if duckyai_yml_path.exists():
         content = duckyai_yml_path.read_text(encoding="utf-8")
 
