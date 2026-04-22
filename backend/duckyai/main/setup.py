@@ -478,7 +478,8 @@ tags:
                     result = subprocess.run(
                         [docker_bin, 'build', '-f', str(dockerfile_path),
                          '-t', 'duckyai-agent:latest', str(build_ctx)],
-                        capture_output=True, text=True, timeout=600,
+                        capture_output=True, encoding='utf-8', errors='replace',
+                        timeout=600,
                     )
                     if result.returncode == 0:
                         click.echo("  ✅ duckyai-agent:latest built successfully")
