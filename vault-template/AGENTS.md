@@ -41,7 +41,7 @@ NEVER proactively create documentation or README files.
   - `obsidian-markdown-structure` - Markdown structure guidelines
   - `markdown-video` - Video generation from markdown
   - `gemini-image-skill` - Image generation with Gemini
-  - `duckyai-cli` - DUCKYAI CLI for orchestrator config, worker management, and vault updates
+  - `duckyai` - DuckyAI CLI for orchestrator config, worker management, and vault updates
   - `gobi-onboarding` - Gobi Desktop 3.0 voice onboarding flow
   - `gobi-cli` - Gobi CLI for spaces, threads, brains, and sessions
   - `obsidian-cli` - Obsidian CLI for search, link validation, properties, and file operations (requires running Obsidian)

@@ -19,9 +19,9 @@ GITHUB_API_BASE = f"https://api.github.com/repos/{GITHUB_REPO}"
 
 
 def get_current_version() -> Optional[str]:
-    """Get the currently installed version of duckyai-cli."""
+    """Get the currently installed version of duckyai."""
     try:
-        return get_installed_version("duckyai-cli")
+        return get_installed_version("duckyai")
     except PackageNotFoundError:
         return None
 

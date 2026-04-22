@@ -33,7 +33,7 @@ def test_get_duckyai_launch_cmd_falls_back_when_wrapper_unhealthy(monkeypatch):
 def test_repair_source_install_writes_pth(monkeypatch, tmp_path):
     source_dir = tmp_path / "cli"
     source_dir.mkdir()
-    (source_dir / "pyproject.toml").write_text("[project]\nname='duckyai-cli'\n", encoding="utf-8")
+    (source_dir / "pyproject.toml").write_text("[project]\nname='duckyai'\n", encoding="utf-8")
     (source_dir / "duckyai").mkdir()
     purelib = tmp_path / "site-packages"
 
