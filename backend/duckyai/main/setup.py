@@ -109,13 +109,34 @@ def _prompt_ado_for_service(
         click.echo("    ⚠ No repos found in this project")
         return org, project, []
 
-    click.echo(f"    Found {len(repos)} repo(s). Select which to clone:")
-    selected = []
-    for repo in repos:
+    click.echo(f"    Found {len(repos)} repo(s):")
+    for i, repo in enumerate(repos, 1):
         size_mb = repo.size / (1024 * 1024) if repo.size else 0
-        label = f"{repo.name}" + (f" ({size_mb:.0f} MB)" if size_mb > 1 else "")
-        if click.confirm(f"      Clone {label}?", default=False):
-            selected.append(repo)
+        size_str = f" ({size_mb:.0f} MB)" if size_mb > 1 else ""
+        click.echo(f"      {i}. {repo.name}{size_str}")
+
+    raw = click.prompt(
+        "    Enter repo numbers to clone (comma-separated, or 'all')",
+        default="all",
+    ).strip()
+
+    if raw.lower() == "all":
+        selected = list(repos)
+    else:
+        selected = []
+        for tok in raw.split(","):
+            tok = tok.strip()
+            if tok.isdigit():
+                idx = int(tok) - 1
+                if 0 <= idx < len(repos):
+                    selected.append(repos[idx])
+                else:
+                    click.echo(f"    ⚠ Skipping invalid number: {tok}")
+
+    if selected:
+        click.echo(f"    → Selected: {', '.join(r.name for r in selected)}")
+    else:
+        click.echo("    (no repos selected)")
 
     return org, project, selected
 
