@@ -894,6 +894,10 @@ main.add_command(service_group)
 from .doctor import doctor_command
 main.add_command(doctor_command)
 
+# Self-update
+from .update import update_cli
+main.add_command(update_cli)
+
 # Chat server
 from .chat_cmd import chat_group
 main.add_command(chat_group)
