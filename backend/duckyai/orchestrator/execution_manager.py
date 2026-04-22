@@ -1492,7 +1492,7 @@ class ExecutionManager:
                 [az_bin, 'repos', 'pr', 'show',
                  '--id', pr_id,
                  '--org', f'https://dev.azure.com/{org}',
-                 '--project', project,
+                 '--detect', 'false',
                  '--output', 'json'],
                 capture_output=True, text=True, timeout=30,
             )
