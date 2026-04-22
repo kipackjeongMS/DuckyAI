@@ -1804,6 +1804,16 @@ class ExecutionManager:
             for key, value in trigger_data['frontmatter'].items():
                 prompt += f"- {key}: {value}\n"
 
+        # Inject affected files for dependent agents so they know which
+        # daily notes to process (populated by orchestrator filesystem scan).
+        affected_files = trigger_data.get('affected_files')
+        if affected_files:
+            prompt += "\n# Parent Output Context\n"
+            prompt += "The following files in the output directory were recently updated by parent agents.\n"
+            prompt += "Process ALL of these files (not just today's date):\n"
+            for fname in affected_files:
+                prompt += f"- {fname}\n"
+
         # Add agent parameters if available
         # For Teams agents (TCS/TMS), pre-resolve the fetch window
         # so the LLM doesn't need to decide between watermark vs lookback

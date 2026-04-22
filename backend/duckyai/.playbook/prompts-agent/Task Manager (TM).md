@@ -12,12 +12,12 @@ You are the **Task Manager** agent. You run automatically after TCS (Teams Chat 
 
 ## Inputs
 
-- Today's daily note: `04-Periodic/Daily/{{YYYY-MM-DD}}.md`
+- Daily notes in `04-Periodic/Daily/`. If a **Parent Output Context** section lists specific files, process those. Otherwise, process today's note: `04-Periodic/Daily/{{YYYY-MM-DD}}.md`
 - The `## Teams Meeting Highlights` and `## Teams Chat Highlights` sections contain content written by TMS/TCS
 
-## Step 1: Read today's daily note
+## Step 1: Read daily notes
 
-Read `04-Periodic/Daily/{{YYYY-MM-DD}}.md`. If it doesn't exist, exit with "No daily note found."
+If the trigger context includes **Parent Output Context** with a list of affected files, read ALL listed files from `04-Periodic/Daily/`. Otherwise, read `04-Periodic/Daily/{{YYYY-MM-DD}}.md`. If no daily notes exist, exit with "No daily note found."
 
 ## Step 2: Extract action items
 
@@ -101,7 +101,7 @@ If no action items were found, print: "No new action items found in today's high
 
 - **Idempotent**: `logPRReview` has built-in deduplication. If a PR review file already exists, the tool will skip creation. Always call the tools — don't try to manually check for duplicates.
 - **Tasks are plain text**: General tasks are added as `- [ ] {title}` via `logTask` only — no file is created in `01-Work/Tasks/`.
-- **Only process today's note**: Do not scan older daily notes. TM runs after each TCS/TMS sync — it only needs today's content.
+- **Only process listed notes**: Process the daily notes from the Parent Output Context (or today's note if none listed). Do not scan older notes beyond what's specified.
 - **Do not modify highlights**: Never edit `## Teams Meeting Highlights` or `## Teams Chat Highlights` content. Those sections belong to TMS/TCS.
 - **User identity**: The vault owner is the "user". When highlights mention them by name, treat those as user-assigned tasks. References to "I" or "me" in highlights also mean the user.
 - **Preserve existing tasks**: If `## Tasks` or `## PRs & Code Reviews` already has items, the MCP tools will append — never clear existing content.

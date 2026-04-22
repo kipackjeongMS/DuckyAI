@@ -137,9 +137,9 @@ class Orchestrator:
         self._dependent_cooldown: Dict[str, float] = {}  # agent_abbr → last_dispatch_timestamp
         self._dependent_cooldown_lock = threading.Lock()
 
-        # Track parent output for require_parent_output.
-        # Key: dependent_abbr → {parent_abbr: bool (had output)}
-        self._parent_output_tracker: Dict[str, Dict[str, bool]] = {}
+        # Track parent output for require_parent_output and affected-files scan.
+        # Key: dependent_abbr → {parent_abbr: (had_output, start_time)}
+        self._parent_output_tracker: Dict[str, Dict[str, tuple]] = {}
 
         logger.info(f"Orchestrator initialized for vault: {self.vault_path}")
         logger.info(f"Loaded {len(self.agent_registry.agents)} agents")
@@ -775,6 +775,57 @@ class Orchestrator:
         else:
             logger.debug(f"No unchecked PR entry found for {pr_filename} in daily note")
 
+    def _scan_affected_files(
+        self, dep_agent: AgentDefinition, dep_key: str,
+        manual_lookback_seconds: int = 86400
+    ) -> list:
+        """Scan the parent agents' output_path for recently modified files.
+
+        For dependent dispatch: uses parent start_times from _parent_output_tracker.
+        For manual dispatch (no tracker entry): uses manual_lookback_seconds (default 24h).
+
+        Returns a sorted list of filenames (e.g., ['2026-04-21.md', '2026-04-22.md']).
+        """
+        output_path = dep_agent.output_path
+        if not output_path:
+            return []
+
+        output_dir = self.vault_path / output_path
+        if not output_dir.exists():
+            return []
+
+        # Determine the cutoff time: earliest parent start_time or manual lookback
+        tracker = self._parent_output_tracker.get(dep_key, {})
+        parent_start_times = [
+            v[1] for v in tracker.values()
+            if isinstance(v, tuple) and v[1] is not None
+        ]
+
+        if parent_start_times:
+            from datetime import timezone
+            earliest_start = min(parent_start_times)
+            if earliest_start.tzinfo is None:
+                earliest_start = earliest_start.replace(tzinfo=timezone.utc)
+            cutoff_epoch = earliest_start.timestamp()
+        else:
+            cutoff_epoch = time.time() - manual_lookback_seconds
+
+        affected = []
+        try:
+            for f in output_dir.iterdir():
+                if f.is_file() and f.suffix == '.md' and f.stat().st_mtime >= cutoff_epoch:
+                    affected.append(f.name)
+        except OSError as e:
+            logger.warning(f"Failed to scan {output_dir}: {e}")
+
+        affected.sort()
+        if affected:
+            logger.info(
+                f"⛓️ {dep_key} affected files in {output_path}/: {affected}",
+                console=True
+            )
+        return affected
+
     def _dispatch_dependents(self, completed_agent: AgentDefinition, ctx: ExecutionContext,
                               _chain_depth: int = 0):
         """
@@ -834,10 +885,12 @@ class Orchestrator:
                     )
                     continue
 
-                # Record parent output status for require_parent_output check
+                # Record parent output status and start_time for dependent dispatch
                 if dep_key not in self._parent_output_tracker:
                     self._parent_output_tracker[dep_key] = {}
-                self._parent_output_tracker[dep_key][completed_abbr] = ctx.output_produced
+                self._parent_output_tracker[dep_key][completed_abbr] = (
+                    ctx.output_produced, ctx.start_time
+                )
 
                 # Check if any sibling parents are still running
                 siblings_running = []
@@ -858,7 +911,7 @@ class Orchestrator:
                 # All parents done — check require_parent_output
                 if dep_agent.require_parent_output:
                     tracker = self._parent_output_tracker.get(dep_key, {})
-                    any_output = any(tracker.values())
+                    any_output = any(v[0] if isinstance(v, tuple) else v for v in tracker.values())
                     if not any_output:
                         logger.info(
                             f"⛓️ {dep_key} skipped — require_parent_output is set "
@@ -884,6 +937,11 @@ class Orchestrator:
                 # Grace period: let file writes from parent agents flush to disk
                 time.sleep(3)
 
+                # Scan parent output_path for recently modified files so the
+                # dependent agent knows which files to process (e.g., TM reads
+                # daily notes that TCS/TMS actually wrote to, regardless of date).
+                affected_files = self._scan_affected_files(dep_agent, dep_key)
+
                 # Build a synthetic trigger event carrying the parent's context
                 dep_event_data = {
                     'path': '',
@@ -892,6 +950,7 @@ class Orchestrator:
                     'timestamp': ctx.end_time or ctx.start_time,
                     'frontmatter': {},
                     'triggered_by': completed_abbr,
+                    'affected_files': affected_files,
                 }
 
                 if self._running:
@@ -1425,6 +1484,14 @@ class Orchestrator:
             'frontmatter': trigger_event.frontmatter,
             'session_id': session_id  # Add session_id to event_data
         }
+
+        # For agents with trigger_wait_for (dependents like TM), scan the
+        # output_path for recently modified files so the agent knows which
+        # daily notes to process — even when triggered manually.
+        if agent.trigger_wait_for:
+            affected = self._scan_affected_files(agent, agent.abbreviation)
+            if affected:
+                event_data['affected_files'] = affected
 
         # Execute synchronously
         try:
