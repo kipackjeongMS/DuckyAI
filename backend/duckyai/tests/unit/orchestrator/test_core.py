@@ -406,7 +406,7 @@ Test prompt body
 
         orch.execution_manager.get_agent_running_count = Mock(return_value=0)
 
-        with patch("duckyai_cli.orchestrator.core.time.sleep", return_value=None):
+        with patch("duckyai.orchestrator.core.time.sleep", return_value=None):
             orch._dispatch_dependents(orch.agent_registry.agents["TCS"], parent_ctx)
 
         orch._execute_agent.assert_not_called()
@@ -442,7 +442,7 @@ Test prompt body
 
         orch.execution_manager.get_agent_running_count = Mock(return_value=0)
 
-        with patch("duckyai_cli.orchestrator.core.time.sleep", return_value=None):
+        with patch("duckyai.orchestrator.core.time.sleep", return_value=None):
             orch._dispatch_dependents(orch.agent_registry.agents["TCS"], parent_ctx)
 
         orch._execute_agent.assert_called_once()

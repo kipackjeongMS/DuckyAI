@@ -604,14 +604,11 @@ class ExecutionManager:
         use_container = self._should_use_container(agent)
 
         if use_container:
-            # In container mode, use a shell wrapper to resolve the runner path
-            # since the Docker image may use either /app/duckyai/ (new) or
-            # /app/duckyai_cli/ (legacy pre-rename).
+            # In container mode, use a shell wrapper to resolve the runner path.
             vault_mount = self._container_config.get('vault_mount', '/vault')
             cwd_path = vault_mount
             runner_resolve = (
                 'RUNNER=/app/duckyai/scripts/copilot_sdk_runner.py; '
-                '[ -f "$RUNNER" ] || RUNNER=/app/duckyai_cli/scripts/copilot_sdk_runner.py; '
             )
             # Build the inner python command args.
             # Write prompt to a temp file mounted into the container to avoid
