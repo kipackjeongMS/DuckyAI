@@ -103,7 +103,7 @@ nodes:
     output_optional: true
     max_parallel: 1
     timeout_minutes: 30
-    use_container: true
+    use_container: ${use_container}
     extra_mounts:
       - source: "${services_path}"
         target: /services
@@ -120,7 +120,7 @@ nodes:
     requires_input_file: true
     max_parallel: 2
     timeout_minutes: 30
-    use_container: true
+    use_container: ${use_container}
     # Orchestrator prepares a git worktree from Services on the host and mounts it at /repo.
     # /services is also mounted for cross-repo reference during code review.
     extra_mounts:

@@ -439,6 +439,39 @@ tags:
         click.echo("  (No services added — you can add them later with 'duckyai service add')")
     service_names = [e[0] for e in service_entries]
 
+    # ─── Step 9: Container Isolation ──────────────────────
+    use_container = False
+    docker_bin = shutil.which('docker')
+    if docker_bin:
+        click.echo("\n🐳 Docker detected.")
+        if click.confirm("  Use container isolation for TP/PR agents?", default=False):
+            use_container = True
+            click.echo("  Building duckyai-agent image (this may take a few minutes)...")
+            dockerfile_path = Path(__file__).parent.parent / '.playbook' / 'Dockerfile.agent'
+            build_ctx = Path(__file__).parent.parent.parent  # backend/
+            if not dockerfile_path.exists():
+                click.echo("  ⚠ Dockerfile.agent not found in package — skipping build")
+                use_container = False
+            else:
+                try:
+                    result = subprocess.run(
+                        [docker_bin, 'build', '-f', str(dockerfile_path),
+                         '-t', 'duckyai-agent:latest', str(build_ctx)],
+                        capture_output=True, text=True, timeout=600,
+                    )
+                    if result.returncode == 0:
+                        click.echo("  ✅ duckyai-agent:latest built successfully")
+                    else:
+                        click.echo(f"  ⚠ Docker build failed: {result.stderr[:200]}")
+                        click.echo("  Falling back to local execution (no container)")
+                        use_container = False
+                except subprocess.TimeoutExpired:
+                    click.echo("  ⚠ Docker build timed out — falling back to local execution")
+                    use_container = False
+                except Exception as e:
+                    click.echo(f"  ⚠ Docker build error: {e}")
+                    use_container = False
+
     # ─── Generate Config Files ──────────────────────────
     click.echo("\n⚙️  Generating configuration...")
 
@@ -514,6 +547,19 @@ tags:
                 content
             )
 
+        # Update use_container on TP and PR agents
+        uc_val = "true" if use_container else "false"
+        content = re.sub(
+            r'(name: Task Planner \(TP\)[\s\S]*?)(use_container:\s*)\S+',
+            rf'\1\g<2>{uc_val}',
+            content
+        )
+        content = re.sub(
+            r'(name: PR Review \(PR\)[\s\S]*?)(use_container:\s*)\S+',
+            rf'\1\g<2>{uc_val}',
+            content
+        )
+
         duckyai_yml_path.write_text(content, encoding="utf-8")
         click.echo(f"  ✓ duckyai.yml (updated)")
     else:
@@ -540,6 +586,7 @@ tags:
             tms_cron=tms_cron_val,
             tcs_enabled=tcs_enabled,
             tms_enabled=tms_enabled,
+            use_container="true" if use_container else "false",
         )
         duckyai_yml_path.write_text(duckyai_content, encoding="utf-8")
         click.echo(f"  ✓ duckyai.yml (created)")
@@ -556,6 +603,7 @@ tags:
         click.echo(f"  Teams sync: {teams_cron}")
     else:
         click.echo(f"  Teams sync: disabled")
+    click.echo(f"  Container:  {'enabled' if use_container else 'disabled'}")
     click.echo("")
 
     # Configure the single home vault (~/.duckyai/config.json)
