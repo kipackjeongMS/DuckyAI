@@ -8,7 +8,7 @@ user:
   timezone: "${timezone}"
 
 services:
-  path: "../${vault_name}-Services"
+  path: "${services_path}"
   entries: []
 
 orchestrator:

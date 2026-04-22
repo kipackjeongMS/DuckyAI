@@ -177,6 +177,18 @@ def run_onboarding(vault_root: Path = None):
     vault_path.mkdir(parents=True, exist_ok=True)
     click.echo(f"  ✓ Vault: {vault_path}")
 
+    # Services directory — code workspace where repos are cloned
+    click.echo("")
+    click.echo("  Services is the code workspace directory where your repos live.")
+    default_services_parent = str(vault_path.parent)
+    services_parent = Path(click.prompt(
+        "  Parent directory for vault-services",
+        default=default_services_parent,
+    ))
+    services_dir_name = f"{vault_name}-Services"
+    services_path = (services_parent / services_dir_name).resolve()
+    click.echo(f"  ✓ Services: {services_path}")
+
     # ─── Step 2: About You ──────────────────────────────
     click.echo("\n👤 Step 2/8 — About You")
     user_name = click.prompt("  Your full name")
@@ -609,6 +621,7 @@ tags:
             tcs_enabled=tcs_enabled,
             tms_enabled=tms_enabled,
             use_container="true" if use_container else "false",
+            services_path=str(services_path),
         )
         duckyai_yml_path.write_text(duckyai_content, encoding="utf-8")
         click.echo(f"  ✓ duckyai.yml (created)")
@@ -618,6 +631,7 @@ tags:
     click.echo("🎉 DuckyAI is ready!")
     click.echo("")
     click.echo(f"  Vault:      {vault_path} ({vault_name})")
+    click.echo(f"  Services:   {services_path}")
     click.echo(f"  User:       {user_name}")
     click.echo(f"  Language:   {primary_lang}")
     click.echo(f"  Model:      {model}")
@@ -654,6 +668,7 @@ tags:
         vault_id=_vault_id,
         name=vault_name,
         path=vault_path,
+        services_path=str(services_path),
     )
     click.echo(f"  ✓ Configured as home vault in ~/.duckyai/config.json")
 
