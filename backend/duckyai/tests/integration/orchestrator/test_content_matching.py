@@ -42,7 +42,7 @@ trigger_event: modified
 trigger_exclude_pattern: "_Tasks_/*.md"
 trigger_content_pattern: "%%\\\\s*#ai\\\\s*%%"
 output_path: _Tasks_
-executor: claude_code
+executor: copilot_sdk
 max_parallel: 1
 timeout_minutes: 5
 post_process_action: remove_trigger_content

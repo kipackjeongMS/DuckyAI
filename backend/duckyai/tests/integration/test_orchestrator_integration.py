@@ -29,7 +29,7 @@ abbreviation: "ITA"
 category: "ingestion"
 trigger_pattern: "Ingest/Test/*.md"
 trigger_event: "created"
-executor: "claude_code"
+executor: "copilot_sdk"
 max_parallel: 1
 timeout_minutes: 5
 ---
@@ -136,7 +136,7 @@ abbreviation: "ST2"
 category: "ingestion"
 trigger_pattern: "Ingest/Test/*.md"
 trigger_event: "created"
-executor: "claude_code"
+executor: "copilot_sdk"
 ---
 
 Second agent prompt.

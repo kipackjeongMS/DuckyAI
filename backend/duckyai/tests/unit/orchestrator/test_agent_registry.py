@@ -37,7 +37,7 @@ input_path:
   - "Ingest/Clippings"
 input_type: "new_file"
 output_path: "AI/Tasks"
-executor: "claude_code"
+executor: "copilot_sdk"
 max_parallel: 2
 timeout_minutes: 15
 ---

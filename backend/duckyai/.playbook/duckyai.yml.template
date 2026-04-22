@@ -101,7 +101,6 @@ nodes:
     input_type: manual
     output_type: update_file
     output_optional: true
-    executor: copilot_cli
     max_parallel: 1
     timeout_minutes: 30
     use_container: true
@@ -119,7 +118,6 @@ nodes:
     trigger_content_pattern: "^status:\\s*todo"
     output_type: update_file
     requires_input_file: true
-    executor: copilot_cli
     max_parallel: 2
     timeout_minutes: 30
     use_container: true

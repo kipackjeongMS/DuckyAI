@@ -57,7 +57,7 @@ class AgentDefinition:
     prompt_body: str = ""
     skills: List[str] = field(default_factory=list)
     mcp_servers: List[str] = field(default_factory=list)
-    executor: str = "claude_code"
+    executor: str = "copilot_sdk"
     max_parallel: int = 1
     timeout_minutes: int = 30
     workers: List[WorkerConfig] = field(default_factory=list)  # Multi-worker execution
