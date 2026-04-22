@@ -46,7 +46,7 @@ When the user refers to someone by nickname or shorthand, use the aliased link f
 
 | Alias | Links To |
 |-------|----------|
-| <!-- Add aliases here, e.g.: Ki | [[Kipack Jeong\|Ki]] --> |
+| <!-- Add aliases here, e.g.: JD | [[Jane Doe\|JD]] --> |
 
 ## Core Principles
 
