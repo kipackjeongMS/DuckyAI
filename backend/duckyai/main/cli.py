@@ -9,7 +9,6 @@ import subprocess
 import sys
 import time
 import click
-import logging
 from pathlib import Path
 
 from .install_health import get_duckyai_launch_cmd
@@ -759,9 +758,8 @@ def main(
     signal.signal(signal.SIGINT, signal_handler)
 
     if debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.WARNING)
+        from ..logger import Logger
+        Logger(console_output=True).set_level("DEBUG")
 
     onboarding_target = _get_onboarding_target(
         invoked_subcommand=ctx.invoked_subcommand,

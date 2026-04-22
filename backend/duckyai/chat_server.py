@@ -26,7 +26,6 @@ import signal
 import sys
 import threading
 import time
-import logging
 import shutil
 from pathlib import Path
 from typing import Optional
@@ -34,7 +33,9 @@ from typing import Optional
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-log = logging.getLogger("duckyai.chat")
+from .logger import Logger
+
+log = Logger()
 
 DEFAULT_PORT = 52846
 PID_FILENAME = "chat.pid"
@@ -273,7 +274,7 @@ def create_chat_app(vault_path: str) -> Flask:
     try:
         run_async(runtime.start())
     except Exception as e:
-        print(f"[chat-server] Warning: SDK client start failed (will retry on first message): {e}", file=sys.stderr)
+        log.warning(f"SDK client start failed (will retry on first message): {e}")
 
     @app.route("/api/chat/send", methods=["POST"])
     def chat_send():
@@ -313,25 +314,14 @@ def create_chat_app(vault_path: str) -> Flask:
 
 def start_chat_server(vault_path: str, port: int = DEFAULT_PORT, host: str = "127.0.0.1"):
     """Start the chat server (blocking)."""
-    # Setup logging to file
-    log_dir = Path(vault_path) / ".duckyai" / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / LOG_FILENAME
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
-        handlers=[
-            logging.FileHandler(str(log_file), encoding="utf-8"),
-            logging.StreamHandler(sys.stderr),
-        ],
-    )
+    log.reconfigure(vault_path)
 
     # Check if already running
     existing_pid = _read_pid(vault_path)
     if existing_pid:
         try:
             os.kill(existing_pid, 0)
-            print(f"Chat server already running (PID {existing_pid})")
+            log.info(f"Chat server already running (PID {existing_pid})")
             return
         except OSError:
             _clear_pid(vault_path)
@@ -346,7 +336,7 @@ def start_chat_server(vault_path: str, port: int = DEFAULT_PORT, host: str = "12
     signal.signal(signal.SIGINT, cleanup)
 
     app = create_chat_app(vault_path)
-    print(f"[chat-server] Starting on {host}:{port} for vault: {vault_path}")
+    log.info(f"[chat-server] Starting on {host}:{port} for vault: {vault_path}")
 
     try:
         from waitress import serve

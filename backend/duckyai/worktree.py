@@ -10,16 +10,16 @@ Worktree layout inside a Services repo:
             pr-1234/          ← worktree checked out at source branch
 """
 
-import logging
 import shutil
 import subprocess
 import time
 from pathlib import Path
 from typing import Optional
 
+from .logger import Logger
 from .services import get_services_path, list_services
 
-logger = logging.getLogger(__name__)
+logger = Logger()
 
 WORKTREE_DIR_NAME = ".duckyai-worktrees"
 

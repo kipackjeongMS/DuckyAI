@@ -17,6 +17,8 @@ orchestrator:
   skills_dir: .github/skills
   max_concurrent: 3
   poll_interval: 1
+  log_level: INFO
+  log_retention_days: 30
   file_extensions:
   - .md
   - .pdf

@@ -1,0 +1,262 @@
+<mxfile host="65bd71144e">
+    <diagram id="duckyai-arch" name="System Architecture">
+        <mxGraphModel dx="1738" dy="1546" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="DuckyAI System Architecture" style="text;fontSize=22;fontFamily=Inter;align=center;verticalAlign=middle;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="480" y="-30" width="440" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="subtitle" value="Configs · Resources · Components" style="text;fontSize=12;fontFamily=Inter;align=center;fontColor=#888888;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="10" width="320" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer1" value="  " style="swimlane;startSize=28;fillColor=#f0f0f0;strokeColor=#cccccc;rounded=1;arcSize=8;fontFamily=Inter;fontSize=13;fontStyle=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="50" width="1320" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="cli" value="duckyai CLI&#xa;─────────&#xa;setup · run · trigger&#xa;orch · service · doctor" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer1" vertex="1">
+                    <mxGeometry x="30" y="35" width="170" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="mcp" value="MCP Server&#xa;─────────&#xa;duckyai-vault&#xa;FastMCP tools" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer1" vertex="1">
+                    <mxGeometry x="230" y="35" width="160" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="httpapi" value="HTTP API&#xa;─────────&#xa;Flask :52845&#xa;/api/daemon · /api/orch&#xa;/api/vault" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer1" vertex="1">
+                    <mxGeometry x="420" y="35" width="190" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="ide" value="VS Code&#xa;─────────&#xa;Workspace · Copilot&#xa;Extensions" style="rounded=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer1" vertex="1">
+                    <mxGeometry x="640" y="35" width="150" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="obsidian" value="Obsidian&#xa;─────────&#xa;Vault viewer&#xa;Daily notes · Tasks" style="rounded=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer1" vertex="1">
+                    <mxGeometry x="820" y="35" width="150" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="pip" value="pip install duckyai&#xa;─────────&#xa;PyPI package&#xa;includes .playbook&#xa;+ vault-template" style="rounded=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer1" vertex="1">
+                    <mxGeometry x="1000" y="35" width="170" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer2" value="Orchestrator Engine" style="swimlane;startSize=28;fillColor=#f5f5f5;strokeColor=#999999;rounded=1;arcSize=8;fontFamily=Inter;fontSize=13;fontStyle=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="210" width="1320" height="195" as="geometry"/>
+                </mxCell>
+                <mxCell id="core" value="Orchestrator Core&#xa;─────────&#xa;Event loop&#xa;Hot reload&#xa;Dependent dispatch&#xa;Queue processing" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer2" vertex="1">
+                    <mxGeometry x="30" y="38" width="160" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="registry" value="Agent Registry&#xa;─────────&#xa;Load from duckyai.yml&#xa;nodes[] + prompts-agent/*.md&#xa;Match trigger patterns" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer2" vertex="1">
+                    <mxGeometry x="220" y="38" width="195" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="execmgr" value="Execution Manager&#xa;─────────&#xa;max_concurrent slots&#xa;Copilot SDK runner&#xa;Container isolation" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer2" vertex="1">
+                    <mxGeometry x="445" y="38" width="175" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="filemon" value="File Monitor&#xa;─────────&#xa;watchdog observer&#xa;Debounce · Event queue&#xa;file_extensions filter" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer2" vertex="1">
+                    <mxGeometry x="650" y="38" width="170" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="cron" value="Cron Scheduler&#xa;─────────&#xa;croniter-based&#xa;TCS / TMS / PRS" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer2" vertex="1">
+                    <mxGeometry x="850" y="38" width="150" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="taskmgr" value="Task Manager&#xa;─────────&#xa;.duckyai/tasks/*&#xa;Status tracking" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Inter;fontSize=10;arcSize=20;fontStyle=1;verticalAlign=middle;align=center;" parent="layer2" vertex="1">
+                    <mxGeometry x="1030" y="38" width="150" height="95" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;" edge="1" parent="layer2" source="core" target="registry">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;" edge="1" parent="layer2" source="core" target="execmgr">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" value="events" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontSize=9;" edge="1" parent="layer2" source="filemon" target="core">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="735" y="155"/>
+                            <mxPoint x="110" y="155"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e4" value="scheduled" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontSize=9;" edge="1" parent="layer2" source="cron" target="core">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="925" y="168"/>
+                            <mxPoint x="110" y="168"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e5" value="track" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontSize=9;" edge="1" parent="layer2" source="execmgr" target="taskmgr">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer3" value="Agent Nodes  (duckyai.yml → nodes[])" style="swimlane;startSize=28;fillColor=#fff8e1;strokeColor=#d6b656;rounded=1;arcSize=8;fontFamily=Inter;fontSize=13;fontStyle=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="435" width="1320" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="tcs" value="TCS&#xa;Teams Chat Summary&#xa;⏰ cron" style="rounded=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer3" vertex="1">
+                    <mxGeometry x="20" y="38" width="130" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="tms" value="TMS&#xa;Teams Meeting Summary&#xa;⏰ cron" style="rounded=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer3" vertex="1">
+                    <mxGeometry x="170" y="38" width="140" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="tm" value="TM&#xa;Task Manager&#xa;⛓ wait_for TCS,TMS&#xa;require_parent_output" style="rounded=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer3" vertex="1">
+                    <mxGeometry x="330" y="38" width="150" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="tp" value="TP&#xa;Task Planner&#xa;🔧 manual  🐳 container" style="rounded=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer3" vertex="1">
+                    <mxGeometry x="500" y="38" width="145" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="pr" value="PR&#xa;PR Review&#xa;📁 new_file  🐳 container" style="rounded=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer3" vertex="1">
+                    <mxGeometry x="665" y="38" width="150" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="prs" value="PRS&#xa;PR Scan&#xa;⏰ cron  🐳 container" style="rounded=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer3" vertex="1">
+                    <mxGeometry x="835" y="38" width="135" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="svc" value="SVC&#xa;Service Sync&#xa;🔧 manual" style="rounded=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer3" vertex="1">
+                    <mxGeometry x="990" y="38" width="110" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="dep1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;dashed=1;" edge="1" parent="layer3" source="tcs" target="tm">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="85" y="125"/>
+                            <mxPoint x="405" y="125"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="dep2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;dashed=1;" edge="1" parent="layer3" source="tms" target="tm">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="240" y="120"/>
+                            <mxPoint x="405" y="120"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="legend" value="🔴 Red = use_container: true&#xa;🟡 Yellow = host process&#xa;⛓ = trigger_wait_for" style="text;fontFamily=Inter;fontSize=10;align=left;verticalAlign=top;" vertex="1" parent="layer3">
+                    <mxGeometry x="1130" y="38" width="170" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer4" value="Configuration" style="swimlane;startSize=28;fillColor=#e8f5e9;strokeColor=#66bb6a;rounded=1;arcSize=8;fontFamily=Inter;fontSize=13;fontStyle=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="640" width="620" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="cfg_yml" value="duckyai.yml&#xa;.duckyai/duckyai.yml&#xa;─────────&#xa;• user (name, lang, tz)&#xa;• services (path, entries[])&#xa;• orchestrator (prompts_dir,&#xa;  skills_dir, max_concurrent,&#xa;  poll_interval, use_container)&#xa;• defaults (executor, model)&#xa;• nodes[] (agent definitions)" style="shape=document;whiteSpace=wrap;fillColor=#c8e6c9;strokeColor=#66bb6a;fontFamily=Inter;fontSize=9;size=0.12;rounded=1;fontStyle=1;verticalAlign=middle;align=center;" parent="layer4" vertex="1">
+                    <mxGeometry x="15" y="38" width="195" height="165" as="geometry"/>
+                </mxCell>
+                <mxCell id="cfg_secrets" value="secrets.yaml&#xa;.duckyai/secrets.yaml&#xa;─────────&#xa;Deep-merged into config&#xa;(API keys, tokens)" style="shape=document;whiteSpace=wrap;fillColor=#c8e6c9;strokeColor=#66bb6a;fontFamily=Inter;fontSize=9;size=0.12;rounded=1;fontStyle=1;verticalAlign=middle;align=center;" parent="layer4" vertex="1">
+                    <mxGeometry x="225" y="38" width="160" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="cfg_home" value="config.json&#xa;~/.duckyai/config.json&#xa;─────────&#xa;home_vault pointer" style="shape=document;whiteSpace=wrap;fillColor=#c8e6c9;strokeColor=#66bb6a;fontFamily=Inter;fontSize=9;size=0.12;rounded=1;fontStyle=1;verticalAlign=middle;align=center;" parent="layer4" vertex="1">
+                    <mxGeometry x="400" y="38" width="155" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="cfg_playbook" value=".playbook/ (bundled in pip)&#xa;─────────&#xa;• duckyai.yml.template&#xa;• Dockerfile.agent&#xa;• prompts-agent/*.md (8 agents)&#xa;• skills/ (28 skills)&#xa;• copilot-instructions.md" style="shape=folder;whiteSpace=wrap;fillColor=#c8e6c9;strokeColor=#66bb6a;fontFamily=Inter;fontSize=9;tabWidth=100;tabHeight=18;tabPosition=left;rounded=1;fontStyle=1;verticalAlign=middle;align=center;" parent="layer4" vertex="1">
+                    <mxGeometry x="225" y="150" width="195" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="cfg_vaulttpl" value=".vault-template/&#xa;─────────&#xa;Obsidian config&#xa;AGENTS.md&#xa;Templates/" style="shape=folder;whiteSpace=wrap;fillColor=#c8e6c9;strokeColor=#66bb6a;fontFamily=Inter;fontSize=9;tabWidth=100;tabHeight=18;tabPosition=left;rounded=1;fontStyle=1;verticalAlign=middle;align=center;" parent="layer4" vertex="1">
+                    <mxGeometry x="440" y="150" width="130" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer5" value="Vault (on-disk)" style="swimlane;startSize=28;fillColor=#e3f2fd;strokeColor=#42a5f5;rounded=1;arcSize=8;fontFamily=Inter;fontSize=13;fontStyle=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="690" y="640" width="670" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_duckyai" value=".duckyai/&#xa;duckyai.yml · secrets.yaml&#xa;.orchestrator.pid&#xa;logs/ · tasks/" style="shape=folder;whiteSpace=wrap;fillColor=#bbdefb;strokeColor=#42a5f5;fontFamily=Inter;fontSize=9;tabWidth=55;tabHeight=16;tabPosition=left;rounded=1;fontStyle=1;verticalAlign=middle;align=center;" parent="layer5" vertex="1">
+                    <mxGeometry x="15" y="38" width="170" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_github" value=".github/&#xa;prompts-agent/ (symlinked)&#xa;skills/ (user-editable)" style="shape=folder;whiteSpace=wrap;fillColor=#bbdefb;strokeColor=#42a5f5;fontFamily=Inter;fontSize=9;tabWidth=50;tabHeight=16;tabPosition=left;rounded=1;fontStyle=1;verticalAlign=middle;align=center;" parent="layer5" vertex="1">
+                    <mxGeometry x="200" y="38" width="170" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_inbox" value="00-Inbox/" style="rounded=1;whiteSpace=wrap;fillColor=#bbdefb;strokeColor=#42a5f5;fontFamily=Inter;fontSize=9;fontStyle=1;" parent="layer5" vertex="1">
+                    <mxGeometry x="390" y="38" width="80" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_work" value="01-Work/&#xa;Tasks/ PRReviews/" style="rounded=1;whiteSpace=wrap;fillColor=#bbdefb;strokeColor=#42a5f5;fontFamily=Inter;fontSize=9;fontStyle=1;" parent="layer5" vertex="1">
+                    <mxGeometry x="485" y="38" width="120" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_knowledge" value="03-Knowledge/&#xa;Topics/ Documentation/" style="rounded=1;whiteSpace=wrap;fillColor=#bbdefb;strokeColor=#42a5f5;fontFamily=Inter;fontSize=9;fontStyle=1;" parent="layer5" vertex="1">
+                    <mxGeometry x="390" y="80" width="145" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_periodic" value="04-Periodic/&#xa;Daily/ Weekly/" style="rounded=1;whiteSpace=wrap;fillColor=#bbdefb;strokeColor=#42a5f5;fontFamily=Inter;fontSize=9;fontStyle=1;" parent="layer5" vertex="1">
+                    <mxGeometry x="550" y="80" width="100" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_archive" value="05-Archive/" style="rounded=1;whiteSpace=wrap;fillColor=#bbdefb;strokeColor=#42a5f5;fontFamily=Inter;fontSize=9;fontStyle=1;" parent="layer5" vertex="1">
+                    <mxGeometry x="390" y="125" width="80" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_obsidian" value=".obsidian/" style="rounded=1;whiteSpace=wrap;fillColor=#bbdefb;strokeColor=#42a5f5;fontFamily=Inter;fontSize=9;fontStyle=1;" parent="layer5" vertex="1">
+                    <mxGeometry x="200" y="125" width="75" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_templates" value="Templates/&#xa;Daily / Weekly / Meeting" style="rounded=1;whiteSpace=wrap;fillColor=#bbdefb;strokeColor=#42a5f5;fontFamily=Inter;fontSize=9;fontStyle=1;" parent="layer5" vertex="1">
+                    <mxGeometry x="200" y="165" width="140" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="v_services" value="../{vault}-Services/&#xa;ADO repo clones&#xa;(sibling directory)" style="shape=folder;whiteSpace=wrap;fillColor=#e1bee7;strokeColor=#9c27b0;fontFamily=Inter;fontSize=9;tabWidth=115;tabHeight=16;tabPosition=left;rounded=1;fontStyle=1;verticalAlign=middle;align=center;" parent="layer5" vertex="1">
+                    <mxGeometry x="15" y="145" width="165" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="layer6" value="External Systems" style="swimlane;startSize=28;fillColor=#fce4ec;strokeColor=#e57373;rounded=1;arcSize=8;fontFamily=Inter;fontSize=13;fontStyle=1;collapsible=0;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="920" width="1320" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_ado" value="Azure DevOps&#xa;Repos · PRs · Work Items" style="rounded=1;whiteSpace=wrap;fillColor=#ffcdd2;strokeColor=#e57373;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer6" vertex="1">
+                    <mxGeometry x="25" y="35" width="155" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_teams" value="Microsoft Teams&#xa;Chat · Meetings&#xa;(via Graph / WorkIQ)" style="rounded=1;whiteSpace=wrap;fillColor=#ffcdd2;strokeColor=#e57373;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer6" vertex="1">
+                    <mxGeometry x="210" y="35" width="160" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_copilot" value="GitHub Copilot SDK&#xa;copilot_sdk_runner&#xa;LLM execution backend" style="rounded=1;whiteSpace=wrap;fillColor=#ffcdd2;strokeColor=#e57373;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer6" vertex="1">
+                    <mxGeometry x="400" y="35" width="170" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_docker" value="Docker&#xa;duckyai-agent:latest&#xa;Container isolation" style="rounded=1;whiteSpace=wrap;fillColor=#ffcdd2;strokeColor=#e57373;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer6" vertex="1">
+                    <mxGeometry x="600" y="35" width="150" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_llm" value="LLM Models&#xa;claude-opus-4.6&#xa;claude-haiku-4.5" style="rounded=1;whiteSpace=wrap;fillColor=#ffcdd2;strokeColor=#e57373;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer6" vertex="1">
+                    <mxGeometry x="780" y="35" width="135" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_fs" value="File System&#xa;Vault on disk&#xa;watchdog events" style="rounded=1;whiteSpace=wrap;fillColor=#ffcdd2;strokeColor=#e57373;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer6" vertex="1">
+                    <mxGeometry x="945" y="35" width="120" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_pypi" value="PyPI&#xa;pip install duckyai" style="rounded=1;whiteSpace=wrap;fillColor=#ffcdd2;strokeColor=#e57373;fontFamily=Inter;fontSize=10;arcSize=15;fontStyle=1;verticalAlign=middle;align=center;" parent="layer6" vertex="1">
+                    <mxGeometry x="1095" y="35" width="130" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="x1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;strokeWidth=1.5;" edge="1" parent="1" source="cli" target="core">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="x2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;strokeWidth=1.5;" edge="1" parent="1" source="mcp" target="core">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="350" y="201"/>
+                            <mxPoint x="150" y="201"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="x3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;strokeWidth=1.5;" edge="1" parent="1" source="httpapi" target="core">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="555" y="188"/>
+                            <mxPoint x="150" y="188"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="x4" value="MCP" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;dashed=1;fontSize=9;" edge="1" parent="1" source="ide" target="mcp">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="755" y="202"/>
+                            <mxPoint x="350" y="202"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="x5" value="reads/writes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;dashed=1;fontSize=9;" edge="1" parent="1" source="obsidian" target="layer5">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="935" y="600"/>
+                            <mxPoint x="1025" y="600"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="x6" value="dispatch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;strokeWidth=2;fontSize=9;" edge="1" parent="1" source="layer2" target="layer3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="x7" value="read/write vault files" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#42a5f5;strokeWidth=1.5;fontSize=9;" edge="1" parent="1" source="layer3" target="layer5">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="x8" value="loads config" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#66bb6a;strokeWidth=1.5;fontSize=9;" edge="1" parent="1" source="layer4" target="layer2">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="350" y="625"/>
+                            <mxPoint x="25" y="625"/>
+                            <mxPoint x="25" y="310"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="x9" value="API calls" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#e57373;strokeWidth=1.5;fontSize=9;" edge="1" parent="1" source="layer3" target="layer6">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1380" y="520"/>
+                            <mxPoint x="1380" y="975"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="vault_disc" value="Vault Discovery&#xa;─────────&#xa;1. --working-dir flag&#xa;2. CWD inside vault&#xa;3. ~/.duckyai/config.json&#xa;   (home_vault)&#xa;4. CWD fallback" style="shape=note;whiteSpace=wrap;fillColor=#fffde7;strokeColor=#f9a825;fontFamily=Inter;fontSize=9;size=14;rounded=1;fontStyle=1;verticalAlign=middle;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="700" width="170" height="110" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
