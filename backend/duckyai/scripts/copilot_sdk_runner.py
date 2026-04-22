@@ -188,7 +188,7 @@ def _create_client(cwd: str | None):
 
 async def _create_session(client, *, model: str | None, mcp_servers: dict[str, dict[str, Any]]):
     try:
-        from copilot import PermissionHandler
+        from copilot.types import PermissionHandler
     except ImportError:
         from copilot.session import PermissionHandler
 
@@ -309,14 +309,27 @@ async def run_agent(prompt: str, model: str = None, mcp_config: str | list[str] 
 
 def main():
     parser = argparse.ArgumentParser(description="Copilot SDK agent runner")
-    parser.add_argument("--prompt", required=True, help="Agent prompt text")
+    parser.add_argument("--prompt", default=None, help="Agent prompt text")
+    parser.add_argument("--prompt-file", default=None, help="Path to file containing agent prompt text")
     parser.add_argument("--model", default=None, help="Model name (e.g., claude-sonnet-4.6)")
     parser.add_argument("--mcp-config", action="append", default=None, help="MCP config JSON string or file path")
     parser.add_argument("--cwd", default=None, help="Working directory")
     args = parser.parse_args()
 
+    prompt = args.prompt
+    if args.prompt_file:
+        prompt_path = Path(args.prompt_file)
+        prompt = prompt_path.read_text(encoding="utf-8")
+        # Clean up the temp file after reading
+        try:
+            prompt_path.unlink()
+        except OSError:
+            pass
+    if not prompt:
+        parser.error("Either --prompt or --prompt-file is required")
+
     exit_code = asyncio.run(run_agent(
-        prompt=args.prompt,
+        prompt=prompt,
         model=args.model,
         mcp_config=args.mcp_config,
         cwd=args.cwd,

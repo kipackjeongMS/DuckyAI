@@ -22,6 +22,7 @@ const statusConfig: Record<
   QUEUED: { color: "#00d4ff", icon: Clock, label: "Queued" },
   FAILED: { color: "#ff4466", icon: XCircle, label: "Failed" },
   failed: { color: "#ff4466", icon: XCircle, label: "Failed" },
+  IGNORE: { color: "#666", icon: Clock, label: "Skipped" },
   IGNORED: { color: "#666", icon: Clock, label: "Skipped" },
   timeout: { color: "#ff8844", icon: XCircle, label: "Timeout" },
 };
@@ -60,7 +61,7 @@ function formatTime(isoString: string): string {
 
 interface EntryRowProps {
   entry: ExecutionEntry;
-  onFetchLog: (id: string) => Promise<ExecutionLogDetail>;
+  onFetchLog: (id: string, date?: string) => Promise<ExecutionLogDetail>;
 }
 
 function EntryRow({ entry, onFetchLog }: EntryRowProps) {
@@ -79,8 +80,16 @@ function EntryRow({ entry, onFetchLog }: EntryRowProps) {
       setLogLoading(true);
       setLogError(null);
       try {
-        const detail = await onFetchLog(entry.id);
-        setLogContent(detail.response || detail.content);
+        // Extract YYYY-MM-DD from entry.created for cross-day robustness
+        let dateStr: string | undefined;
+        try {
+          const d = new Date(entry.created);
+          if (!isNaN(d.getTime())) {
+            dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          }
+        } catch { /* fallback: let backend use today */ }
+        const detail = await onFetchLog(entry.id, dateStr);
+        setLogContent(detail.response || detail.content || "(empty)");
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : "Failed to load log";
@@ -231,7 +240,7 @@ export interface AgentActivityLogProps {
   agents: string[];
   onSetAgentFilter: (agent: string | null) => void;
   onRefresh: () => void;
-  onFetchLog: (id: string) => Promise<ExecutionLogDetail>;
+  onFetchLog: (id: string, date?: string) => Promise<ExecutionLogDetail>;
 }
 
 export function AgentActivityLog({
