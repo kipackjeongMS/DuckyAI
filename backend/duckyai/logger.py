@@ -40,6 +40,9 @@ class Logger:
         """
         vault_root = Path(os.getcwd())
         default = os.path.join(str(vault_root), ".duckyai", "logs")
+        # If CWD doesn't look like a vault, fall back to ~/.duckyai/logs
+        if not (vault_root / ".duckyai").exists():
+            default = os.path.join(str(Path.home()), ".duckyai", "logs")
         try:
             import yaml
             config_path = vault_root / ".duckyai" / "duckyai.yml"

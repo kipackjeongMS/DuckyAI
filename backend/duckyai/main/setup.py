@@ -117,7 +117,7 @@ def _prompt_ado_for_service(
         if click.confirm(f"      Clone {label}?", default=False):
             selected.append(repo)
 
-    return org, project.name, selected
+    return org, project, selected
 
 
 def run_onboarding(vault_root: Path = None):
