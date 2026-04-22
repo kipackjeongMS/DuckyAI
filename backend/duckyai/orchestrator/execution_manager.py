@@ -607,8 +607,11 @@ class ExecutionManager:
             # In container mode, use a shell wrapper to resolve the runner path.
             vault_mount = self._container_config.get('vault_mount', '/vault')
             cwd_path = vault_mount
+            # Resolve the runner script path dynamically inside the container.
+            # When duckyai is pip-installed, the script lives under site-packages,
+            # not at a fixed /app/ path.
             runner_resolve = (
-                'RUNNER=/app/duckyai/scripts/copilot_sdk_runner.py; '
+                'RUNNER=$(python3 -c "from pathlib import Path; import duckyai; print(Path(duckyai.__file__).parent / \'scripts\' / \'copilot_sdk_runner.py\')"); '
             )
             # Build the inner python command args.
             # Write prompt to a temp file mounted into the container to avoid
