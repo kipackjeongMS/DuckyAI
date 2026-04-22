@@ -210,8 +210,18 @@ class Orchestrator:
         """
         Load and process existing QUEUED tasks on startup.
 
+        Also cleans up stale IN_PROGRESS entries from previous runs that
+        never completed (e.g. process crash, daemon thread death).
+
         Uses v2 daily log API to find QUEUED entries.
         """
+        # ── Phase 1: Mark stale IN_PROGRESS entries as FAILED ──
+        try:
+            self._cleanup_stale_tasks()
+        except Exception as e:
+            logger.error(f"Error cleaning up stale tasks on startup: {e}", exc_info=True)
+
+        # ── Phase 2: Re-dispatch QUEUED entries ──
         try:
             queued_count = self.execution_manager.task_manager.count_queued()
 
@@ -221,6 +231,26 @@ class Orchestrator:
                     self._process_queued_tasks()
         except Exception as e:
             logger.error(f"Error loading queued tasks on startup: {e}", exc_info=True)
+
+    def _cleanup_stale_tasks(self):
+        """
+        Mark stale IN_PROGRESS entries as FAILED on startup.
+
+        Builds a per-agent timeout map from agent definitions and delegates
+        to ``TaskFileManagerV2.mark_stale_as_failed``.
+        """
+        agent_timeouts = {
+            agent.abbreviation: agent.timeout_minutes
+            for agent in self.agent_registry.agents.values()
+        }
+
+        count = self.execution_manager.task_manager.mark_stale_as_failed(
+            default_timeout_minutes=30,
+            agent_timeouts=agent_timeouts,
+        )
+
+        if count:
+            logger.info(f"♻️ Cleaned up {count} stale IN_PROGRESS task(s) from previous run", console=True)
 
     def stop(self):
         """Stop the orchestrator event loop."""

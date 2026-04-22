@@ -9,7 +9,7 @@ Each execution is a row in a YAML array (frontmatter) + markdown table (body).
 import json
 import threading
 from pathlib import Path
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Optional, List, Dict, Any
 
 from .models import AgentDefinition, ExecutionContext
@@ -399,5 +399,87 @@ class TaskFileManagerV2:
     def count_queued(self) -> int:
         """Count QUEUED entries across recent daily logs."""
         return len(self.find_queued_entries())
+
+    def find_stale_in_progress(
+        self,
+        default_timeout_minutes: int = 30,
+        agent_timeouts: Optional[Dict[str, int]] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Find IN_PROGRESS entries that have exceeded their timeout.
+
+        Scans the last 7 days of daily logs for IN_PROGRESS entries whose
+        ``created`` timestamp is older than the agent's timeout (or the
+        default).
+
+        Args:
+            default_timeout_minutes: Fallback timeout when no per-agent
+                value is provided.
+            agent_timeouts: Mapping of agent abbreviation → timeout in
+                minutes.  Agents not in the map use *default_timeout_minutes*.
+
+        Returns:
+            List of entry dicts (each includes ``_date_str``).
+        """
+        agent_timeouts = agent_timeouts or {}
+        now = self.config.user_now()
+        results: List[Dict[str, Any]] = []
+
+        for days_back in range(7):
+            d = now - timedelta(days=days_back)
+            date_str = d.strftime('%Y-%m-%d')
+            daily_log = self._get_daily_log(date_str)
+
+            for entry in daily_log.find_entries(status='IN_PROGRESS'):
+                created_raw = entry.get('created', '')
+                if not created_raw:
+                    continue
+                try:
+                    created_dt = datetime.fromisoformat(str(created_raw))
+                except (ValueError, TypeError):
+                    continue
+
+                agent_abbr = entry.get('agent', '') or entry.get('task_type', '')
+                timeout = agent_timeouts.get(agent_abbr, default_timeout_minutes)
+                age_minutes = (now - created_dt).total_seconds() / 60.0
+
+                if age_minutes >= timeout:
+                    entry['_date_str'] = date_str
+                    results.append(entry)
+
+        return results
+
+    def mark_stale_as_failed(
+        self,
+        default_timeout_minutes: int = 30,
+        agent_timeouts: Optional[Dict[str, int]] = None,
+    ) -> int:
+        """
+        Transition stale IN_PROGRESS entries to FAILED.
+
+        Returns:
+            Number of entries that were marked FAILED.
+        """
+        stale = self.find_stale_in_progress(default_timeout_minutes, agent_timeouts)
+        count = 0
+
+        for entry in stale:
+            exec_id = entry.get('id', '')
+            agent_abbr = entry.get('agent', '') or entry.get('task_type', '')
+            if not exec_id:
+                continue
+
+            self.update_task_status(
+                exec_id,
+                "FAILED",
+                error_message=f"Stale IN_PROGRESS: exceeded timeout (agent={agent_abbr})",
+            )
+            count += 1
+            logger.info(
+                f"♻️ Marked stale task as FAILED: {agent_abbr} [{exec_id}]",
+                console=True,
+            )
+
+        return count
 
 
