@@ -602,24 +602,43 @@ tags:
     from ..ado import clone_repo as ado_clone_repo
     services_dir = ensure_services_dir(vault_path)
     click.echo(f"  ✓ Services directory: {services_dir}")
+
+    # Build clone jobs: (svc_name, service_dir, repo) for each repo to clone
+    clone_jobs = []
     for svc_name, ado_org, ado_project, selected_repos in service_entries:
         service_dir = add_service(
             vault_path, svc_name,
             ado_org=ado_org, ado_project=ado_project,
         )
         click.echo(f"    ✓ Service: {svc_name}/")
-        # Clone selected ADO repos
         for repo in selected_repos:
             dest = service_dir / repo.name
             if dest.exists():
                 click.echo(f"      · {repo.name}/ (already exists)")
-                continue
-            click.echo(f"      Cloning {repo.name}...")
-            if ado_clone_repo(repo.remote_url, dest):
-                add_repo_to_service(vault_path, svc_name, repo.name, repo.remote_url)
-                click.echo(f"      ✓ {repo.name}/")
             else:
-                click.echo(f"      ⚠ Failed to clone {repo.name}")
+                clone_jobs.append((svc_name, dest, repo))
+
+    # Clone repos in parallel
+    if clone_jobs:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        total = len(clone_jobs)
+        click.echo(f"\n  Cloning {total} repo(s) in parallel...")
+
+        def _do_clone(job):
+            svc, dest, repo = job
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            ok = ado_clone_repo(repo.remote_url, dest)
+            return svc, repo, ok
+
+        with ThreadPoolExecutor(max_workers=min(total, 4)) as pool:
+            futures = {pool.submit(_do_clone, j): j for j in clone_jobs}
+            for future in as_completed(futures):
+                svc, repo, ok = future.result()
+                if ok:
+                    add_repo_to_service(vault_path, svc, repo.name, repo.remote_url)
+                    click.echo(f"      ✓ {svc}/{repo.name}")
+                else:
+                    click.echo(f"      ⚠ Failed: {svc}/{repo.name}")
 
     # Update home vault config with services_path
     set_home_vault(
