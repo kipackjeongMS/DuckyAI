@@ -85,6 +85,29 @@ If you want Copilot to have access to your team's documentation repos:
 
 Repos are cloned to `.repos/` (git-ignored). Copilot can then reference them for context.
 
+## Step 6b: Link Azure DevOps Repos (Optional)
+
+During `duckyai setup`, you can link each service to an Azure DevOps organization and project. The CLI will fetch available repos and clone them into the service directory.
+
+**Prerequisites:**
+- Azure CLI installed (`az`)
+- Azure DevOps extension: `az extension add --name azure-devops`
+- Logged in: `az login`
+
+**During setup:** When prompted "Link to ADO?", answer yes to connect a service to ADO repos.
+
+**After setup:** Use the dedicated command to add more repos:
+
+```bash
+# Interactive — prompts for org, project, and repo selection
+duckyai service add-repo MyService
+
+# Non-interactive — pass all flags
+duckyai service add-repo MyService --org msazure --project "My Project" --repo my-repo
+```
+
+The repo metadata is stored in `.services.json` alongside each service directory.
+
 ## Step 7: Create Your First Daily Note
 
 In VS Code Copilot Chat:

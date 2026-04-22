@@ -14,6 +14,8 @@ from duckyai.services import (
     remove_service,
     list_services,
     get_all_repo_paths,
+    get_service_entry,
+    add_repo_to_service,
     _read_services_meta,
     _write_services_meta,
 )
@@ -285,3 +287,87 @@ class TestMetadataIO:
         (tmp_path / ".services.json").write_text("not json!", encoding="utf-8")
         result = _read_services_meta(tmp_path)
         assert result == {"services": []}
+
+
+class TestAddServiceWithAdo:
+    """Tests for add_service() with ADO metadata."""
+
+    def test_stores_ado_org_and_project(self, temp_vault):
+        add_service(temp_vault, "WithAdo", ado_org="msazure", ado_project="MyProject")
+        services_dir = get_services_path(temp_vault)
+        meta = _read_services_meta(services_dir)
+        entry = meta["services"][0]
+        assert entry["name"] == "WithAdo"
+        assert entry["ado_org"] == "msazure"
+        assert entry["ado_project"] == "MyProject"
+
+    def test_ado_fields_optional(self, temp_vault):
+        add_service(temp_vault, "NoAdo")
+        services_dir = get_services_path(temp_vault)
+        meta = _read_services_meta(services_dir)
+        entry = meta["services"][0]
+        assert entry["name"] == "NoAdo"
+        assert "ado_org" not in entry or entry.get("ado_org") is None
+        assert "ado_project" not in entry or entry.get("ado_project") is None
+
+
+class TestGetServiceEntry:
+    """Tests for get_service_entry()."""
+
+    def test_returns_entry_when_exists(self, temp_vault):
+        add_service(temp_vault, "FindMe")
+        entry = get_service_entry(temp_vault, "FindMe")
+        assert entry is not None
+        assert entry["name"] == "FindMe"
+
+    def test_returns_none_when_missing(self, temp_vault):
+        ensure_services_dir(temp_vault)
+        entry = get_service_entry(temp_vault, "DoesNotExist")
+        assert entry is None
+
+    def test_returns_ado_metadata(self, temp_vault):
+        add_service(temp_vault, "AdoSvc", ado_org="myorg", ado_project="myproj")
+        entry = get_service_entry(temp_vault, "AdoSvc")
+        assert entry["ado_org"] == "myorg"
+        assert entry["ado_project"] == "myproj"
+
+
+class TestAddRepoToService:
+    """Tests for add_repo_to_service()."""
+
+    def test_adds_repo_entry(self, temp_vault):
+        add_service(temp_vault, "Svc")
+        add_repo_to_service(
+            temp_vault, "Svc", "my-repo", "https://dev.azure.com/org/proj/_git/my-repo"
+        )
+        services_dir = get_services_path(temp_vault)
+        meta = _read_services_meta(services_dir)
+        entry = meta["services"][0]
+        assert len(entry["repos"]) == 1
+        assert entry["repos"][0]["name"] == "my-repo"
+        assert entry["repos"][0]["remote_url"] == "https://dev.azure.com/org/proj/_git/my-repo"
+        assert "cloned_at" in entry["repos"][0]
+
+    def test_does_not_duplicate(self, temp_vault):
+        add_service(temp_vault, "Svc")
+        add_repo_to_service(temp_vault, "Svc", "repo1", "https://example.com/repo1")
+        add_repo_to_service(temp_vault, "Svc", "repo1", "https://example.com/repo1")
+        services_dir = get_services_path(temp_vault)
+        meta = _read_services_meta(services_dir)
+        entry = meta["services"][0]
+        assert len(entry["repos"]) == 1
+
+    def test_multiple_repos(self, temp_vault):
+        add_service(temp_vault, "Multi")
+        add_repo_to_service(temp_vault, "Multi", "r1", "https://a.com/r1")
+        add_repo_to_service(temp_vault, "Multi", "r2", "https://a.com/r2")
+        services_dir = get_services_path(temp_vault)
+        meta = _read_services_meta(services_dir)
+        entry = meta["services"][0]
+        names = [r["name"] for r in entry["repos"]]
+        assert names == ["r1", "r2"]
+
+    def test_noop_for_nonexistent_service(self, temp_vault):
+        ensure_services_dir(temp_vault)
+        # Should not raise
+        add_repo_to_service(temp_vault, "Ghost", "repo", "https://a.com/repo")
