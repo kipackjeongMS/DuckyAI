@@ -9,5 +9,5 @@ services:
   agent:
     build:
       context: .
-      dockerfile: Dockerfile.agent
+      dockerfile: duckyai/.playbook/Dockerfile.agent
     image: duckyai-agent:latest

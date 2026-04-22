@@ -448,7 +448,7 @@ tags:
             use_container = True
             click.echo("  Building duckyai-agent image (this may take a few minutes)...")
             dockerfile_path = Path(__file__).parent.parent / '.playbook' / 'Dockerfile.agent'
-            build_ctx = Path(__file__).parent.parent.parent  # backend/
+            build_ctx = dockerfile_path.parent  # no COPY needed, context is minimal
             if not dockerfile_path.exists():
                 click.echo("  ⚠ Dockerfile.agent not found in package — skipping build")
                 use_container = False
