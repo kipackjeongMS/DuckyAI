@@ -177,7 +177,11 @@ def update_cli(force: bool, target_version: Optional[str], list_releases: bool) 
             download_zip(zipball_url, zip_path)
             extracted_path = extract_zip(zip_path, tmpdir_path)
             
-            if install_package(extracted_path):
+            # pyproject.toml lives in backend/ subdirectory
+            backend_path = extracted_path / "backend"
+            install_dir = backend_path if backend_path.is_dir() and (backend_path / "pyproject.toml").exists() else extracted_path
+            
+            if install_package(install_dir):
                 click.echo()
                 click.echo("=" * 50)
                 click.echo("Update completed successfully!")

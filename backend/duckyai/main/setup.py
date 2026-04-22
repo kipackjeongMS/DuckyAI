@@ -149,6 +149,30 @@ def run_onboarding(vault_root: Path = None):
         else:
             click.echo(f"  · {folder}/ (exists)")
 
+    # Copy bundled vault-template files (Obsidian templates, agent instructions, workspace)
+    vault_template_dir = Path(__file__).resolve().parent.parent / ".vault-template"
+    if vault_template_dir.is_dir():
+        for item in vault_template_dir.iterdir():
+            dest = vault_path / item.name
+            if item.is_dir():
+                # Copy template subdirectories (e.g. Templates/)
+                for child in item.rglob("*"):
+                    if child.is_file():
+                        rel = child.relative_to(item)
+                        target = dest / rel
+                        if not target.exists():
+                            target.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(str(child), str(target))
+                            click.echo(f"  ✓ {item.name}/{rel}")
+                        else:
+                            click.echo(f"  · {item.name}/{rel} (exists)")
+            else:
+                if not dest.exists():
+                    shutil.copy2(str(item), str(dest))
+                    click.echo(f"  ✓ {item.name}")
+                else:
+                    click.echo(f"  · {item.name} (exists)")
+
     # Create .gitignore
     gitignore_path = vault_path / ".gitignore"
     if not gitignore_path.exists():

@@ -56,6 +56,12 @@ where = ["."]
 include = ["duckyai*"]
 
 [tool.setuptools.package-data]
+duckyai = [
+    ".playbook/**/*",
+    ".playbook/*",
+    ".vault-template/**/*",
+    ".vault-template/*",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["duckyai/tests"]
