@@ -17,7 +17,7 @@ def test_agent_definition_minimal():
     
     assert agent.name == "Test Agent"
     assert agent.max_parallel == 1
-    assert agent.executor == "claude_code"
+    assert agent.executor == "copilot_sdk"
 
 
 def test_execution_context_duration():

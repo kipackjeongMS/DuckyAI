@@ -147,6 +147,11 @@ class VaultService:
             description="Convert a UTC timestamp to the user's local date and time.",
             implemented=True,
         ),
+        ToolDefinition(
+            name="generateRoundup",
+            description="Generate the daily roundup.",
+            implemented=True,
+        ),
     )
 
     _TOOL_MAP: dict[str, ToolDefinition] = {tool.name: tool for tool in TOOL_DEFINITIONS}
@@ -720,7 +725,7 @@ class VaultService:
         for line in daily_content.split("\n"):
             if re.match(r"^##\s", line):
                 heading = re.sub(r"^#+\s*", "", line).lower()
-                if "completed" in heading or "done" in heading:
+                if "completed" in heading or "done" in heading or "task" in heading:
                     current_section = "completed"
                 elif "meeting" in heading:
                     current_section = "meetings"
@@ -735,7 +740,8 @@ class VaultService:
             if line.strip().startswith("-") and current_section:
                 item = line.strip()
                 if current_section == "completed":
-                    completed_tasks.append(item)
+                    if "[x]" in item:
+                        completed_tasks.append(item)
                 elif current_section == "meetings":
                     meetings.append(item)
                 elif current_section == "notes":

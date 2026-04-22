@@ -29,7 +29,9 @@ def _write_task(vault: Path, title: str, content: str) -> Path:
 def test_get_current_date_formats_using_user_timezone(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    (vault / "duckyai.yml").write_text(
+    config_dir = vault / ".duckyai"
+    config_dir.mkdir()
+    (config_dir / "duckyai.yml").write_text(
         'id: v1\nuser:\n  timezone: "America/Los_Angeles"\n',
         encoding="utf-8",
     )
@@ -50,7 +52,9 @@ def test_get_current_date_formats_using_user_timezone(monkeypatch, tmp_path):
 def test_convert_utc_to_local_date_converts_across_day_boundary(tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
-    (vault / "duckyai.yml").write_text(
+    config_dir = vault / ".duckyai"
+    config_dir.mkdir()
+    (config_dir / "duckyai.yml").write_text(
         'id: v1\nuser:\n  timezone: "America/Los_Angeles"\n',
         encoding="utf-8",
     )

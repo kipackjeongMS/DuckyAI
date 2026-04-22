@@ -125,8 +125,13 @@ def test_safe_print_falls_back_for_unicode_encode_error():
 
 def test_create_session_uses_keyword_api_and_falls_back(monkeypatch):
     approve_all = object()
-    fake_module = types.SimpleNamespace(PermissionHandler=types.SimpleNamespace(approve_all=approve_all))
+    fake_types = types.SimpleNamespace(PermissionHandler=types.SimpleNamespace(approve_all=approve_all))
+    fake_module = types.SimpleNamespace(
+        PermissionHandler=types.SimpleNamespace(approve_all=approve_all),
+        types=fake_types,
+    )
     monkeypatch.setitem(sys.modules, "copilot", fake_module)
+    monkeypatch.setitem(sys.modules, "copilot.types", fake_types)
 
     class _KeywordClient:
         def __init__(self):

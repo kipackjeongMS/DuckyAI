@@ -80,7 +80,7 @@ This is the prompt body for testing.
         assert agent.trigger_exclude_pattern == "*.draft.md"
         assert agent.input_path == ["Ingest/Clippings"]
         assert agent.output_path == "AI/Tasks"
-        assert agent.executor == "claude_code"
+        assert agent.executor == "copilot_sdk"
         assert agent.max_parallel == 2
         assert agent.timeout_minutes == 15
         assert "This is the prompt body for testing." in agent.prompt_body
