@@ -130,7 +130,9 @@ def _update_duckyai_yml(vault_path: Path, services: List[Dict]) -> None:
     config_path.write_text(content, encoding="utf-8")
 
 
-def add_service(vault_path: Path, name: str) -> Path:
+def add_service(vault_path: Path, name: str, *,
+                ado_org: Optional[str] = None,
+                ado_project: Optional[str] = None) -> Path:
     """Add a new service to the vault's services directory.
 
     Creates the service subdirectory and updates metadata.
@@ -144,10 +146,15 @@ def add_service(vault_path: Path, name: str) -> Path:
     meta = _read_services_meta(services_dir)
     existing_names = {s["name"] for s in meta.get("services", [])}
     if name not in existing_names:
-        meta.setdefault("services", []).append({
+        entry: Dict[str, Any] = {
             "name": name,
             "created": datetime.now().isoformat(),
-        })
+        }
+        if ado_org:
+            entry["ado_org"] = ado_org
+        if ado_project:
+            entry["ado_project"] = ado_project
+        meta.setdefault("services", []).append(entry)
         _write_services_meta(services_dir, meta)
 
     # Update duckyai.yml
@@ -220,3 +227,32 @@ def get_all_repo_paths(vault_path: Path) -> List[str]:
             if repo.get("is_git"):
                 repos.append(repo["path"])
     return repos
+
+
+def get_service_entry(vault_path: Path, name: str) -> Optional[Dict[str, Any]]:
+    """Return the .services.json entry for a named service, or None."""
+    services_dir = get_services_path(vault_path)
+    meta = _read_services_meta(services_dir)
+    for entry in meta.get("services", []):
+        if entry["name"] == name:
+            return entry
+    return None
+
+
+def add_repo_to_service(vault_path: Path, service_name: str,
+                        repo_name: str, remote_url: str) -> None:
+    """Record a cloned repo in the service's metadata."""
+    services_dir = get_services_path(vault_path)
+    meta = _read_services_meta(services_dir)
+    for entry in meta.get("services", []):
+        if entry["name"] == service_name:
+            repos = entry.setdefault("repos", [])
+            # Don't duplicate
+            if not any(r["name"] == repo_name for r in repos):
+                repos.append({
+                    "name": repo_name,
+                    "remote_url": remote_url,
+                    "cloned_at": datetime.now().isoformat(),
+                })
+            _write_services_meta(services_dir, meta)
+            return

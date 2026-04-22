@@ -117,3 +117,102 @@ def service_path(ctx):
 
     vault_root = _resolve_vault_root(ctx)
     click.echo(str(get_services_path(vault_root)))
+
+
+# duckyai service add-repo
+@service_group.command("add-repo")
+@click.argument("service_name")
+@click.option("--org", "ado_org", type=str, help="ADO organization name")
+@click.option("--project", "ado_project", type=str, help="ADO project name")
+@click.option("--repo", "repo_name", type=str, help="Repo name to clone (skip interactive selection)")
+@click.pass_context
+def service_add_repo(ctx, service_name, ado_org, ado_project, repo_name):
+    """Clone an ADO repo into a service directory."""
+    from ..ado import is_az_devops_available, list_projects, list_repos, clone_repo
+    from ..services import (
+        get_services_path, get_service_entry,
+        add_repo_to_service, add_service,
+    )
+
+    vault_root = _resolve_vault_root(ctx)
+
+    # Verify az devops is available
+    available, msg = is_az_devops_available()
+    if not available:
+        click.echo(f"  ❌ {msg}", err=True)
+        sys.exit(1)
+
+    # Ensure service exists
+    services_dir = get_services_path(vault_root)
+    service_dir = services_dir / service_name
+    entry = get_service_entry(vault_root, service_name)
+    if not entry:
+        if click.confirm(f"  Service '{service_name}' not registered. Create it?", default=True):
+            service_dir = add_service(vault_root, service_name)
+        else:
+            sys.exit(1)
+
+    # Resolve org (from flag, service metadata, or prompt)
+    if not ado_org:
+        ado_org = (entry or {}).get("ado_org")
+    if not ado_org:
+        ado_org = click.prompt("  ADO organization name").strip()
+        if not ado_org:
+            click.echo("  ❌ Organization required.", err=True)
+            sys.exit(1)
+
+    # Resolve project (from flag, service metadata, or prompt)
+    if not ado_project:
+        ado_project = (entry or {}).get("ado_project")
+    if not ado_project:
+        click.echo("  Fetching projects...")
+        projects = list_projects(ado_org)
+        if not projects:
+            click.echo("  ❌ No projects found. Check org name and az login.", err=True)
+            sys.exit(1)
+        for i, p in enumerate(projects):
+            click.echo(f"    {i + 1}. {p.name}")
+        idx = click.prompt(
+            "  Select project number",
+            type=click.IntRange(1, len(projects)),
+        ) - 1
+        ado_project = projects[idx].name
+
+    # Resolve repo (from flag or prompt)
+    if not repo_name:
+        click.echo(f"  Fetching repos in {ado_project}...")
+        repos = list_repos(ado_org, ado_project)
+        if not repos:
+            click.echo("  ❌ No repos found.", err=True)
+            sys.exit(1)
+        for i, r in enumerate(repos):
+            size_mb = r.size / (1024 * 1024) if r.size else 0
+            label = r.name + (f" ({size_mb:.0f} MB)" if size_mb > 1 else "")
+            click.echo(f"    {i + 1}. {label}")
+        idx = click.prompt(
+            "  Select repo number",
+            type=click.IntRange(1, len(repos)),
+        ) - 1
+        selected = repos[idx]
+    else:
+        # Lookup by name
+        repos = list_repos(ado_org, ado_project)
+        selected = next((r for r in repos if r.name == repo_name), None)
+        if not selected:
+            click.echo(f"  ❌ Repo '{repo_name}' not found in {ado_project}.", err=True)
+            click.echo(f"  Available: {', '.join(r.name for r in repos)}", err=True)
+            sys.exit(1)
+
+    # Clone
+    dest = service_dir / selected.name
+    if dest.exists():
+        click.echo(f"  · {selected.name}/ already exists at {dest}")
+        sys.exit(0)
+
+    click.echo(f"  Cloning {selected.name}...")
+    if clone_repo(selected.remote_url, dest):
+        add_repo_to_service(vault_root, service_name, selected.name, selected.remote_url)
+        click.echo(f"  ✅ Cloned {selected.name} into {dest}")
+    else:
+        click.echo(f"  ❌ Clone failed. Check git credentials and network.", err=True)
+        sys.exit(1)

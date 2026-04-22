@@ -70,6 +70,66 @@ def _prompt_teams_schedule() -> str:
     return cron
 
 
+# ---------------------------------------------------------------------------
+# ADO integration helpers for setup flow
+# ---------------------------------------------------------------------------
+
+def _prompt_ado_for_service(
+    service_name: str,
+    default_org: str | None = None,
+) -> tuple[str | None, str | None, list]:
+    """Prompt user for ADO org → project → repos for one service.
+
+    Returns ``(ado_org, ado_project, selected_repos)`` where
+    ``selected_repos`` is a list of ``AdoRepo`` dataclass instances.
+    Returns ``(None, None, [])`` if the user cancels at any point.
+    """
+    from ..ado import list_projects, list_repos
+
+    # 1) Organization
+    org = click.prompt(
+        "    ADO organization name",
+        default=default_org or "", show_default=bool(default_org),
+    ).strip()
+    if not org:
+        click.echo("    (skipped)")
+        return None, None, []
+
+    # 2) Project selection
+    click.echo("    Fetching projects...")
+    projects = list_projects(org)
+    if not projects:
+        click.echo("    ⚠ No projects found (check org name and az login)")
+        return org, None, []
+
+    click.echo(f"    Found {len(projects)} project(s):")
+    for i, p in enumerate(projects):
+        click.echo(f"      {i + 1}. {p.name}")
+    proj_idx = click.prompt(
+        "    Select project number",
+        type=click.IntRange(1, len(projects)), default=1,
+    ) - 1
+    project = projects[proj_idx]
+    click.echo(f"    → {project.name}")
+
+    # 3) Repo multi-select
+    click.echo("    Fetching repos...")
+    repos = list_repos(org, project.name)
+    if not repos:
+        click.echo("    ⚠ No repos found in this project")
+        return org, project.name, []
+
+    click.echo(f"    Found {len(repos)} repo(s). Select which to clone:")
+    selected = []
+    for repo in repos:
+        size_mb = repo.size / (1024 * 1024) if repo.size else 0
+        label = f"{repo.name}" + (f" ({size_mb:.0f} MB)" if size_mb > 1 else "")
+        if click.confirm(f"      Clone {label}?", default=False):
+            selected.append(repo)
+
+    return org, project.name, selected
+
+
 def run_onboarding(vault_root: Path = None):
     """Run the full onboarding wizard."""
     click.echo("")
@@ -349,7 +409,17 @@ tags:
     click.echo("\n🛠️  Step 8/8 — Services (Code Repos)")
     click.echo("  Services are code projects you work on (each can contain git repos).")
     click.echo("  They live outside your vault in a sibling directory.\n")
-    service_names = []
+
+    # Check ADO availability once upfront (Decision 4: prereq check at start)
+    from ..ado import is_az_devops_available
+    ado_available, ado_msg = is_az_devops_available()
+    if not ado_available:
+        click.echo(f"  ℹ️  ADO integration unavailable: {ado_msg}")
+        click.echo("  (You can still add services — repos must be cloned manually)\n")
+
+    service_entries = []  # list of (name, ado_org, ado_project, selected_repos)
+    last_ado_org = None   # remember org across services
+
     while True:
         svc_name = click.prompt(
             "  Service name (leave empty to finish)",
@@ -357,10 +427,27 @@ tags:
         ).strip()
         if not svc_name:
             break
-        service_names.append(svc_name)
+
+        ado_org = None
+        ado_project = None
+        selected_repos = []
+
+        # Decision 2: Optional — ask "Link to ADO?" per service
+        if ado_available and click.confirm("    Link this service to an ADO project?", default=True):
+            ado_org, ado_project, selected_repos = _prompt_ado_for_service(
+                svc_name, default_org=last_ado_org,
+            )
+            if ado_org:
+                last_ado_org = ado_org
+
+        service_entries.append((svc_name, ado_org, ado_project, selected_repos))
         click.echo(f"    ✅ Added: {svc_name}")
-    if not service_names:
+        if selected_repos:
+            click.echo(f"       ({len(selected_repos)} repo(s) will be cloned)")
+
+    if not service_entries:
         click.echo("  (No services added — you can add them later with 'duckyai service add')")
+    service_names = [e[0] for e in service_entries]
 
     # ─── Generate Config Files ──────────────────────────
     click.echo("\n⚙️  Generating configuration...")
@@ -511,12 +598,28 @@ tags:
     click.echo(f"  ✓ Configured as home vault in ~/.duckyai/config.json")
 
     # Create services directory and register services
-    from ..services import ensure_services_dir, add_service, get_services_path
+    from ..services import ensure_services_dir, add_service, add_repo_to_service, get_services_path
+    from ..ado import clone_repo as ado_clone_repo
     services_dir = ensure_services_dir(vault_path)
     click.echo(f"  ✓ Services directory: {services_dir}")
-    for svc_name in service_names:
-        add_service(vault_path, svc_name)
+    for svc_name, ado_org, ado_project, selected_repos in service_entries:
+        service_dir = add_service(
+            vault_path, svc_name,
+            ado_org=ado_org, ado_project=ado_project,
+        )
         click.echo(f"    ✓ Service: {svc_name}/")
+        # Clone selected ADO repos
+        for repo in selected_repos:
+            dest = service_dir / repo.name
+            if dest.exists():
+                click.echo(f"      · {repo.name}/ (already exists)")
+                continue
+            click.echo(f"      Cloning {repo.name}...")
+            if ado_clone_repo(repo.remote_url, dest):
+                add_repo_to_service(vault_path, svc_name, repo.name, repo.remote_url)
+                click.echo(f"      ✓ {repo.name}/")
+            else:
+                click.echo(f"      ⚠ Failed to clone {repo.name}")
 
     # Update home vault config with services_path
     set_home_vault(
