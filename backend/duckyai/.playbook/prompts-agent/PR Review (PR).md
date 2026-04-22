@@ -12,19 +12,17 @@ trigger_content_pattern: "^status:\\s*todo"
 You are the PR Review agent. You trigger automatically when a PR review file in `01-Work/PRReviews/` has `status: todo` in its frontmatter. Your job is to:
 
 1. Fetch PR metadata from Azure DevOps
-2. Clone the repo and check out the PR source branch
-3. Compute diffs locally using `git diff`
-4. Cross-reference changes against the full codebase
-5. Write a structured review with findings into the PR file
-6. Set `status: done` in frontmatter so the agent does not re-process this file
+2. Compute diffs locally from the pre-mounted repo
+3. Cross-reference changes against the full codebase
+4. Write a structured review with findings into the PR file
+5. Set `status: done` in frontmatter so the agent does not re-process this file
 
 ## Environment
 
 - **Container**: You run inside a Docker container
-- **Services directory**: `/services/` is mounted read-only — contains existing repo clones for reference
-- **Repo cache**: `/repo-cache/` is mounted read-write — persistent repo clones survive across runs
+- **Repo**: `/repo/` is mounted read-only — the PR source branch is already checked out by the orchestrator. The target branch is available as `origin/{target_branch}`.
+- **Services directory**: `/services/` is mounted read-only — contains existing repo clones for cross-reference
 - **Azure CLI**: Authenticated via `AZURE_DEVOPS_EXT_PAT` env var
-- **Git auth**: Use `AZURE_DEVOPS_EXT_PAT` for cloning — see Step 4
 
 ## Input
 
@@ -76,120 +74,33 @@ From the metadata (whether pre-fetched or manual), extract:
 - `reviewers[]`: List of reviewers with their vote status
 - `mergeStatus`: Merge status
 
-## Step 4: Obtain the repository (cached clone)
+## Step 4: Verify the repository
 
-Repos are cached at `/repo-cache/{organization}/{repository}/` and persist across runs. You MUST handle all edge cases robustly.
-
-### 4a. Configure git auth
+The orchestrator pre-mounts the repo at `/repo` with the source branch checked out. Verify it's ready:
 
 ```bash
-git config --global credential.helper '!f() { echo "password=$AZURE_DEVOPS_EXT_PAT"; }; f'
-```
-
-### 4b. Determine cache path and repo URL
-
-```bash
-CACHE_DIR="/repo-cache/{organization}/{repository}"
-REPO_URL="https://dev.azure.com/{organization}/{project}/_git/{repository}"
-```
-
-### 4c. Acquire or update the cached repo
-
-Run these checks **in order**. Stop at the first one that succeeds.
-
-**Check 1: Cached repo exists and is healthy**
-```bash
-if [ -d "$CACHE_DIR/.git" ]; then
-  cd "$CACHE_DIR"
-
-  # Remove stale lock files from crashed previous runs
-  rm -f .git/index.lock .git/shallow.lock .git/refs/heads/*.lock
-
-  # Verify the remote URL matches (repo may have moved)
-  CURRENT_REMOTE=$(git remote get-url origin 2>/dev/null || echo "")
-  if [ "$CURRENT_REMOTE" != "$REPO_URL" ]; then
-    echo "Remote URL mismatch: $CURRENT_REMOTE != $REPO_URL — re-cloning"
-    cd /
-    rm -rf "$CACHE_DIR"
-    # Fall through to Check 3 (fresh clone)
-  else
-    # Verify repo integrity with a quick sanity check
-    if git rev-parse --git-dir > /dev/null 2>&1; then
-      echo "Cache hit: $CACHE_DIR"
-      # Hard-reset to clean state (discard any dirty tree from previous crash)
-      git reset --hard HEAD 2>/dev/null || true
-      git clean -fdx 2>/dev/null || true
-      # Fetch latest from remote
-      git fetch origin --prune --depth 50 2>&1
-      if [ $? -eq 0 ]; then
-        # Checkout source branch
-        git checkout {source_branch} 2>/dev/null || git checkout -b {source_branch} origin/{source_branch}
-        git reset --hard origin/{source_branch}
-        # Fetch target branch
-        git fetch origin {target_branch} --depth 50
-        echo "Cache updated successfully"
-        # DONE — skip to Step 5
-      else
-        echo "Fetch failed — repo may be corrupted, re-cloning"
-        cd /
-        rm -rf "$CACHE_DIR"
-        # Fall through to Check 3
-      fi
-    else
-      echo "Corrupt .git directory — re-cloning"
-      cd /
-      rm -rf "$CACHE_DIR"
-      # Fall through to Check 3
-    fi
-  fi
-fi
-```
-
-**Check 2: Partial/empty cache dir exists (no .git)**
-```bash
-if [ -d "$CACHE_DIR" ] && [ ! -d "$CACHE_DIR/.git" ]; then
-  echo "Partial cache dir without .git — removing"
-  rm -rf "$CACHE_DIR"
-fi
-```
-
-**Check 3: Fresh clone (cache miss or recovery from corruption)**
-```bash
-if [ ! -d "$CACHE_DIR/.git" ]; then
-  echo "Cache miss — cloning fresh"
-  mkdir -p "$(dirname "$CACHE_DIR")"
-  git clone --depth 50 --branch {source_branch} "$REPO_URL" "$CACHE_DIR" 2>&1
-  if [ $? -ne 0 ]; then
-    # Branch might not exist as a direct ref — clone default and checkout
-    rm -rf "$CACHE_DIR"
-    git clone --depth 50 "$REPO_URL" "$CACHE_DIR" 2>&1
-    cd "$CACHE_DIR"
-    git fetch origin {source_branch} --depth 50
-    git checkout -b {source_branch} origin/{source_branch} 2>/dev/null || git checkout {source_branch}
-  else
-    cd "$CACHE_DIR"
-  fi
-  # Fetch the target branch
-  git fetch origin {target_branch} --depth 50
-fi
-```
-
-### 4d. Final verification
-
-After 4c, confirm you have both branches:
-```bash
-cd "$CACHE_DIR"
-git rev-parse HEAD > /dev/null 2>&1 || { echo "FATAL: repo checkout failed"; exit 1; }
+cd /repo
+git rev-parse HEAD > /dev/null 2>&1 || { echo "FATAL: /repo not a valid git repo"; exit 1; }
 git rev-parse origin/{target_branch} > /dev/null 2>&1 || { echo "FATAL: target branch not available"; exit 1; }
 echo "Repo ready: $(git log --oneline -1)"
 ```
 
-## Step 5: Compute diffs locally
-
-From the cached repo, compute the diff between target and source:
+**Fallback**: If `/repo` does not exist or is not a valid git repo, configure git auth and clone manually:
 
 ```bash
-cd /repo-cache/{organization}/{repository}
+git config --global credential.helper '!f() { echo "password=$AZURE_DEVOPS_EXT_PAT"; }; f'
+REPO_URL="https://dev.azure.com/{organization}/{project}/_git/{repository}"
+git clone --depth 50 --branch {source_branch} "$REPO_URL" /repo 2>&1
+cd /repo
+git fetch origin {target_branch} --depth 50
+```
+
+## Step 5: Compute diffs locally
+
+From the repo, compute the diff between target and source:
+
+```bash
+cd /repo
 git diff origin/{target_branch}...HEAD --stat     # Summary: files changed, insertions, deletions
 git diff origin/{target_branch}...HEAD             # Full diff
 git diff origin/{target_branch}...HEAD --name-only  # List of changed files
@@ -199,7 +110,7 @@ This is more reliable than `az repos pr diff` — you get the full diff without 
 
 ## Step 6: Cross-reference with the codebase
 
-For each changed file, go beyond just the diff. Using the cloned repo:
+For each changed file, go beyond just the diff. Using the repo:
 
 ### 6a. Read full file context
 For each modified file, read the entire file (not just the diff hunks) to understand the full context of the changes.
@@ -207,14 +118,14 @@ For each modified file, read the entire file (not just the diff hunks) to unders
 ### 6b. Find callers and consumers
 For each modified function, class, or interface:
 ```bash
-grep -rn "{function_name}" /repo-cache/{organization}/{repository}/ --include="*.cs" --include="*.ts" --include="*.py" --include="*.js" --include="*.java"
+grep -rn "{function_name}" /repo/ --include="*.cs" --include="*.ts" --include="*.py" --include="*.js" --include="*.java"
 ```
 Check if the change breaks any callers or contracts.
 
 ### 6c. Find related test files
 ```bash
 # Look for test files related to changed source files
-find /repo-cache/{organization}/{repository}/ -name "*Test*" -o -name "*test_*" -o -name "*.test.*" -o -name "*.spec.*" | grep -i "{changed_file_stem}"
+find /repo/ -name "*Test*" -o -name "*test_*" -o -name "*.test.*" -o -name "*.spec.*" | grep -i "{changed_file_stem}"
 ```
 Check if tests exist for the modified code. If new logic was added without tests, flag it.
 

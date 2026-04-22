@@ -6,6 +6,7 @@ Uses simple instance-level counter with threading lock.
 """
 import threading
 import subprocess
+import tempfile
 import time
 import os
 import shutil
@@ -271,6 +272,10 @@ class ExecutionManager:
 
         finally:
             ctx.end_time = self.config.user_now()
+
+            # Clean up PR worktree if one was created on the host
+            if hasattr(ctx, '_pr_metadata') and ctx._pr_metadata:
+                self._cleanup_pr_worktree(ctx._pr_metadata)
 
             # Log token usage summary to console
             if ctx.token_usage:
@@ -602,13 +607,36 @@ class ExecutionManager:
             # In container mode, use a shell wrapper to resolve the runner path
             # since the Docker image may use either /app/duckyai/ (new) or
             # /app/duckyai_cli/ (legacy pre-rename).
-            cwd_path = self._container_config.get('vault_mount', '/vault')
+            vault_mount = self._container_config.get('vault_mount', '/vault')
+            cwd_path = vault_mount
             runner_resolve = (
                 'RUNNER=/app/duckyai/scripts/copilot_sdk_runner.py; '
                 '[ -f "$RUNNER" ] || RUNNER=/app/duckyai_cli/scripts/copilot_sdk_runner.py; '
             )
-            # Build the inner python command args
-            inner_args = ['python3', '"$RUNNER"', '--prompt', shlex.quote(ctx.prompt), '--cwd', cwd_path]
+            # Build the inner python command args.
+            # Write prompt to a temp file mounted into the container to avoid
+            # Windows CreateProcessW 32K command-line limit (WinError 206).
+            # The shlex.quote + list2cmdline double-escaping of single quotes
+            # in large prompts (e.g. PRS with prefetched PR dicts) can easily
+            # exceed the limit.  We use $(cat <file>) inside the container's
+            # shell so the expansion happens on Linux (2MB ARG_MAX) not Windows
+            # (32K).  This also stays compatible with older Docker images whose
+            # runner only has --prompt (no --prompt-file).
+            prompt_file_host = Path(self.vault_path) / '.duckyai' / 'tmp'
+            prompt_file_host.mkdir(parents=True, exist_ok=True)
+            prompt_fd, prompt_path = tempfile.mkstemp(
+                suffix='.txt', prefix='prompt_', dir=str(prompt_file_host)
+            )
+            try:
+                with os.fdopen(prompt_fd, 'w', encoding='utf-8') as f:
+                    f.write(ctx.prompt)
+            except Exception:
+                os.close(prompt_fd)
+                raise
+            # Map host path to container path
+            prompt_filename = Path(prompt_path).name
+            container_prompt_path = f'{vault_mount}/.duckyai/tmp/{prompt_filename}'
+            inner_args = ['python3', '"$RUNNER"', '--prompt', f'"$(cat {container_prompt_path})"', '--cwd', cwd_path]
 
             if agent.agent_params and agent.agent_params.get('model'):
                 inner_args.extend(['--model', agent.agent_params['model']])
@@ -620,7 +648,14 @@ class ExecutionManager:
 
             shell_cmd = runner_resolve + ' '.join(inner_args)
             cmd = ['sh', '-c', shell_cmd]
-            self._execute_subprocess(ctx, 'Copilot SDK', cmd, agent.timeout_minutes * 60, use_container=use_container, agent=agent)
+            try:
+                self._execute_subprocess(ctx, 'Copilot SDK', cmd, agent.timeout_minutes * 60, use_container=use_container, agent=agent)
+            finally:
+                # Clean up the temp prompt file
+                try:
+                    os.unlink(prompt_path)
+                except OSError:
+                    pass
             return
         else:
             # Find Python 3.10+ for the SDK (requires union type syntax)
@@ -628,7 +663,22 @@ class ExecutionManager:
             runner_path = str(runner_script)
             cwd_path = str(self.working_dir)
 
-        cmd = [sdk_python, runner_path, '--prompt', ctx.prompt, '--cwd', cwd_path]
+        cmd = [sdk_python, runner_path]
+
+        # Use --prompt-file for large prompts to avoid Windows command-line length limits (WinError 206)
+        if len(ctx.prompt) > 8000:
+            prompt_fd, prompt_path = tempfile.mkstemp(suffix='.txt', prefix='duckyai_prompt_')
+            try:
+                with os.fdopen(prompt_fd, 'w', encoding='utf-8') as f:
+                    f.write(ctx.prompt)
+            except Exception:
+                os.close(prompt_fd)
+                raise
+            cmd.extend(['--prompt-file', prompt_path])
+        else:
+            cmd.extend(['--prompt', ctx.prompt])
+
+        cmd.extend(['--cwd', cwd_path])
 
         # Model selection
         if agent.agent_params and agent.agent_params.get('model'):
@@ -735,6 +785,14 @@ class ExecutionManager:
             cmd.extend(['--session-id', ctx.session_id])
 
         use_container = self._should_use_container(agent)
+
+        # Inject worktree mount for PR Review agent (if worktree was prepared on host)
+        if hasattr(ctx, '_pr_worktree_path') and ctx._pr_worktree_path:
+            if not hasattr(agent, '_original_extra_mounts'):
+                agent._original_extra_mounts = list(agent.extra_mounts) if agent.extra_mounts else []
+            agent.extra_mounts = list(agent._original_extra_mounts) + [
+                {"source": str(ctx._pr_worktree_path), "target": "/repo", "readonly": True},
+            ]
 
         try:
             self._execute_subprocess(ctx, 'GitHub Copilot CLI', cmd, agent.timeout_minutes * 60, use_container=use_container, agent=agent)
@@ -873,7 +931,8 @@ class ExecutionManager:
         if agent and hasattr(agent, 'extra_mounts') and agent.extra_mounts:
             extra_mounts.extend(agent.extra_mounts)
 
-        # Resolve ${services_path} and ${repo_cache} placeholders in mount sources
+        # Resolve ${services_path} placeholder in mount sources.
+        # ${repo_cache} mounts are deprecated — worktrees are mounted at /repo instead.
         if extra_mounts:
             try:
                 from ..services import get_services_path
@@ -881,20 +940,20 @@ class ExecutionManager:
             except Exception:
                 services_path_str = None
 
-            repo_cache_path = self.vault_path / '.duckyai' / 'repo-cache'
-            repo_cache_path.mkdir(parents=True, exist_ok=True)
-            repo_cache_str = str(repo_cache_path)
-
+            resolved = []
             for mount in extra_mounts:
                 src = mount.get('source', '')
+                if '${repo_cache}' in src:
+                    logger.debug(f"Skipping deprecated repo_cache mount: {mount}")
+                    continue
                 if '${services_path}' in src:
                     if services_path_str:
                         mount['source'] = src.replace('${services_path}', services_path_str)
                     else:
                         logger.warning(f"Cannot resolve ${{services_path}} for mount: {mount}")
                         mount['source'] = ''  # Will be skipped below
-                if '${repo_cache}' in src:
-                    mount['source'] = src.replace('${repo_cache}', repo_cache_str)
+                resolved.append(mount)
+            extra_mounts = resolved
 
         # Resolve docker CLI path (may not be in PATH on Windows)
         docker_bin = shutil.which('docker')
@@ -1483,6 +1542,54 @@ class ExecutionManager:
             "pr_url": match.group(0),
         }
 
+    def _prepare_pr_worktree(self, pr_metadata: Dict) -> Optional[Path]:
+        """Create a git worktree from Services for PR review.
+
+        Returns the worktree path, or None if the repo isn't in Services
+        or creation fails (caller falls back to in-container clone).
+        """
+        if not pr_metadata or 'error' in pr_metadata:
+            return None
+        required = ('pr_number', 'repo', 'source_branch', 'target_branch')
+        if not all(pr_metadata.get(k) for k in required):
+            return None
+
+        from ..worktree import find_repo_in_services, prepare_pr_worktree
+
+        repo_path = find_repo_in_services(self.vault_path, pr_metadata['repo'])
+        if not repo_path:
+            logger.debug(f"Repo '{pr_metadata['repo']}' not found in Services — skipping worktree")
+            return None
+
+        try:
+            wt = prepare_pr_worktree(
+                repo_path,
+                pr_id=str(pr_metadata['pr_number']),
+                source_branch=pr_metadata['source_branch'],
+                target_branch=pr_metadata['target_branch'],
+            )
+            logger.info(f"PR worktree ready: {wt}")
+            return wt
+        except Exception as e:
+            logger.warning(f"Worktree creation failed, will fall back to clone: {e}")
+            return None
+
+    def _cleanup_pr_worktree(self, pr_metadata: Dict) -> None:
+        """Remove the worktree created by _prepare_pr_worktree."""
+        if not pr_metadata or not pr_metadata.get('repo'):
+            return
+
+        from ..worktree import find_repo_in_services, cleanup_pr_worktree
+
+        repo_path = find_repo_in_services(self.vault_path, pr_metadata['repo'])
+        if not repo_path:
+            return
+
+        try:
+            cleanup_pr_worktree(repo_path, str(pr_metadata['pr_number']))
+        except Exception as e:
+            logger.warning(f"Worktree cleanup failed (non-fatal): {e}")
+
     def _read_teams_watermark(self, agent_abbr: str) -> Optional[str]:
         """Read the lastSynced timestamp from the Teams agent's watermark file.
 
@@ -1734,6 +1841,13 @@ class ExecutionManager:
                 else:
                     logger.info(f"[PR] Pre-fetched metadata for PR #{pr_metadata.get('pr_number')}: "
                                 f"{pr_metadata.get('title', '')[:60]}")
+
+            # Prepare a git worktree on the host so the container gets /repo pre-mounted
+            if pr_metadata and not pr_metadata.get('error'):
+                wt_path = self._prepare_pr_worktree(pr_metadata)
+                if wt_path:
+                    ctx._pr_worktree_path = wt_path
+                    ctx._pr_metadata = pr_metadata
 
         if resolved_params:
             prompt += "\n# Agent Parameters\n"
