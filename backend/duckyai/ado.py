@@ -184,3 +184,39 @@ def _normalize_org_url(org: str) -> str:
     if org.startswith("https://"):
         return org
     return f"https://dev.azure.com/{org}"
+
+
+def parse_ado_project_url(url: str) -> tuple[str | None, str | None]:
+    """Extract ``(org, project)`` from an ADO project URL.
+
+    Supported formats::
+
+        https://dev.azure.com/{org}/{project}
+        https://dev.azure.com/{org}/{project}/_git/...
+        https://{org}.visualstudio.com/{project}
+
+    Returns ``(org, project)`` or ``(None, None)`` if unparseable.
+    Project names are URL-decoded (e.g. ``Azure%20AppConfig`` → ``Azure AppConfig``).
+    """
+    from urllib.parse import unquote
+
+    url = url.strip().rstrip("/")
+    if not url.startswith("https://"):
+        return None, None
+
+    try:
+        # Strip protocol
+        rest = url.split("://", 1)[1]
+        host, _, path = rest.partition("/")
+        parts = [unquote(p) for p in path.split("/") if p and p != "_git"]
+
+        if "dev.azure.com" in host and len(parts) >= 2:
+            return parts[0], parts[1]
+
+        if host.endswith(".visualstudio.com") and len(parts) >= 1:
+            org = host.replace(".visualstudio.com", "")
+            return org, parts[0]
+    except (ValueError, IndexError):
+        pass
+
+    return None, None

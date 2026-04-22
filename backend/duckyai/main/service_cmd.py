@@ -122,13 +122,12 @@ def service_path(ctx):
 # duckyai service add-repo
 @service_group.command("add-repo")
 @click.argument("service_name")
-@click.option("--org", "ado_org", type=str, help="ADO organization name")
-@click.option("--project", "ado_project", type=str, help="ADO project name")
+@click.option("--url", "ado_url", type=str, help="ADO project URL (e.g. https://dev.azure.com/org/project)")
 @click.option("--repo", "repo_name", type=str, help="Repo name to clone (skip interactive selection)")
 @click.pass_context
-def service_add_repo(ctx, service_name, ado_org, ado_project, repo_name):
+def service_add_repo(ctx, service_name, ado_url, repo_name):
     """Clone an ADO repo into a service directory."""
-    from ..ado import is_az_devops_available, list_projects, list_repos, clone_repo
+    from ..ado import is_az_devops_available, parse_ado_project_url, list_repos, clone_repo
     from ..services import (
         get_services_path, get_service_entry,
         add_repo_to_service, add_service,
@@ -152,31 +151,30 @@ def service_add_repo(ctx, service_name, ado_org, ado_project, repo_name):
         else:
             sys.exit(1)
 
-    # Resolve org (from flag, service metadata, or prompt)
-    if not ado_org:
+    # Resolve org + project from URL, service metadata, or prompt
+    ado_org = None
+    ado_project = None
+
+    if ado_url:
+        ado_org, ado_project = parse_ado_project_url(ado_url)
+        if not ado_org or not ado_project:
+            click.echo(f"  ❌ Could not parse org/project from URL: {ado_url}", err=True)
+            sys.exit(1)
+    else:
+        # Try from service metadata
         ado_org = (entry or {}).get("ado_org")
-    if not ado_org:
-        ado_org = click.prompt("  ADO organization name").strip()
-        if not ado_org:
-            click.echo("  ❌ Organization required.", err=True)
+        ado_project = (entry or {}).get("ado_project")
+
+    if not ado_org or not ado_project:
+        ado_url = click.prompt(
+            "  ADO project URL (e.g. https://dev.azure.com/org/project)"
+        ).strip()
+        ado_org, ado_project = parse_ado_project_url(ado_url)
+        if not ado_org or not ado_project:
+            click.echo(f"  ❌ Could not parse org/project from URL.", err=True)
             sys.exit(1)
 
-    # Resolve project (from flag, service metadata, or prompt)
-    if not ado_project:
-        ado_project = (entry or {}).get("ado_project")
-    if not ado_project:
-        click.echo("  Fetching projects...")
-        projects = list_projects(ado_org)
-        if not projects:
-            click.echo("  ❌ No projects found. Check org name and az login.", err=True)
-            sys.exit(1)
-        for i, p in enumerate(projects):
-            click.echo(f"    {i + 1}. {p.name}")
-        idx = click.prompt(
-            "  Select project number",
-            type=click.IntRange(1, len(projects)),
-        ) - 1
-        ado_project = projects[idx].name
+    click.echo(f"  → org: {ado_org}, project: {ado_project}")
 
     # Resolve repo (from flag or prompt)
     if not repo_name:

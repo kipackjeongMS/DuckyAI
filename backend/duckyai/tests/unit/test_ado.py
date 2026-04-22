@@ -16,7 +16,48 @@ from duckyai.ado import (
     list_projects,
     list_repos,
     clone_repo,
+    parse_ado_project_url,
 )
+
+
+# ---------------------------------------------------------------------------
+# parse_ado_project_url
+# ---------------------------------------------------------------------------
+
+class TestParseAdoProjectUrl:
+
+    def test_standard_url(self):
+        org, proj = parse_ado_project_url("https://dev.azure.com/msazure/Azure%20AppConfig")
+        assert org == "msazure"
+        assert proj == "Azure AppConfig"
+
+    def test_url_with_git_suffix(self):
+        org, proj = parse_ado_project_url("https://dev.azure.com/myorg/MyProject/_git/MyRepo")
+        assert org == "myorg"
+        assert proj == "MyProject"
+
+    def test_legacy_visualstudio_url(self):
+        org, proj = parse_ado_project_url("https://msazure.visualstudio.com/MyProject")
+        assert org == "msazure"
+        assert proj == "MyProject"
+
+    def test_trailing_slash(self):
+        org, proj = parse_ado_project_url("https://dev.azure.com/org/proj/")
+        assert org == "org"
+        assert proj == "proj"
+
+    def test_no_protocol_returns_none(self):
+        assert parse_ado_project_url("dev.azure.com/org/proj") == (None, None)
+
+    def test_empty_string(self):
+        assert parse_ado_project_url("") == (None, None)
+
+    def test_org_only_returns_none(self):
+        assert parse_ado_project_url("https://dev.azure.com/orgonly") == (None, None)
+
+    def test_url_encoded_project(self):
+        org, proj = parse_ado_project_url("https://dev.azure.com/org/My%20Big%20Project")
+        assert proj == "My Big Project"
 
 
 # ---------------------------------------------------------------------------

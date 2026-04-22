@@ -76,48 +76,38 @@ def _prompt_teams_schedule() -> str:
 
 def _prompt_ado_for_service(
     service_name: str,
-    default_org: str | None = None,
+    default_url: str | None = None,
 ) -> tuple[str | None, str | None, list]:
-    """Prompt user for ADO org → project → repos for one service.
+    """Prompt user for ADO project URL → repos for one service.
 
     Returns ``(ado_org, ado_project, selected_repos)`` where
     ``selected_repos`` is a list of ``AdoRepo`` dataclass instances.
     Returns ``(None, None, [])`` if the user cancels at any point.
     """
-    from ..ado import list_projects, list_repos
+    from ..ado import parse_ado_project_url, list_repos
 
-    # 1) Organization
-    org = click.prompt(
-        "    ADO organization name",
-        default=default_org or "", show_default=bool(default_org),
+    # 1) Project URL
+    hint = " (e.g. https://dev.azure.com/org/project)"
+    url = click.prompt(
+        f"    ADO project URL{hint}",
+        default=default_url or "", show_default=bool(default_url),
     ).strip()
-    if not org:
+    if not url:
         click.echo("    (skipped)")
         return None, None, []
 
-    # 2) Project selection
-    click.echo("    Fetching projects...")
-    projects = list_projects(org)
-    if not projects:
-        click.echo("    ⚠ No projects found (check org name and az login)")
-        return org, None, []
+    org, project = parse_ado_project_url(url)
+    if not org or not project:
+        click.echo("    ⚠ Could not parse org/project from URL")
+        return None, None, []
+    click.echo(f"    → org: {org}, project: {project}")
 
-    click.echo(f"    Found {len(projects)} project(s):")
-    for i, p in enumerate(projects):
-        click.echo(f"      {i + 1}. {p.name}")
-    proj_idx = click.prompt(
-        "    Select project number",
-        type=click.IntRange(1, len(projects)), default=1,
-    ) - 1
-    project = projects[proj_idx]
-    click.echo(f"    → {project.name}")
-
-    # 3) Repo multi-select
+    # 2) Repo multi-select
     click.echo("    Fetching repos...")
-    repos = list_repos(org, project.name)
+    repos = list_repos(org, project)
     if not repos:
         click.echo("    ⚠ No repos found in this project")
-        return org, project.name, []
+        return org, project, []
 
     click.echo(f"    Found {len(repos)} repo(s). Select which to clone:")
     selected = []
@@ -418,7 +408,7 @@ tags:
         click.echo("  (You can still add services — repos must be cloned manually)\n")
 
     service_entries = []  # list of (name, ado_org, ado_project, selected_repos)
-    last_ado_org = None   # remember org across services
+    last_ado_url = None   # remember URL across services
 
     while True:
         svc_name = click.prompt(
@@ -435,10 +425,10 @@ tags:
         # Decision 2: Optional — ask "Link to ADO?" per service
         if ado_available and click.confirm("    Link this service to an ADO project?", default=True):
             ado_org, ado_project, selected_repos = _prompt_ado_for_service(
-                svc_name, default_org=last_ado_org,
+                svc_name, default_url=last_ado_url,
             )
-            if ado_org:
-                last_ado_org = ado_org
+            if ado_org and ado_project:
+                last_ado_url = f"https://dev.azure.com/{ado_org}/{ado_project}"
 
         service_entries.append((svc_name, ado_org, ado_project, selected_repos))
         click.echo(f"    ✅ Added: {svc_name}")

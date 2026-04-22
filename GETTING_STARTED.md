@@ -87,23 +87,23 @@ Repos are cloned to `.repos/` (git-ignored). Copilot can then reference them for
 
 ## Step 6b: Link Azure DevOps Repos (Optional)
 
-During `duckyai setup`, you can link each service to an Azure DevOps organization and project. The CLI will fetch available repos and clone them into the service directory.
+During `duckyai setup`, you can link each service to an Azure DevOps project by pasting the project URL. The CLI will fetch available repos and clone them into the service directory.
 
 **Prerequisites:**
 - Azure CLI installed (`az`)
 - Azure DevOps extension: `az extension add --name azure-devops`
 - Logged in: `az login`
 
-**During setup:** When prompted "Link to ADO?", answer yes to connect a service to ADO repos.
+**During setup:** When prompted "Link to ADO?", answer yes and paste the ADO project URL (e.g. `https://dev.azure.com/myorg/MyProject`).
 
 **After setup:** Use the dedicated command to add more repos:
 
 ```bash
-# Interactive — prompts for org, project, and repo selection
+# Interactive — prompts for URL and repo selection
 duckyai service add-repo MyService
 
-# Non-interactive — pass all flags
-duckyai service add-repo MyService --org msazure --project "My Project" --repo my-repo
+# Non-interactive — pass URL and repo name
+duckyai service add-repo MyService --url "https://dev.azure.com/myorg/MyProject" --repo my-repo
 ```
 
 The repo metadata is stored in `.services.json` alongside each service directory.
