@@ -15,7 +15,6 @@ orchestrator:
   auto_start: true
   prompts_dir: .github/prompts-agent
   skills_dir: .github/skills
-  bases_dir: .github/bases
   max_concurrent: 3
   poll_interval: 1
   file_extensions:
