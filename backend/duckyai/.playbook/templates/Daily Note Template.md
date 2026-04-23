@@ -18,7 +18,9 @@ tags:
 - [ ]
 
 ## PRs & Code Reviews
-- [ ]
+### My PRs
+### Requested
+### Discovered
 
 ## Tasks Completed
 - [ ]

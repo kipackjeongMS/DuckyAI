@@ -333,9 +333,10 @@ class VaultService:
         if action not in {"todo", "reviewed", "commented"}:
             raise ValueError("Field 'action' must be one of: todo, reviewed, commented")
 
-        # Subsection: "requested" (from TM/Teams) or "discovered" (from PRS/AzDO scan)
+        # Subsection: "requested" (from TM/Teams), "discovered" (from PRS/AzDO scan),
+        # or "my_prs" (PRs authored by user, tracked for others' review)
         subsection = arguments.get("subsection", "requested")
-        if subsection not in {"requested", "discovered"}:
+        if subsection not in {"requested", "discovered", "my_prs"}:
             subsection = "requested"
 
         today = self._get_today_date()
@@ -388,7 +389,11 @@ class VaultService:
                 pending_entry = f"- [ ] {pr_review_link} - {description}"
 
                 # Determine target H3 subsection
-                target_h3 = "Requested" if subsection == "requested" else "Discovered"
+                target_h3 = (
+                    "My PRs" if subsection == "my_prs"
+                    else "Requested" if subsection == "requested"
+                    else "Discovered"
+                )
 
                 # Ensure subsections exist under ## PRs & Code Reviews
                 content = self._ensure_pr_subsections(content)
@@ -1565,26 +1570,35 @@ class VaultService:
         return "Pending Review"
 
     def _ensure_pr_subsections(self, content: str) -> str:
-        """Ensure ### Requested and ### Discovered exist under ## PRs & Code Reviews."""
+        """Ensure ### My PRs, ### Requested, and ### Discovered exist under ## PRs & Code Reviews."""
         h2_span = self._find_section_span(content, "PRs & Code Reviews", 2)
         if h2_span is None:
             return content
-        # Check if subsections already exist
-        if re.search(r"^### Requested\s*$", content, re.MULTILINE) is None:
-            # Insert ### Requested right after ## PRs & Code Reviews header
-            content = re.sub(
-                r"(^## PRs & Code Reviews\s*\n)",
-                r"\1### Requested\n\n### Discovered\n",
-                content,
-                count=1,
-                flags=re.MULTILINE,
-            )
-        elif re.search(r"^### Discovered\s*$", content, re.MULTILINE) is None:
-            # Requested exists but Discovered doesn't — add after Requested section
-            req_span = self._find_section_span(content, "Requested", 3)
-            if req_span:
-                _, req_end = req_span
-                content = content[:req_end] + "\n### Discovered\n" + content[req_end:]
+
+        subsections = ["My PRs", "Requested", "Discovered"]
+        for sub in subsections:
+            pattern = rf"^### {re.escape(sub)}\s*$"
+            if re.search(pattern, content, re.MULTILINE) is None:
+                # Find where to insert: after the last existing subsection, or after H2 header
+                insert_pos = None
+                for existing_sub in subsections:
+                    span = self._find_section_span(content, existing_sub, 3)
+                    if span:
+                        _, end = span
+                        if insert_pos is None or end > insert_pos:
+                            insert_pos = end
+                if insert_pos is None:
+                    # No subsections yet — insert all after ## PRs & Code Reviews header
+                    content = re.sub(
+                        r"(^## PRs & Code Reviews\s*\n)",
+                        r"\g<1>" + "\n".join(f"### {s}\n" for s in subsections) + "\n",
+                        content,
+                        count=1,
+                        flags=re.MULTILINE,
+                    )
+                    break  # All inserted at once
+                else:
+                    content = content[:insert_pos] + f"\n### {sub}\n" + content[insert_pos:]
         return content
 
     def _promote_pr_to_requested(self, content: str, pr_marker: str) -> str:
