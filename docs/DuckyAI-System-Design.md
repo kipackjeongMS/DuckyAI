@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-**DuckyAI** is an AI-powered personal knowledge management (DuckAI) platform that combines an **Obsidian vault**, a **Python orchestrator daemon**, a **TypeScript MCP server**, and **GitHub Copilot / Claude Code integration** into a unified automation system.
+**DuckyAI** is an AI-powered personal knowledge management (DuckAI) platform that combines an **Obsidian vault**, a **Python orchestrator daemon**, a **Python MCP server**, and **GitHub Copilot / Claude Code integration** into a unified automation system.
 
 The core idea: give AI assistants **persistent memory** of your work by storing everything in markdown files, then automate repetitive knowledge management tasks through event-driven agents.
 
@@ -45,7 +45,7 @@ graph TB
 
     subgraph CORE["DuckyAI Core"]
         direction TB
-        MCP[MCP Server - TypeScript]
+        MCP[MCP Server - Python]
         ORCH[Orchestrator Daemon - Python]
         CFG[duckyai.yml Config]
     end
@@ -160,9 +160,9 @@ sequenceDiagram
     EM->>EM: Update task status
 ```
 
-### 3.2 MCP Server (TypeScript)
+### 3.2 MCP Server (Python)
 
-Exposes vault operations as standardized tools to AI assistants via the Model Context Protocol.
+Exposes vault operations as standardized tools to AI assistants via the Model Context Protocol. Runs as a **separate process** spawned by the AI host (Copilot, Claude) over stdio transport. Wraps the same `VaultService` class used by the daemon's Flask API.
 
 ```mermaid
 graph LR
@@ -171,11 +171,12 @@ graph LR
         CLA[Claude Desktop]
     end
 
-    subgraph MCP_SRV["MCP Server - stdio transport"]
+    subgraph MCP_SRV["MCP Server Process - stdio transport"]
         direction TB
-        IDX[index.ts]
+        ENTRY[mcp_server.py - FastMCP]
+        VS[VaultService]
 
-        subgraph TOOLS["19 MCP Tools"]
+        subgraph TOOLS["MCP Tools"]
             direction LR
             T1[prepareDailyNote]
             T2[createTask]
@@ -197,13 +198,17 @@ graph LR
             T18[updateTeamsMeetingSyncState]
             T19[appendTeamsMeetingHighlights]
         end
+
+        ENTRY --> VS
+        VS --> TOOLS
     end
 
-    CLIENTS <-->|stdio| IDX
-    IDX --> TOOLS
+    CLIENTS <-->|stdio JSON-RPC| ENTRY
     TOOLS -->|read/write| VAULT_FILES[Vault Markdown Files]
     TOOLS -->|read/write| STATE[Global State Files]
 ```
+
+**Entry point:** `duckyai-vault-mcp = "duckyai.mcp_server:main"` (in pyproject.toml)
 
 #### Key MCP Tool Categories
 
@@ -579,26 +584,114 @@ graph TB
 
 ### 8.2 Process Architecture
 
+DuckyAI runs as **three independent processes** that share the same `VaultService` logic but serve different consumers:
+
 ```mermaid
 graph TB
-    USER[User Terminal] -->|duckyai -o| DAEMON[Orchestrator Daemon Process]
+    subgraph CONSUMERS["Consumers"]
+        direction LR
+        ELECTRON[Electron Desktop App]
+        OBSIDIAN[Obsidian Plugin]
+        COPILOT[GitHub Copilot / Claude CLI]
+        CLI_USER[duckyai CLI]
+    end
 
-    DAEMON --> FM_THREAD[FileMonitor Thread]
-    DAEMON --> CRON_THREAD[CronScheduler Thread]
-    DAEMON --> POLL_THREAD[PollerManager Thread]
-    DAEMON --> EVENT_LOOP[Main Event Loop Thread]
+    subgraph DAEMON_PROC["Daemon Process — duckyai -o"]
+        direction TB
+        subgraph ORCH["Orchestrator Core"]
+            FM[FileMonitor Thread]
+            CRON[CronScheduler Thread]
+            POLL[PollerManager Thread]
+            LOOP[Main Event Loop]
+        end
+        subgraph API["Flask HTTP API :52845"]
+            ROUTE_D["/api/daemon/*"]
+            ROUTE_O["/api/orchestrator/*"]
+            ROUTE_V["/api/vault/*"]
+        end
+        VS1[VaultService]
+        API --> VS1
+        ORCH --> VS1
+    end
 
-    EVENT_LOOP -->|spawn| AGENT1[Agent Subprocess 1]
-    EVENT_LOOP -->|spawn| AGENT2[Agent Subprocess 2]
-    EVENT_LOOP -->|spawn| AGENT3[Agent Subprocess 3]
+    subgraph MCP_PROC["MCP Server Process — duckyai-vault-mcp"]
+        MCP_FAST[FastMCP - stdio transport]
+        VS2[VaultService]
+        MCP_FAST --> VS2
+    end
 
-    AGENT1 --> AI1[claude-code CLI]
-    AGENT2 --> AI2[copilot SDK]
-    AGENT3 --> AI3[gemini CLI]
+    subgraph AGENTS["Agent Subprocesses"]
+        AI1[Claude Code CLI]
+        AI2[Copilot SDK]
+        AI3[Gemini CLI]
+    end
+
+    %% Consumer → Process connections
+    ELECTRON -->|HTTP fetch| API
+    OBSIDIAN -->|HTTP fetch| API
+    COPILOT -->|stdio MCP| MCP_PROC
+    CLI_USER -->|file queue .task files| DAEMON_PROC
+    CLI_USER -->|PID file + OS signals| DAEMON_PROC
+
+    %% Daemon → Agents
+    LOOP -->|spawn subprocess| AGENTS
+    AGENTS -->|stdio MCP| MCP_PROC
+
+    %% Shared state
+    VS1 -->|read/write| VAULT[(Obsidian Vault)]
+    VS2 -->|read/write| VAULT
+```
+
+#### Three Processes, Three IPC Mechanisms
+
+| Process | Started by | Purpose | IPC |
+|---|---|---|---|
+| **Daemon** (`duckyai -o`) | `duckyai orchestrator start` (detached) or `duckyai -o` (foreground) | File watching, cron scheduling, agent execution, HTTP API for UIs | — |
+| **MCP Server** (`duckyai-vault-mcp`) | AI host (Copilot, Claude) as a child process | Expose vault tools to AI assistants via MCP protocol | stdio (JSON-RPC) |
+| **Agent subprocesses** | Daemon's ExecutionManager | Run AI agents (Claude, Copilot, Gemini) | stdin/stdout + subprocess |
+
+#### Why Three IPC Styles?
+
+| IPC | Who uses it | Why |
+|---|---|---|
+| **HTTP (Flask :52845)** | Electron app, Obsidian plugin | Cross-language (Python↔JS) communication; `fetch` is native in both |
+| **stdio MCP** | GitHub Copilot, Claude CLI | MCP protocol requirement — AI hosts expect stdio JSON-RPC |
+| **File queue (.task files)** | `duckyai` CLI commands | Fire-and-forget; works even if daemon restarts before picking up |
+
+#### VaultService — Shared Core, Two Interfaces
+
+Both the daemon and the MCP server expose the same `VaultService` class — the pure-Python implementation of all vault operations (createTask, logAction, prepareDailyNote, etc.). The only difference is the transport layer:
+
+```
+AI Agents ──stdio JSON-RPC──► duckyai-vault-mcp ──► VaultService ──► Vault files
+UIs ───────HTTP POST─────────► Flask /api/vault ──► VaultService ──► Vault files
+```
+
+These are independent processes with no shared memory. Concurrent writes are safe because each vault tool operates on separate files or uses append-only patterns.
+
+#### Daemon Internal Threads
+
+```mermaid
+graph TB
+    subgraph DAEMON["Daemon Process"]
+        MAIN[Main Thread - Event Loop]
+        FM[FileMonitor Thread - watchdog]
+        CRON[CronScheduler Thread - croniter]
+        POLL[PollerManager Thread]
+        FLASK[Flask Thread - HTTP API]
+
+        FM -->|TriggerEvent queue| MAIN
+        CRON -->|TriggerEvent queue| MAIN
+        POLL -->|TriggerEvent queue| MAIN
+        MAIN -->|spawn| SUB[Agent Subprocess]
+    end
 
     DAEMON -->|write| PID[.orchestrator.pid]
+    DAEMON -->|write| DISC[.duckyai/api.json - service discovery]
     DAEMON -->|hot reload| CONFIG[duckyai.yml]
 ```
+
+The daemon writes `.duckyai/api.json` (containing `host`, `port`, `pid`, `url`) so the Electron app and Obsidian plugin can discover the API endpoint at runtime.
 
 ---
 
