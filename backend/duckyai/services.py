@@ -14,7 +14,6 @@ user code services and their git repos:
 
 import json
 import os
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -40,7 +39,7 @@ def get_services_path(vault_path: Path) -> Path:
 
 
 def ensure_services_dir(vault_path: Path) -> Path:
-    """Create the services directory and vault symlink if they don't exist.
+    """Create the services directory if it doesn't exist.
 
     Returns the absolute path to the services directory.
     """
@@ -57,33 +56,6 @@ def ensure_services_dir(vault_path: Path) -> Path:
             "services": [],
         }
         meta_file.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-
-    # Create .services symlink inside vault → services dir
-    link_path = Path(vault_path) / ".services"
-    if not link_path.exists():
-        try:
-            # On Windows, use directory junction (no admin required)
-            if sys.platform == "win32":
-                import subprocess
-                subprocess.run(
-                    ["cmd", "/c", "mklink", "/J", str(link_path), str(services_dir)],
-                    capture_output=True, check=True,
-                )
-            else:
-                link_path.symlink_to(services_dir)
-        except (OSError, subprocess.CalledProcessError):
-            pass  # Symlink creation may fail — not critical
-
-    # Ensure .services/ is in .gitignore
-    gitignore_path = Path(vault_path) / ".gitignore"
-    try:
-        if gitignore_path.exists():
-            content = gitignore_path.read_text(encoding="utf-8")
-            if ".services/" not in content:
-                with gitignore_path.open("a", encoding="utf-8") as f:
-                    f.write("\n# Services directory junction (points outside vault)\n.services/\n")
-    except OSError:
-        pass
 
     return services_dir
 

@@ -262,8 +262,7 @@ def run_onboarding(vault_root: Path = None):
         gitignore_path.write_text(
             "# OS\n.DS_Store\nThumbs.db\n\n"
             "# Obsidian\n.obsidian/workspace*.json\n.obsidian/plugins/\n.trash/\n\n"
-            "# Python\n__pycache__/\n*.pyc\n\n"
-            "# Services directory junction (points outside vault)\n.services/\n",
+            "# Python\n__pycache__/\n*.pyc\n",
             encoding="utf-8",
         )
         click.echo(f"  ✓ .gitignore")
@@ -281,7 +280,6 @@ def run_onboarding(vault_root: Path = None):
                 "**/.git": True,
                 "**/.obsidian/plugins": True,
                 "**/.obsidian/workspace*.json": True,
-                "**/.services": True,
             },
             "git.scanRepositories": ["."],
         }

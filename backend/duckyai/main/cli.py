@@ -415,13 +415,6 @@ def ensure_init(vault_root: Path):
     except Exception:
         pass  # non-critical
 
-    # Ensure services directory and .services junction exist
-    try:
-        from ..services import ensure_services_dir
-        ensure_services_dir(vault_root)
-    except Exception:
-        pass  # non-critical
-
 
 def _resolve_node_cmd_shim(cmd_name: str) -> tuple[str, list[str]] | None:
     """Resolve a Node.js .cmd shim to (node_path, [js_entry_point]).

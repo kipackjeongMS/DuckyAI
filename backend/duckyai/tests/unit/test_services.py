@@ -114,12 +114,6 @@ class TestEnsureServicesDir:
         meta = json.loads((svc_dir1 / ".services.json").read_text(encoding="utf-8"))
         assert meta["services"] == []
 
-    def test_creates_symlink_in_vault(self, temp_vault):
-        ensure_services_dir(temp_vault)
-        link = temp_vault / ".services"
-        # On some CI environments symlinks may not be supported — just check it was attempted
-        # The actual symlink/junction creation is platform-dependent
-
 
 class TestAddService:
     """Tests for add_service()."""
