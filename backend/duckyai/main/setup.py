@@ -11,11 +11,53 @@ from datetime import datetime
 import click
 
 def _detect_timezone() -> str:
-    """Detect local timezone name."""
+    """Detect local timezone as an IANA name (e.g. ``America/Los_Angeles``).
+
+    Priority: Windows ``time.tzname`` mapped via Config's table → tzlocal → hardcoded fallback.
+    """
+    # Map common Windows timezone display names to IANA
+    _WIN_MAP = {
+        "Pacific Standard Time": "America/Los_Angeles",
+        "Pacific Daylight Time": "America/Los_Angeles",
+        "Mountain Standard Time": "America/Denver",
+        "Mountain Daylight Time": "America/Denver",
+        "Central Standard Time": "America/Chicago",
+        "Central Daylight Time": "America/Chicago",
+        "Eastern Standard Time": "America/New_York",
+        "Eastern Daylight Time": "America/New_York",
+        "Alaskan Standard Time": "America/Anchorage",
+        "Alaskan Daylight Time": "America/Anchorage",
+        "Hawaiian Standard Time": "Pacific/Honolulu",
+        "Atlantic Standard Time": "America/Halifax",
+        "Atlantic Daylight Time": "America/Halifax",
+        "GMT Standard Time": "Europe/London",
+        "Central European Standard Time": "Europe/Berlin",
+        "China Standard Time": "Asia/Shanghai",
+        "Tokyo Standard Time": "Asia/Tokyo",
+        "Korea Standard Time": "Asia/Seoul",
+        "AUS Eastern Standard Time": "Australia/Sydney",
+        "India Standard Time": "Asia/Kolkata",
+    }
     try:
         import time
         if hasattr(time, 'tzname') and time.tzname[0]:
-            return time.tzname[0]
+            win_name = time.tzname[0]
+            if win_name in _WIN_MAP:
+                return _WIN_MAP[win_name]
+            # If it already looks like an IANA name (contains '/'), use as-is
+            if '/' in win_name:
+                return win_name
+    except Exception:
+        pass
+    # Fallback: try tzlocal
+    try:
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            from tzlocal import get_localzone
+            tz = str(get_localzone())
+            if tz and tz not in ("UTC", "Etc/UTC"):
+                return tz
     except Exception:
         pass
     return "America/Los_Angeles"

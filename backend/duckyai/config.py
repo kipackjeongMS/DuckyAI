@@ -283,8 +283,36 @@ class Config:
         "Atlantic Standard Time": "America/Halifax",
     }
 
+    # Mapping from standard UTC offset (seconds east of UTC) to IANA timezone.
+    # Uses the NON-DST (standard time) offset for unambiguous identification.
+    # Used as a last-resort fallback when tzlocal misdetects the timezone.
+    _OFFSET_TO_IANA = {
+        -36000: "Pacific/Honolulu",   # HST  UTC-10
+        -32400: "America/Anchorage",  # AKST UTC-9
+        -28800: "America/Los_Angeles",# PST  UTC-8
+        -25200: "America/Denver",     # MST  UTC-7
+        -21600: "America/Chicago",    # CST  UTC-6
+        -18000: "America/New_York",   # EST  UTC-5
+        -14400: "America/Halifax",    # AST  UTC-4
+             0: "UTC",
+          3600: "Europe/London",      # GMT+1 / BST
+          7200: "Europe/Berlin",      # CET  UTC+2
+         19800: "Asia/Kolkata",       # IST  UTC+5:30
+         28800: "Asia/Shanghai",      # CST  UTC+8
+         32400: "Asia/Tokyo",         # JST  UTC+9
+         36000: "Australia/Sydney",   # AEST UTC+10
+    }
+
     def _get_os_timezone_name(self) -> str:
-        """Resolve the local OS timezone name without surfacing tzlocal env warnings."""
+        """Resolve the local OS timezone name without surfacing tzlocal env warnings.
+
+        Falls back to ``time.timezone`` offset mapping when tzlocal returns a
+        clearly wrong result (e.g. ``Etc/UTC`` on a machine that is actually PST).
+        Always uses the **standard** (non-DST) offset for unambiguous mapping.
+        """
+        import time as _time
+
+        tz_name: str = "UTC"
         try:
             with warnings.catch_warnings():
                 warnings.filterwarnings(
@@ -294,9 +322,19 @@ class Config:
                 )
                 from tzlocal import get_localzone
 
-                return str(get_localzone())
+                tz_name = str(get_localzone())
         except Exception:
-            return "UTC"
+            pass
+
+        # Sanity-check: if tzlocal returned UTC but the OS offset disagrees,
+        # derive the IANA name from the standard (non-DST) offset.
+        if tz_name in ("UTC", "Etc/UTC"):
+            # time.timezone = seconds WEST of UTC (always standard offset)
+            std_offset = -_time.timezone
+            if std_offset != 0:
+                tz_name = self._OFFSET_TO_IANA.get(std_offset, tz_name)
+
+        return tz_name
 
     def get_user_timezone(self) -> str:
         """Return the user's timezone as an IANA name.
