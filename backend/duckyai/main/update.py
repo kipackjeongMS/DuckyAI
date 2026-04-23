@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Self-update command for DuckyAI CLI."""
 
+import os
+import platform
 import shutil
+import site
 import sys
+import sysconfig
 import tempfile
 import zipfile
 import subprocess
@@ -93,6 +97,74 @@ def extract_zip(zip_path: Path, dest_dir: Path) -> Path:
         return extracted_dirs[0]
     
     return dest_dir
+
+
+def _normalize_version(v: str) -> str:
+    """Strip leading 'v' for consistent comparison (v0.1.20 → 0.1.20)."""
+    return v.lstrip("v") if v else v
+
+
+def _cleanup_corrupt_distributions() -> int:
+    """Remove orphaned ~duckyai* directories in site-packages.
+
+    Pip renames dist-info dirs with a ``~`` prefix during uninstall.
+    If the install fails mid-way, these orphans cause noisy warnings.
+    """
+    removed = 0
+    for sp in site.getsitepackages():
+        sp_path = Path(sp)
+        if not sp_path.is_dir():
+            continue
+        for d in sp_path.iterdir():
+            if d.is_dir() and d.name.startswith("~") and "uckyai" in d.name:
+                shutil.rmtree(d, ignore_errors=True)
+                removed += 1
+    return removed
+
+
+def _rename_locked_scripts() -> list[Path]:
+    """On Windows, rename duckyai*.exe so pip can write new ones.
+
+    Windows allows renaming a running executable but not overwriting it.
+    Returns a list of ``.old`` paths for later cleanup.
+    """
+    if platform.system() != "Windows":
+        return []
+
+    scripts_dir = Path(sysconfig.get_path("scripts"))
+    renamed: list[Path] = []
+
+    for name in ("duckyai.exe", "duckyai-vault-mcp.exe"):
+        exe = scripts_dir / name
+        if not exe.exists():
+            continue
+        old = exe.with_suffix(".exe.old")
+        try:
+            if old.exists():
+                old.unlink()
+        except OSError:
+            pass
+        try:
+            os.rename(str(exe), str(old))
+            renamed.append(old)
+        except OSError:
+            pass
+    return renamed
+
+
+def _cleanup_old_scripts() -> None:
+    """Remove leftover .old executables from a prior update."""
+    if platform.system() != "Windows":
+        return
+
+    scripts_dir = Path(sysconfig.get_path("scripts"))
+    if not scripts_dir.is_dir():
+        return
+    for old_file in scripts_dir.glob("duckyai*.exe.old"):
+        try:
+            old_file.unlink()
+        except OSError:
+            pass
 
 
 def install_package(package_dir: Path) -> bool:
@@ -211,6 +283,9 @@ def _find_active_vaults() -> list[Path]:
 @click.option("--sync-only", is_flag=True, help="Skip pip install, only sync vault files")
 def update_cli(force: bool, target_version: Optional[str], list_releases: bool, sync_only: bool) -> None:
     """Self-update the DuckyAI CLI from GitHub releases."""
+    # Housekeeping: clean up leftover .old exes from a prior update
+    _cleanup_old_scripts()
+
     click.echo("=" * 50)
     click.echo("DuckyAI CLI Self-Update")
     click.echo("=" * 50)
@@ -260,7 +335,8 @@ def update_cli(force: bool, target_version: Optional[str], list_releases: bool, 
     click.echo(f"Target version:  {release_version}")
     click.echo()
 
-    if not force and current_version and current_version == release_version:
+    release_ver_normalized = _normalize_version(release_version)
+    if not force and current_version and current_version == release_ver_normalized:
         click.echo("Already up to date!")
         # Still sync vault files in case they're stale
         _sync_all_vaults()
@@ -281,6 +357,14 @@ def update_cli(force: bool, target_version: Optional[str], list_releases: bool, 
             # pyproject.toml lives in backend/ subdirectory
             backend_path = extracted_path / "backend"
             install_dir = backend_path if backend_path.is_dir() and (backend_path / "pyproject.toml").exists() else extracted_path
+
+            # Pre-install cleanup
+            cleaned = _cleanup_corrupt_distributions()
+            if cleaned:
+                click.echo(f"  Cleaned {cleaned} orphaned dist-info dir(s)")
+
+            # On Windows, rename locked exes so pip can write new ones
+            renamed = _rename_locked_scripts()
 
             if install_package(install_dir):
                 click.echo()
