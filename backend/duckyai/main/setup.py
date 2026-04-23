@@ -619,7 +619,7 @@ tags:
             tcs_enabled=tcs_enabled,
             tms_enabled=tms_enabled,
             use_container="true" if use_container else "false",
-            services_path=str(services_path),
+            services_path=str(services_path).replace("\\", "\\\\"),
         )
         duckyai_yml_path.write_text(duckyai_content, encoding="utf-8")
         click.echo(f"  ✓ duckyai.yml (created)")
