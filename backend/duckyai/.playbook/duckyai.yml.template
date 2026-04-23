@@ -103,9 +103,6 @@ nodes:
   - source: "${services_path}"
     target: "/services"
     readonly: true
-  - source: "${repo_cache}"
-    target: "/repo-cache"
-    readonly: false
 
 - type: agent
   name: PR Scan (PRS)

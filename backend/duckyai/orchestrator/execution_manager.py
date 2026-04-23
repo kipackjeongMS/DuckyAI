@@ -932,7 +932,6 @@ class ExecutionManager:
             extra_mounts.extend(agent.extra_mounts)
 
         # Resolve ${services_path} placeholder in mount sources.
-        # ${repo_cache} mounts are deprecated — worktrees are mounted at /repo instead.
         if extra_mounts:
             try:
                 from ..services import get_services_path
@@ -943,9 +942,6 @@ class ExecutionManager:
             resolved = []
             for mount in extra_mounts:
                 src = mount.get('source', '')
-                if '${repo_cache}' in src:
-                    logger.debug(f"Skipping deprecated repo_cache mount: {mount}")
-                    continue
                 if '${services_path}' in src:
                     if services_path_str:
                         mount['source'] = src.replace('${services_path}', services_path_str)
