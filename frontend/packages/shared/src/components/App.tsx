@@ -54,6 +54,7 @@ export default function DuckyAIApp({
   const [showOverlay, setShowOverlay] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [terminalLoading, setTerminalLoading] = useState(false);
   const chatRequestIdRef = useRef(0);
 
   const orch = useOrchestrator();
@@ -250,11 +251,15 @@ export default function DuckyAIApp({
                       />
                     </div>
                   ) : (
-                    <div className="flex-1 flex flex-col min-h-0">
-                      {!terminalOpen ? (
+                    <div className="flex-1 flex flex-col min-h-0 relative">
+                      {!terminalOpen && !terminalLoading ? (
                         <div className="flex-1 flex items-center justify-center">
                           <motion.button
-                            onClick={() => setTerminalOpen(true)}
+                            onClick={() => {
+                              setTerminalOpen(true);
+                              setTerminalLoading(true);
+                              setTimeout(() => setTerminalLoading(false), 3000);
+                            }}
                             className="flex flex-col items-center gap-3 px-10 py-6 rounded-2xl border border-[rgba(0,212,255,0.15)] bg-[rgba(0,212,255,0.04)] hover:bg-[rgba(0,212,255,0.08)] text-foreground cursor-pointer transition-colors"
                             style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}
                             whileHover={{ scale: 1.03 }}
@@ -268,15 +273,38 @@ export default function DuckyAIApp({
                           </motion.button>
                         </div>
                       ) : (
-                        <motion.div
-                          className="flex-1 overflow-hidden min-h-0"
-                          style={{ height: "100%" }}
-                          initial={{ opacity: 0, clipPath: "inset(40% 10% 40% 10% round 16px)" }}
-                          animate={{ opacity: 1, clipPath: "inset(0% 0% 0% 0% round 0px)" }}
-                          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                        >
-                          <TerminalPanel wsUrl={api.terminal.wsUrl} />
-                        </motion.div>
+                        <>
+                          {/* Terminal mounts immediately (hidden behind loading overlay) */}
+                          <div className="flex-1 overflow-hidden min-h-0" style={{ height: "100%", visibility: terminalLoading ? "hidden" : "visible" }}>
+                            <TerminalPanel wsUrl={api.terminal.wsUrl} />
+                          </div>
+                          <AnimatePresence>
+                            {terminalLoading && (
+                              <motion.div
+                                className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10"
+                                style={{ background: "var(--background, #0a0a0a)" }}
+                                initial={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.4 }}
+                              >
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                >
+                                  <Terminal size={32} className="text-[#00d4ff]" />
+                                </motion.div>
+                                <motion.span
+                                  className="text-muted-foreground"
+                                  style={{ fontSize: "0.75rem", letterSpacing: "0.08em" }}
+                                  animate={{ opacity: [0.4, 1, 0.4] }}
+                                  transition={{ duration: 1.5, repeat: Infinity }}
+                                >
+                                  Waking up Ducky...
+                                </motion.span>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </>
                       )}
                     </div>
                   )}
