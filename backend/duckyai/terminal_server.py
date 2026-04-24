@@ -120,12 +120,32 @@ class PtyProcess:
             await self._spawn_unix()
 
     async def _spawn_windows(self):
-        """Spawn PTY on Windows using pywinpty."""
+        """Spawn PTY on Windows using pywinpty ConPTY backend.
+
+        ConPTY (Windows 10 1903+) is the native Windows PTY implementation and
+        correctly handles all Console APIs (SetConsoleMode, ReadConsoleInput, etc.)
+        that interactive TUI apps like the Copilot CLI picker rely on.
+        WinPTY (the legacy PtyProcess backend) emulates these and silently hangs
+        on apps that call SetConsoleMode / ReadConsoleInput directly.
+        """
         import winpty  # pywinpty
+
+        # Inject terminal environment so TUI libraries can detect capabilities
+        env = os.environ.copy()
+        env.setdefault("TERM", "xterm-256color")
+        env.setdefault("COLORTERM", "truecolor")
+        env.setdefault("TERM_PROGRAM", "DuckyAI")
+
+        # Use ConPTY backend — Microsoft's native PTY (Windows 10 1903+).
+        # ConPTY correctly handles SetConsoleMode / ReadConsoleInput calls that
+        # interactive TUI apps like the Copilot CLI @ / # pickers rely on.
+        # WinPTY (the default backend) emulates these APIs and silently hangs.
         self._pty = winpty.PtyProcess.spawn(
             self.command,
             cwd=self.cwd,
             dimensions=(self.rows, self.cols),
+            env=env,
+            backend=winpty.Backend.ConPTY,
         )
 
     async def _spawn_unix(self):
