@@ -276,16 +276,22 @@ class TestHandleTerminal:
         asyncio.run(run())
 
     def test_initial_command_sent_after_spawn(self):
-        """After PTY spawn, 'copilot\\n' should be written to PTY."""
+        """After PTY spawn, 'copilot\\n' should be written to PTY via auto_command task."""
         from duckyai.terminal_server import _handle_terminal
 
+        # WebSocket that stays open long enough for auto_command to fire
+        async def slow_ws_iter():
+            await asyncio.sleep(5.0)  # Keep WS alive; test timeout will cancel
+            return
+            yield  # make it an async generator
+
         mock_ws = AsyncMock()
-        mock_ws.__aiter__ = MagicMock(return_value=AsyncIteratorMock([]))
+        mock_ws.__aiter__ = MagicMock(return_value=slow_ws_iter())
         mock_ws.send = AsyncMock()
 
         mock_pty = MagicMock()
         mock_pty.spawn = AsyncMock()
-        mock_pty.is_alive.return_value = False
+        mock_pty.is_alive.return_value = True
         mock_pty.read.return_value = b""
         mock_pty.write = MagicMock()
         mock_pty.kill = MagicMock()
@@ -296,11 +302,11 @@ class TestHandleTerminal:
                     try:
                         await asyncio.wait_for(
                             _handle_terminal(mock_ws, vault_path="/vault"),
-                            timeout=1.0,
+                            timeout=3.0,
                         )
-                    except asyncio.TimeoutError:
+                    except (asyncio.TimeoutError, asyncio.CancelledError):
                         pass
-                mock_pty.write.assert_any_call(b"copilot\n")
+            mock_pty.write.assert_any_call(b"copilot\n")
 
         asyncio.run(run())
 

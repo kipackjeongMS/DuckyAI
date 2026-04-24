@@ -239,10 +239,6 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
         await websocket.close(1011, f"PTY spawn failed: {e}")
         return
 
-    # Pre-execute initial command after shell initializes
-    await asyncio.sleep(0.3)
-    pty.write(b"copilot\n")
-
     stop_event = asyncio.Event()
 
     async def pty_reader():
@@ -287,8 +283,16 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
         finally:
             stop_event.set()
 
+    async def auto_command():
+        """Send initial command after shell fully initializes."""
+        delay = 2.0 if sys.platform == "win32" else 0.5
+        await asyncio.sleep(delay)
+        if not stop_event.is_set():
+            pty.write(b"copilot\n")
+            log.info("[terminal] Auto-executed: copilot")
+
     try:
-        await asyncio.gather(pty_reader(), ws_reader())
+        await asyncio.gather(pty_reader(), ws_reader(), auto_command())
     finally:
         pty.kill()
         log.info("[terminal] PTY session closed")
