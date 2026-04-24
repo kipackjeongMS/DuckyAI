@@ -23,78 +23,39 @@ def test_get_mcp_config_uses_native_python_vault_server(tmp_path):
     }
 
 
-def test_default_command_selects_ide_then_prompts_teams_sync_then_opens_vault(monkeypatch, tmp_path):
+def test_default_command_shows_help_when_no_subcommand(monkeypatch, tmp_path):
+    """Bare `duckyai` with no args should display help listing subcommands."""
     vault_root = tmp_path / "Vault"
     vault_root.mkdir()
 
-    call_order = []
-
-    class _Config:
-        def __init__(self, vault_path=None):
-            self.orchestrator_auto_start = True
-
-        def get(self, key, default=None):
-            return "vault1" if key == "id" else default
-
-    class _ExecutionManager:
-        @staticmethod
-        def check_workiq_auth_flag(vault_id, vault_path=None):
-            return False
-
     monkeypatch.setattr(cli_module, "resolve_vault", lambda working_dir=None: vault_root)
-    monkeypatch.setattr(cli_module, "ensure_init", lambda path: None)
-    monkeypatch.setattr(cli_module, "_select_ide", lambda: call_order.append("select_ide") or ("VS Code", "code"))
-    monkeypatch.setattr(cli_module, "ensure_orchestrator_running", lambda vault_root, debug=False: call_order.append("start_orchestrator") or True)
-    monkeypatch.setattr(cli_module, "_open_vault_in_selected_ide", lambda path, selected_ide: call_order.append("open_vault"))
-    monkeypatch.setattr(cli_module, "_prompt_startup_teams_sync", lambda path: call_order.append("teams_sync"))
-    monkeypatch.setattr(cli_module, "launch_copilot", lambda *args, **kwargs: call_order.append("launch_copilot") or 0)
     monkeypatch.setattr(cli_module.signal, "signal", lambda *args, **kwargs: None)
-    monkeypatch.setattr("duckyai.config.Config", _Config)
-    monkeypatch.setattr("duckyai.orchestrator.execution_manager.ExecutionManager", _ExecutionManager)
+    monkeypatch.setattr("duckyai.vault_registry.get_home_vault", lambda: {"path": str(vault_root)})
 
     runner = CliRunner()
     result = runner.invoke(main, [])
 
     assert result.exit_code == 0
-    assert call_order == ["select_ide", "start_orchestrator", "teams_sync", "open_vault", "launch_copilot"]
-    assert "Starting orchestrator background service..." in result.output
+    # Help text should list known subcommands
+    assert "setup" in result.output
+    assert "update" in result.output
+    assert "doctor" in result.output
 
 
-def test_default_command_skips_teams_sync_when_orchestrator_already_running(monkeypatch, tmp_path):
+def test_default_command_shows_help_even_with_vault_configured(monkeypatch, tmp_path):
+    """Bare `duckyai` should show help even when a vault exists (no Copilot launch)."""
     vault_root = tmp_path / "Vault"
     vault_root.mkdir()
 
-    call_order = []
-
-    class _Config:
-        def __init__(self, vault_path=None):
-            self.orchestrator_auto_start = True
-
-        def get(self, key, default=None):
-            return "vault1" if key == "id" else default
-
-    class _ExecutionManager:
-        @staticmethod
-        def check_workiq_auth_flag(vault_id, vault_path=None):
-            return False
-
     monkeypatch.setattr(cli_module, "resolve_vault", lambda working_dir=None: vault_root)
-    monkeypatch.setattr(cli_module, "ensure_init", lambda path: None)
-    monkeypatch.setattr(cli_module, "_select_ide", lambda: call_order.append("select_ide") or ("VS Code", "code"))
-    monkeypatch.setattr(cli_module, "ensure_orchestrator_running", lambda vault_root, debug=False: call_order.append("start_orchestrator") or False)
-    monkeypatch.setattr(cli_module, "_open_vault_in_selected_ide", lambda path, selected_ide: call_order.append("open_vault"))
-    monkeypatch.setattr(cli_module, "_prompt_startup_teams_sync", lambda path: call_order.append("teams_sync"))
-    monkeypatch.setattr(cli_module, "launch_copilot", lambda *args, **kwargs: call_order.append("launch_copilot") or 0)
     monkeypatch.setattr(cli_module.signal, "signal", lambda *args, **kwargs: None)
-    monkeypatch.setattr("duckyai.config.Config", _Config)
-    monkeypatch.setattr("duckyai.orchestrator.execution_manager.ExecutionManager", _ExecutionManager)
+    monkeypatch.setattr("duckyai.vault_registry.get_home_vault", lambda: {"path": str(vault_root)})
 
     runner = CliRunner()
     result = runner.invoke(main, [])
 
     assert result.exit_code == 0
-    assert call_order == ["select_ide", "start_orchestrator", "teams_sync", "open_vault", "launch_copilot"]
-    assert "Starting orchestrator background service..." in result.output
+    assert "Commands:" in result.output or "Options:" in result.output
 
 
 def test_default_command_runs_onboarding_when_no_home_vault_is_configured(monkeypatch, tmp_path):

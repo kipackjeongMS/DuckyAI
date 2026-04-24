@@ -31,8 +31,6 @@ def _get_onboarding_target(
     orchestrator_status: bool,
     show_config: bool,
     list_agents: bool,
-    prompt_text: str | None,
-    interactive_prompt: bool,
     working_dir: str | None,
 ) -> Path | None:
     """Return the path that should trigger first-run onboarding, if any."""
@@ -42,9 +40,6 @@ def _get_onboarding_target(
         return None
 
     if orchestrator or orchestrator_status or show_config or list_agents:
-        return None
-
-    if prompt_text or interactive_prompt:
         return None
 
     candidate = Path(working_dir).resolve() if working_dir else Path.cwd().resolve()
@@ -687,27 +682,6 @@ def _show_global_agents():
     help="Working directory for the vault",
 )
 @click.option(
-    "-p",
-    "--prompt",
-    "prompt_text",
-    type=str,
-    help="Execute a one-time prompt (non-interactive)",
-)
-@click.option(
-    "-i",
-    "--interactive",
-    "interactive_prompt",
-    type=str,
-    help="Start interactive session and execute this prompt first",
-)
-@click.option(
-    "-s",
-    "--session-id",
-    "session_id",
-    type=str,
-    help="Session ID — resumes if exists, creates if not",
-)
-@click.option(
     "--mcp-config",
     "mcp_config",
     multiple=True,
@@ -730,23 +704,20 @@ def main(
     list_agents,
     show_config,
     working_dir,
-    prompt_text,
-    interactive_prompt,
-    session_id,
     mcp_config,
     model,
 ):
     """DuckyAI — AI-powered developer assistant.
 
     \b
-    Run with no arguments to start an interactive AI session.
-    The assistant has full access to your vault, skills, and tools.
+    Run with no arguments to see available commands.
 
     \b
     Examples:
-        duckyai                          # Interactive AI session
-        duckyai -p "create a new task"   # One-shot prompt
-        duckyai -o                       # Start orchestrator daemon
+        duckyai setup                    # First-time setup wizard
+        duckyai update                   # Self-update from GitHub
+        duckyai orchestrator start       # Start orchestrator daemon
+        duckyai doctor                   # Check installation health
     """
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -760,8 +731,6 @@ def main(
         orchestrator_status=orchestrator_status,
         show_config=show_config,
         list_agents=list_agents,
-        prompt_text=prompt_text,
-        interactive_prompt=interactive_prompt,
         working_dir=working_dir,
     )
     if onboarding_target is not None:
@@ -819,50 +788,10 @@ def main(
             _show_global_agents()
     elif show_config:
         show_config_handler(vault_root)
-    elif prompt_text or interactive_prompt or not any([orchestrator, orchestrator_status, list_agents, show_config]):
-        # Auto-init .github symlink, skills, services junction, etc.
-        ensure_init(vault_root)
-
-        # Check for WorkIQ auth expired flag (interactive TTY only)
-        from duckyai.orchestrator.execution_manager import ExecutionManager
-        from duckyai.config import Config as _Config
-        _cfg = _Config(vault_path=vault_root)
-        _vault_id = _cfg.get("id", "default")
-        if sys.stdin and sys.stdin.isatty() and ExecutionManager.check_workiq_auth_flag(_vault_id, vault_path=vault_root):
-            try:
-                click.echo("\n⚠️  WorkIQ authentication expired (permission denied on last run).")
-                from .trigger_agent import _prompt_yn
-                if _prompt_yn("Re-accept WorkIQ EULA now?"):
-                    ExecutionManager.clear_workiq_auth_flag(_vault_id, vault_path=vault_root)
-                    click.echo("✓ Auth flag cleared. WorkIQ EULA will be re-accepted on next agent run.")
-                    click.echo("  (If prompted by WorkIQ in your Copilot session, accept the EULA.)")
-            except (EOFError, KeyboardInterrupt):
-                pass
-
-        # Ask for IDE selection first so startup ordering stays consistent
-        selected_ide = _select_ide()
-
-        # Auto-start orchestrator if enabled in duckyai.yml, after IDE open flow
-        from duckyai.config import Config
-        ws_config = Config(vault_path=vault_root)
-        if ws_config.orchestrator_auto_start:
-            click.echo("Starting orchestrator background service...")
-            ensure_orchestrator_running(vault_root, debug=debug)
-            _prompt_startup_teams_sync(vault_root)
-
-        # Open vault in IDE after background startup and sync prompt
-        _open_vault_in_selected_ide(vault_root, selected_ide)
-
-        # Launch Copilot (interactive if no -p flag)
-        returncode = launch_copilot(
-            vault_root,
-            prompt=prompt_text,
-            interactive_prompt=interactive_prompt,
-            mcp_config=mcp_config,
-            session_id=session_id,
-            model=model,
-        )
-        sys.exit(returncode)
+    else:
+        # No flags, no subcommand — show help with all available commands
+        click.echo(ctx.get_help())
+        return
 
 
 # Register subcommand groups
