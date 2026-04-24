@@ -113,7 +113,42 @@ async function spawnChatServer(vaultPath: string): Promise<void> {
   throw new Error("Could not spawn chat server — no working Python found");
 }
 
-/** Check if the chat server is reachable. */
+/** Spawn the terminal server as a detached background process. */
+async function spawnTerminalServer(vaultPath: string): Promise<void> {
+  for (const candidate of getCliCandidates(vaultPath)) {
+    try {
+      const args = [...candidate.baseArgs, "terminal", "start"];
+      const spawnOpts: Record<string, unknown> = {
+        cwd: vaultPath,
+        stdio: "ignore",
+        detached: true,
+      };
+
+      if (process.platform === "win32") {
+        const CREATE_NEW_PROCESS_GROUP = 0x00000200;
+        const CREATE_NO_WINDOW = 0x08000000;
+        spawnOpts.windowsHide = true;
+        (spawnOpts as any).creationflags =
+          CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW;
+      }
+
+      const child = spawn(candidate.command, args, spawnOpts as any);
+      child.unref();
+      console.log(
+        `[duckyai] Spawned terminal server: ${candidate.command} ${args.join(" ")}`,
+      );
+      return;
+    } catch (err) {
+      console.warn(
+        `[duckyai] Failed to spawn terminal server with ${candidate.command}:`,
+        err,
+      );
+    }
+  }
+  throw new Error("Could not spawn terminal server — no working Python found");
+}
+
+
 async function chatHealthCheck(): Promise<boolean> {
   try {
     const res = await requestUrl({
@@ -415,6 +450,9 @@ export function createObsidianBridge(obsidianApp: App): DuckyAIApi {
 
     terminal: {
       wsUrl: "ws://127.0.0.1:52847/ws/terminal",
+      start: async () => {
+        await spawnTerminalServer(vaultPath);
+      },
     },
 
     onNotification: (callback: (data: NotificationData) => void) => {

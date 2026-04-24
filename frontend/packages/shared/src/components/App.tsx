@@ -64,6 +64,18 @@ export default function DuckyAIApp({
   const [sidebarTab, setSidebarTab] = useState<"files" | "agents">("files");
   const [obsidianTab, setObsidianTab] = useState<"dashboard" | "ducky">("dashboard");
 
+  // Ensure terminal server is running and show loading overlay whenever terminal opens
+  useEffect(() => {
+    if (terminalOpen) {
+      api.terminal.start().catch((err) => {
+        console.warn("[DuckyAI] Terminal server start failed:", err);
+      });
+      setTerminalLoading(true);
+      const timer = setTimeout(() => setTerminalLoading(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [terminalOpen]);
+
   // Listen for background notifications
   useEffect(() => {
     const unsubscribe = api.onNotification((data) => {
@@ -257,8 +269,6 @@ export default function DuckyAIApp({
                           <motion.button
                             onClick={() => {
                               setTerminalOpen(true);
-                              setTerminalLoading(true);
-                              setTimeout(() => setTerminalLoading(false), 3000);
                             }}
                             className="flex flex-col items-center gap-3 px-10 py-6 rounded-2xl border border-[rgba(0,212,255,0.15)] bg-[rgba(0,212,255,0.04)] hover:bg-[rgba(0,212,255,0.08)] text-foreground cursor-pointer transition-colors"
                             style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}
@@ -380,7 +390,6 @@ export default function DuckyAIApp({
                     restarting={orch.restarting}
                     onRestartDaemon={orch.restartDaemon}
                     onOpenWorkspace={onOpenWorkspace}
-                    onChatSend={api.chat.send}
                     activityEntries={activity.entries}
                     activityLoading={activity.loading}
                     activityAgentFilter={activity.agentFilter}
@@ -444,7 +453,6 @@ export default function DuckyAIApp({
                       restarting={orch.restarting}
                       onRestartDaemon={orch.restartDaemon}
                       onOpenWorkspace={onOpenWorkspace}
-                      onChatSend={api.chat.send}
                       activityEntries={activity.entries}
                       activityLoading={activity.loading}
                       activityAgentFilter={activity.agentFilter}

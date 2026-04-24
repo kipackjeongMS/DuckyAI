@@ -47,7 +47,7 @@ export interface SidebarProps {
   activityAgentFilter?: string | null;
   onActivityFilterChange?: (agent: string | null) => void;
   onActivityRefresh?: () => void;
-  onFetchLog?: (id: string) => Promise<ExecutionLogDetail>;
+  onFetchLog?: (id: string, date?: string) => Promise<ExecutionLogDetail>;
 }
 
 export function Sidebar({
