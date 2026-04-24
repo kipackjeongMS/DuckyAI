@@ -9,7 +9,6 @@ import {
   Code2,
   Activity,
   RotateCcw,
-  Terminal,
 } from "lucide-react";
 import type { Agent } from "../hooks/use-orchestrator";
 import type { ExecutionEntry, ExecutionLogDetail, TokenUsage } from "../types/duckyai";
@@ -40,7 +39,7 @@ export interface SidebarProps {
   onTriggerAgent: (abbreviation: string) => void;
   onRestartDaemon?: () => void;
   onOpenWorkspace?: () => void;
-  // Talk with Ducky button
+  // Talk with Ducky button (unused — kept for external consumers)
   onTalkWithDucky?: () => void;
   // Activity log
   activityEntries?: ExecutionEntry[];
@@ -97,22 +96,6 @@ export function Sidebar({
 
   return (
     <div className="h-full flex flex-col py-6 px-5 overflow-y-auto">
-      {/* Talk with Ducky */}
-      {onTalkWithDucky && (
-        <div className="mb-6 flex items-center justify-center py-6">
-          <motion.button
-            onClick={onTalkWithDucky}
-            className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-[rgba(0,212,255,0.15)] bg-[rgba(0,212,255,0.04)] hover:bg-[rgba(0,212,255,0.08)] text-foreground cursor-pointer transition-colors"
-            style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            <Terminal size={20} className="text-[#00d4ff]" />
-            Talk with Ducky
-          </motion.button>
-        </div>
-      )}
-
       {/* Orchestrator Status */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">

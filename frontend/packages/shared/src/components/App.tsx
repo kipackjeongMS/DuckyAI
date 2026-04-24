@@ -61,6 +61,7 @@ export default function DuckyAIApp({
   const vault = useVaultExplorer();
   const activity = useAgentHistory();
   const [sidebarTab, setSidebarTab] = useState<"files" | "agents">("files");
+  const [obsidianTab, setObsidianTab] = useState<"dashboard" | "ducky">("dashboard");
 
   // Listen for background notifications
   useEffect(() => {
@@ -197,40 +198,88 @@ export default function DuckyAIApp({
                   )}
                 </div>
 
-                {/* Orchestrator / Agent monitoring (top ~50%) */}
-                <div className={terminalOpen ? "overflow-y-auto min-h-0" : "flex-1 overflow-y-auto min-h-0"} style={terminalOpen ? { height: "50%" } : undefined}>
-                  <Sidebar
-                    orchestratorRunning={orch.running}
-                    agents={orch.agents}
-                    triggeringId={orch.triggeringId}
-                    onToggleOrchestrator={orch.toggleOrchestrator}
-                    onTriggerAgent={orch.triggerAgent}
-                    restarting={orch.restarting}
-                    onRestartDaemon={orch.restartDaemon}
-                    onOpenWorkspace={onOpenWorkspace}
-                    onTalkWithDucky={terminalOpen ? undefined : () => setTerminalOpen(true)}
-                    activityEntries={activity.entries}
-                    activityLoading={activity.loading}
-                    activityAgentFilter={activity.agentFilter}
-                    onActivityFilterChange={activity.setAgentFilter}
-                    onActivityRefresh={activity.refresh}
-                    onFetchLog={activity.fetchLog}
-                  />
+                {/* Tabs */}
+                <div className="flex border-b border-[rgba(0,212,255,0.06)]">
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 transition-colors"
+                    style={{
+                      fontSize: "0.68rem",
+                      letterSpacing: "0.1em",
+                      color: obsidianTab === "dashboard" ? "#00d4ff" : "#64748b",
+                      borderBottom: obsidianTab === "dashboard" ? "2px solid #00d4ff" : "2px solid transparent",
+                    }}
+                    onClick={() => setObsidianTab("dashboard")}
+                  >
+                    <Bot size={13} />
+                    DASHBOARD
+                  </button>
+                  <button
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 transition-colors"
+                    style={{
+                      fontSize: "0.68rem",
+                      letterSpacing: "0.1em",
+                      color: obsidianTab === "ducky" ? "#00d4ff" : "#64748b",
+                      borderBottom: obsidianTab === "ducky" ? "2px solid #00d4ff" : "2px solid transparent",
+                    }}
+                    onClick={() => setObsidianTab("ducky")}
+                  >
+                    <Terminal size={13} />
+                    DUCKY
+                  </button>
                 </div>
 
-                {/* Terminal (bottom ~50%, only when open) */}
-                {terminalOpen && (
-                  <div className="border-t border-[rgba(0,212,255,0.06)]" style={{ height: "50%" }}>
-                    <motion.div
-                      className="h-full overflow-hidden"
-                      initial={{ opacity: 0, clipPath: "inset(40% 10% 40% 10% round 16px)" }}
-                      animate={{ opacity: 1, clipPath: "inset(0% 0% 0% 0% round 0px)" }}
-                      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                      <TerminalPanel wsUrl={api.terminal.wsUrl} />
-                    </motion.div>
-                  </div>
-                )}
+                {/* Tab content */}
+                <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+                  {obsidianTab === "dashboard" ? (
+                    <div className="flex-1 overflow-y-auto">
+                      <Sidebar
+                        orchestratorRunning={orch.running}
+                        agents={orch.agents}
+                        triggeringId={orch.triggeringId}
+                        onToggleOrchestrator={orch.toggleOrchestrator}
+                        onTriggerAgent={orch.triggerAgent}
+                        restarting={orch.restarting}
+                        onRestartDaemon={orch.restartDaemon}
+                        onOpenWorkspace={onOpenWorkspace}
+                        activityEntries={activity.entries}
+                        activityLoading={activity.loading}
+                        activityAgentFilter={activity.agentFilter}
+                        onActivityFilterChange={activity.setAgentFilter}
+                        onActivityRefresh={activity.refresh}
+                        onFetchLog={activity.fetchLog}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col">
+                      {!terminalOpen ? (
+                        <div className="flex-1 flex items-center justify-center">
+                          <motion.button
+                            onClick={() => setTerminalOpen(true)}
+                            className="flex flex-col items-center gap-3 px-10 py-6 rounded-2xl border border-[rgba(0,212,255,0.15)] bg-[rgba(0,212,255,0.04)] hover:bg-[rgba(0,212,255,0.08)] text-foreground cursor-pointer transition-colors"
+                            style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                          >
+                            <Terminal size={28} className="text-[#00d4ff]" />
+                            <span>Talk with Ducky</span>
+                            <span className="text-muted-foreground" style={{ fontSize: "0.65rem", letterSpacing: "0.05em" }}>
+                              Opens an interactive terminal session
+                            </span>
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <motion.div
+                          className="flex-1 overflow-hidden"
+                          initial={{ opacity: 0, clipPath: "inset(40% 10% 40% 10% round 16px)" }}
+                          animate={{ opacity: 1, clipPath: "inset(0% 0% 0% 0% round 0px)" }}
+                          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                          <TerminalPanel wsUrl={api.terminal.wsUrl} />
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
             <>
