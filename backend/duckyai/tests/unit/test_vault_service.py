@@ -287,6 +287,43 @@ def test_log_pr_review_no_pr_number_uses_description_as_title(monkeypatch, tmp_p
     assert "[Review and approve cherry-pick PRs](../../01-Work/PRReviews/Review%20and%20approve%20cherry-pick%20PRs.md)" in daily
 
 
+def test_log_pr_review_my_prs_does_not_create_pr_file(monkeypatch, tmp_path):
+    """My PRs (user is author) should never create a PR file — they must not be
+    picked up by the PR Review agent."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    _write_daily_note(vault, "2026-03-28", "## PRs & Code Reviews\n- [ ]\n\n## Notes\n\n")
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-28")
+
+    result = service.call_tool(
+        "logPRReview",
+        {
+            "person": "Jane Doe",
+            "prNumber": "77777",
+            "prUrl": "https://example/pr/77777",
+            "description": "Add retry logic",
+            "action": "requested",
+            "subsection": "my_prs",
+        },
+    )
+
+    # No PR file should exist
+    pr_file = vault / "01-Work" / "PRReviews" / "Review PR 77777 - Add retry logic.md"
+    assert not pr_file.exists(), "My PRs must NOT create a PR file in PRReviews/"
+
+    # Daily note should still have the entry under My PRs
+    daily = (vault / "04-Periodic" / "Daily" / "2026-03-28.md").read_text(encoding="utf-8")
+    assert "My PRs" in daily
+    assert "PR 77777" in daily
+    # Link should point to the ADO URL, not a vault file
+    assert "https://example/pr/77777" in daily
+
+    assert "tracked (my PR)" in result["content"][0]["text"]
+
+
 def test_log_pr_review_completed_adds_tasks_completed_and_reuses_existing_pr_file(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()

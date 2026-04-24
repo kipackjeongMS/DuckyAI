@@ -351,31 +351,37 @@ class VaultService:
         else:
             pr_title = self._sanitize_filename(description)
 
-        self.pr_reviews_dir.mkdir(parents=True, exist_ok=True)
-        existing_pr_title = self._find_existing_pr_review_title(pr_number) if pr_number else None
-        final_pr_title = existing_pr_title or pr_title
-        final_pr_path = self.pr_reviews_dir / f"{final_pr_title}.md"
-
         # Display label for the PR in notes
         pr_display = f"PR {pr_number}" if pr_number else description
 
-        if existing_pr_title is None and not final_pr_path.exists():
-            status = "done" if action == "reviewed" else "in-progress" if action == "commented" else "todo"
-            if pr_url:
-                pr_link = f"[{pr_display}]({pr_url})"
-            else:
-                pr_link = pr_display
-            pr_note_source = f"01-Work/PRReviews/{final_pr_title}.md"
-            person_link = md_link(person, f"02-People/Contacts/{person}.md", pr_note_source)
-            pr_note = (
-                f"---\ncreated: {today}\ntype: task\nstatus: {status}\npriority: P2\ntags:\n  - pr-review\n---\n\n"
-                "## PR Details\n\n"
-                f"- **Author**: {person_link}\n"
-                f"- **PR**: {pr_link}\n"
-                f"- **Description**: {description}\n"
-                f"- **Action**: {self._pr_action_label(action)}\n"
-            )
-            self._write_text(final_pr_path, pr_note)
+        # "my_prs" = user is the author; skip PR file creation entirely
+        # so the PR Review agent never picks these up.
+        is_my_pr = subsection == "my_prs"
+
+        final_pr_title = pr_title
+        if not is_my_pr:
+            self.pr_reviews_dir.mkdir(parents=True, exist_ok=True)
+            existing_pr_title = self._find_existing_pr_review_title(pr_number) if pr_number else None
+            final_pr_title = existing_pr_title or pr_title
+            final_pr_path = self.pr_reviews_dir / f"{final_pr_title}.md"
+
+            if existing_pr_title is None and not final_pr_path.exists():
+                status = "done" if action == "reviewed" else "in-progress" if action == "commented" else "todo"
+                if pr_url:
+                    pr_link = f"[{pr_display}]({pr_url})"
+                else:
+                    pr_link = pr_display
+                pr_note_source = f"01-Work/PRReviews/{final_pr_title}.md"
+                person_link = md_link(person, f"02-People/Contacts/{person}.md", pr_note_source)
+                pr_note = (
+                    f"---\ncreated: {today}\ntype: task\nstatus: {status}\npriority: P2\ntags:\n  - pr-review\n---\n\n"
+                    "## PR Details\n\n"
+                    f"- **Author**: {person_link}\n"
+                    f"- **PR**: {pr_link}\n"
+                    f"- **Description**: {description}\n"
+                    f"- **Action**: {self._pr_action_label(action)}\n"
+                )
+                self._write_text(final_pr_path, pr_note)
 
         content = self._read_text(daily_path)
         content_lower = content.lower()
@@ -386,8 +392,15 @@ class VaultService:
         daily_source = f"04-Periodic/Daily/{today}.md"
         if pr_marker not in content_lower:
             if action in {"discovered", "requested"}:
-                pr_review_link = md_link(pr_display, f"01-Work/PRReviews/{final_pr_title}.md", daily_source)
-                pending_entry = f"- [ ] {pr_review_link} - {description}"
+                if is_my_pr:
+                    # My PRs: link directly to ADO URL (no PR file exists)
+                    if pr_url:
+                        pr_entry_link = f"[{pr_display}]({pr_url})"
+                    else:
+                        pr_entry_link = pr_display
+                else:
+                    pr_entry_link = md_link(pr_display, f"01-Work/PRReviews/{final_pr_title}.md", daily_source)
+                pending_entry = f"- [ ] {pr_entry_link} - {description}"
 
                 # Determine target H3 subsection
                 target_h3 = (
@@ -433,7 +446,7 @@ class VaultService:
         contact_ref = f"[{pr_display}]({pr_url})" if pr_url else pr_display
         created_contact = self._ensure_contact_exists(person, f"First referenced in {contact_ref} - {description}")
         contact_msg = f" (created contact for {person})" if created_contact else ""
-        action_label = "queued for review" if action in {"discovered", "requested"} else action
+        action_label = "tracked (my PR)" if is_my_pr else "queued for review" if action in {"discovered", "requested"} else action
         return self._text_response(f"Logged {action_label} on {person}'s PR review: {description}{contact_msg}")
 
     def tool_createMeeting(self, arguments: dict[str, Any]) -> dict[str, Any]:

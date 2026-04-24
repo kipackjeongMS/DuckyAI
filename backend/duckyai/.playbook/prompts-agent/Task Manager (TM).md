@@ -92,8 +92,7 @@ Call `logPRReview` with:
 - `subsection`: `"my_prs"`
 
 This will:
-1. Create a file in `01-Work/PRReviews/` (named with PR number if available, otherwise description only)
-2. Add a `- [ ]` entry to `### My PRs` under `## PRs & Code Reviews` in the daily note
+1. Add a `- [ ]` entry to `### My PRs` under `## PRs & Code Reviews` in the daily note (no PR file is created — My PRs are excluded from the PR Review agent)
 
 ### For PR Review Tasks (user is reviewer)
 
