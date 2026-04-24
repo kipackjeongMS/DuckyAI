@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Settings, X, Menu, FolderTree, Bot, Terminal } from "lucide-react";
+import { Settings, X, Menu, FolderTree, Bot, Terminal, Trash2 } from "lucide-react";
 import { VoiceOrb } from "./voice-orb";
 import { StatusBar, StatusIndicator } from "./status-bar";
 import { QuickActions } from "./quick-actions";
@@ -201,13 +201,7 @@ export default function DuckyAIApp({
                     </p>
                   </div>
                   {terminalOpen && (
-                    <button
-                      onClick={() => { setTerminalOpen(false); setTerminalLoading(false); }}
-                      className="p-1.5 rounded-md transition-colors hover:bg-[rgba(255,68,102,0.12)] text-muted-foreground hover:text-[#ff4466]"
-                      title="Kill terminal session"
-                    >
-                      <X size={14} />
-                    </button>
+                    <div style={{ width: 22 }} /> /* spacer to keep header balanced */
                   )}
                 </div>
 
@@ -293,6 +287,19 @@ export default function DuckyAIApp({
                         <div className="flex-1 overflow-hidden min-h-0" style={{ height: "100%", visibility: terminalLoading ? "hidden" : "visible" }}>
                           <TerminalPanel wsUrl={api.terminal.wsUrl} />
                         </div>
+                        {/* Floating kill button — top-right corner of terminal */}
+                        {!terminalLoading && (
+                          <button
+                            onClick={() => { setTerminalOpen(false); setTerminalLoading(false); }}
+                            className="absolute top-2 right-2 z-20 p-1.5 rounded-md transition-colors hover:bg-[rgba(255,68,102,0.15)] text-muted-foreground hover:text-[#ff4466]"
+                            title="Kill terminal session"
+                            style={{ opacity: 0.5 }}
+                            onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                            onMouseLeave={e => (e.currentTarget.style.opacity = "0.5")}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                         <AnimatePresence>
                           {terminalLoading && (
                             <motion.div
