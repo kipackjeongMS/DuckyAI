@@ -264,7 +264,8 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
     async def pty_reader():
         """Read PTY output → send to WebSocket."""
         loop = asyncio.get_event_loop()
-        da1_responded = False  # only respond to DA1 once at startup
+        da1_responded = False        # only respond to DA1 once at startup
+        win32_input_disabled = False  # only disable Win32 input mode once at startup
         try:
             while not stop_event.is_set():
                 data = await loop.run_in_executor(None, pty.read, 4096)
@@ -286,12 +287,17 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
                 # Win32 input mode: ConPTY requests \x1b[?9001h so the terminal
                 # sends keyboard events in Win32 format. xterm.js supports this,
                 # but the Win32-encoded key events may not round-trip correctly
-                # through our WebSocket bridge back to ConPTY. Disable it so
-                # ConPTY stays in standard VT input mode — ConPTY correctly
+                # through our WebSocket bridge back to ConPTY. Disable it ONCE
+                # so ConPTY stays in standard VT input mode — ConPTY correctly
                 # translates \x1b[A / \x1b[B arrow sequences to VK_UP / VK_DOWN
                 # events, making the @ and # pickers navigable.
-                if b"\x1b[?9001h" in data:
+                # We MUST NOT repeat this — Copilot CLI re-emits \x1b[?9001h
+                # after each picker re-render (e.g. when typing a filter char),
+                # and injecting \x1b[?9001l into stdin mid-ReadConsoleInput
+                # corrupts the input stream → freeze on typed characters.
+                if not win32_input_disabled and b"\x1b[?9001h" in data:
                     pty.write(b"\x1b[?9001l")
+                    win32_input_disabled = True
 
                 try:
                     await websocket.send(data)
