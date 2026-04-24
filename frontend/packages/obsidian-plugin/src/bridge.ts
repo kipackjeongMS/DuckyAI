@@ -413,6 +413,10 @@ export function createObsidianBridge(obsidianApp: App): DuckyAIApi {
       },
     },
 
+    terminal: {
+      wsUrl: "ws://127.0.0.1:52847/ws/terminal",
+    },
+
     onNotification: (callback: (data: NotificationData) => void) => {
       listeners.add(callback);
       return () => {

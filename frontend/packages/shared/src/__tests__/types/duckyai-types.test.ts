@@ -18,9 +18,10 @@ describe("DuckyAIApi type contract", () => {
       "vault",
       "window",
       "chat",
+      "terminal",
       "onNotification",
     ];
-    expect(keys).toHaveLength(5);
+    expect(keys).toHaveLength(6);
   });
 
   it("orchestrator methods return correct types", () => {

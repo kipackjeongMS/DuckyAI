@@ -37,3 +37,5 @@ export { LoginScreen } from "./components/login-screen";
 export { ToastContainer, useToasts } from "./components/toast";
 export { AgentActivityLog } from "./components/agent-activity-log";
 export type { AgentActivityLogProps } from "./components/agent-activity-log";
+export { TerminalPanel } from "./components/terminal-panel";
+export type { TerminalPanelProps } from "./components/terminal-panel";

@@ -175,6 +175,25 @@
             }
           },
           "required": ["enabled", "start", "end"]
+        },
+        "terminal": {
+          "type": "object",
+          "description": "Terminal server configuration for the embedded PTY WebSocket server.",
+          "additionalProperties": false,
+          "properties": {
+            "port": {
+              "type": "integer",
+              "description": "Port for the WebSocket terminal server.",
+              "default": 52847,
+              "minimum": 1024,
+              "maximum": 65535
+            },
+            "shell": {
+              "type": "string",
+              "description": "Shell command to spawn in the terminal. Auto-detects system shell if omitted.",
+              "examples": ["cmd.exe", "/bin/bash", "powershell.exe"]
+            }
+          }
         }
       }
     },

@@ -195,7 +195,16 @@ def _stop_duckyai_processes() -> list[dict]:
         except Exception:
             pass
 
-    # 3. Kill any remaining duckyai processes (not ourselves)
+        # 3. Stop terminal server for this vault
+        try:
+            from ..terminal_server import stop_terminal_server
+            if stop_terminal_server(str(vault_path)):
+                stopped.append({"type": "terminal", "vault": str(vault_path)})
+                click.echo(f"  Stopped terminal server for {vault_path.name}")
+        except Exception:
+            pass
+
+    # 4. Kill any remaining duckyai processes (not ourselves)
     # Collect our own PID and all ancestor PIDs — on Windows duckyai.exe
     # is a launcher shim (PID A) that spawns python.exe (PID B, us).
     # We must skip both to avoid killing the running update process.

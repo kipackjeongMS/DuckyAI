@@ -36,6 +36,9 @@ export function createMockApi(
       send: vi.fn().mockResolvedValue("mock response"),
       ...overrides?.chat,
     },
+    terminal: {
+      wsUrl: "ws://127.0.0.1:52847/ws/terminal",
+    },
     onNotification: overrides?.onNotification ?? vi.fn().mockReturnValue(() => {}),
   };
 }

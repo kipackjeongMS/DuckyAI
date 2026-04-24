@@ -33,6 +33,8 @@ orchestrator:
     enabled: true
     start: "23:00"
     end: "08:00"
+  terminal:
+    port: 52847
 defaults:
   executor: copilot_sdk
   timeout_minutes: 30

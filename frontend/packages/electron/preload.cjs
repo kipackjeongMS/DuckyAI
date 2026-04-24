@@ -21,6 +21,9 @@ contextBridge.exposeInMainWorld("duckyai", {
   chat: {
     send: (text) => ipcRenderer.invoke("chat:send", text),
   },
+  terminal: {
+    wsUrl: "ws://127.0.0.1:52847/ws/terminal",
+  },
   onNotification: (callback) => {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on("duckyai:notification", handler);

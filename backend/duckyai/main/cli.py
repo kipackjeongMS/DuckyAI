@@ -634,6 +634,10 @@ main.add_command(update_cli)
 from .chat_cmd import chat_group
 main.add_command(chat_group)
 
+# Terminal server
+from .terminal_cmd import terminal_group
+main.add_command(terminal_group)
+
 
 # Configuration management
 @main.group(invoke_without_command=True)

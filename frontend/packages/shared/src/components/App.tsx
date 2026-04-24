@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Settings, X, Menu, FolderTree, Bot } from "lucide-react";
+import { Settings, X, Menu, FolderTree, Bot, Terminal } from "lucide-react";
 import { VoiceOrb } from "./voice-orb";
 import { StatusBar, StatusIndicator } from "./status-bar";
 import { QuickActions } from "./quick-actions";
@@ -9,6 +9,7 @@ import { Sidebar } from "./sidebar";
 import { LoginScreen } from "./login-screen";
 import { VaultExplorer } from "./vault-explorer";
 import { NoteViewer } from "./note-viewer";
+import { TerminalPanel } from "./terminal-panel";
 import { useOrchestrator } from "../hooks/use-orchestrator";
 import { useVaultExplorer } from "../hooks/use-vault-explorer";
 import { useAgentHistory } from "../hooks/use-agent-history";
@@ -52,6 +53,7 @@ export default function DuckyAIApp({
   const [overlayEntries, setOverlayEntries] = useState<TypewriterEntry[]>([]);
   const [showOverlay, setShowOverlay] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [terminalOpen, setTerminalOpen] = useState(false);
   const chatRequestIdRef = useRef(0);
 
   const orch = useOrchestrator();
@@ -347,8 +349,10 @@ export default function DuckyAIApp({
               )}
             </AnimatePresence>
 
-            {/* Main content */}
-            <div className="flex-1 h-full flex flex-col relative overflow-hidden">
+            {/* Main content + Terminal */}
+            <div className="flex-1 h-full flex flex-row overflow-hidden">
+              {/* Main content */}
+              <div className={`${terminalOpen ? "flex-1 min-w-0" : "flex-1"} h-full flex flex-col relative overflow-hidden`}>
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
@@ -417,6 +421,14 @@ export default function DuckyAIApp({
                       <X size={18} />
                     </motion.button>
                   )}
+                  <button
+                    onClick={() => setTerminalOpen((v) => !v)}
+                    className="p-2 rounded-lg transition-colors"
+                    style={{ color: terminalOpen ? "#00d4ff" : undefined }}
+                    title={terminalOpen ? "Close terminal" : "Open terminal"}
+                  >
+                    <Terminal size={18} />
+                  </button>
                   <button className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
                     <Settings size={18} />
                   </button>
@@ -544,6 +556,17 @@ export default function DuckyAIApp({
                   </div>
                 </div>
               </div>
+              </div>
+
+              {/* Terminal right panel */}
+              {terminalOpen && (
+                <div
+                  className="h-full border-l border-[rgba(0,212,255,0.08)]"
+                  style={{ width: "clamp(320px, 40%, 600px)" }}
+                >
+                  <TerminalPanel wsUrl={api.terminal.wsUrl} />
+                </div>
+              )}
             </div>
             </>
             )}
