@@ -282,16 +282,23 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
                 #   raw bytes → echoed as ^[[?1;2c → corrupts the cmd.exe prompt.
                 #   Stripping prevents the xterm.js auto-response entirely.
                 #
-                # \x1b[?9001h — Win32 input mode request from Copilot CLI.
-                #   If xterm.js sees it, it switches to Win32 key-event reporting.
-                #   The Win32-format events xterm.js then sends don't round-trip
-                #   cleanly through our WebSocket bridge. More importantly, if this
-                #   sequence reaches xterm.js WHILE a filter character is being
-                #   typed, xterm.js temporarily drops keystrokes → picker freeze.
-                #   Stripping keeps xterm.js in standard VT input mode; ConPTY
-                #   correctly translates VT sequences (\x1b[A / \x1b[B / plain
-                #   chars) into INPUT_RECORDs for Copilot CLI regardless.
-                data = data.replace(b"\x1b[c", b"").replace(b"\x1b[?9001h", b"")
+                # \x1b[?9001h — Win32 input mode enable sent by Copilot CLI's picker.
+                #   When ConPTY's output pipe emits this, ConPTY has already processed
+                #   it internally and switched its INPUT translation to "Win32 mode".
+                #   In Win32 mode, ConPTY stops translating plain printable chars
+                #   (e.g. 'f', 'a') into VK_* INPUT_RECORDs for the app. VT arrow
+                #   sequences (\x1b[A/B) still work as a fallback, which is why picker
+                #   navigation works but typing a filter letter "freezes" the picker.
+                #   Fix: strip the sequence from output (so xterm.js is unaffected),
+                #   AND inject \x1b[?9001l into the input pipe immediately so ConPTY
+                #   switches back to standard VT input translation mode.
+                data = data.replace(b"\x1b[c", b"")
+                if b"\x1b[?9001h" in data:
+                    data = data.replace(b"\x1b[?9001h", b"")
+                    # Re-enable VT input translation in ConPTY (fire-and-forget).
+                    asyncio.ensure_future(
+                        loop.run_in_executor(None, pty.write, b"\x1b[?9001l")
+                    )
 
                 if not data:
                     continue
@@ -317,7 +324,7 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
                             rows = msg.get("rows", 30)
                             pty.resize(cols, rows)
                             continue
-                    except (json.JSONDecodeError, KeyError):
+                    except (json.JSONDecodeError, KeyError, AttributeError, TypeError):
                         pass
                     # Plain text input — run in executor so pty.write() (which
                     # calls WriteFile on the ConPTY input pipe) never blocks the
