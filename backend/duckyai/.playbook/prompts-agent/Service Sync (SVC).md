@@ -112,13 +112,13 @@ fi
 **Example for the standard vault config:**
 ```bash
 # DEPA: exact repo → clones into ../Main-Services/DEPA/DevOpsDeploymentAgents/
-bash clone-ado-repos.sh --org msazuredev --project AzureDevSvcAI --repos "DevOpsDeploymentAgents" --target ../Main-Services/DEPA
+bash clone-ado-repos.sh --org msazuredev --project "AzureDevSvcAI" --repos "DevOpsDeploymentAgents" --target ../Main-Services/DEPA
 
 # AppConfig: all repos → clones each into ../Main-Services/AppConfig/<RepoName>/
 bash clone-ado-repos.sh --org msazure --project "Azure AppConfig" --repos "*" --target ../Main-Services/AppConfig
 
 # ServiceConnector: glob → clones matches into ../Main-Services/ServiceConnector/<RepoName>/
-bash clone-ado-repos.sh --org msazure --project One --repos "ServiceLinker*" --target ../Main-Services/ServiceConnector
+bash clone-ado-repos.sh --org msazure --project "One" --repos "ServiceLinker*" --target ../Main-Services/ServiceConnector
 ```
 
 **⚠️ The `--target` is the SERVICE folder, not the repo folder.** The script automatically creates `<repo_name>/` inside the target. Resulting structure:

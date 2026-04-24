@@ -12,8 +12,8 @@
 #
 # Examples:
 #   clone-ado-repos.sh --org msazure --project "Azure AppConfig" --repos "*" --target ./services/AppConfig
-#   clone-ado-repos.sh --org msazuredev --project AzureDevSvcAI --repos "DevOpsDeploymentAgents" --target ./services/DEPA
-#   clone-ado-repos.sh --org msazure --project One --repos "ServiceLinker*" --target ./services/ServiceConnector --depth 1
+#   clone-ado-repos.sh --org msazuredev --project "AzureDevSvcAI" --repos "DevOpsDeploymentAgents" --target ./services/DEPA
+#   clone-ado-repos.sh --org msazure --project "One" --repos "ServiceLinker*" --target ./services/ServiceConnector --depth 1
 #
 # Auth:
 #   Uses AZURE_DEVOPS_EXT_PAT env var if set (recommended).

@@ -30,10 +30,14 @@ function getCliCandidates(vaultPath: string): CliCandidate[] {
 
   const addCandidates = (cwd: string) => {
     if (process.platform === "win32") {
-      candidates.push({ command: "py", baseArgs: ["-m", "duckyai"], cwd });
+      // Avoid the `py` Windows launcher: it spawns python.exe as a child process
+      // without CREATE_NO_WINDOW, causing a visible console flash. Use python directly.
+      candidates.push({ command: "python", baseArgs: ["-m", "duckyai"], cwd });
+      candidates.push({ command: "python3", baseArgs: ["-m", "duckyai"], cwd });
+    } else {
+      candidates.push({ command: "python", baseArgs: ["-m", "duckyai"], cwd });
+      candidates.push({ command: "python3", baseArgs: ["-m", "duckyai"], cwd });
     }
-    candidates.push({ command: "python", baseArgs: ["-m", "duckyai"], cwd });
-    candidates.push({ command: "python3", baseArgs: ["-m", "duckyai"], cwd });
   };
 
   if (hasRepoCli) {

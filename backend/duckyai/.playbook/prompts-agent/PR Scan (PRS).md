@@ -40,7 +40,7 @@ The `scan_services` parameter contains pre-resolved service entries from `duckya
 
 For glob patterns (`*`, `prefix*`), resolve them first:
 ```bash
-az repos list --org https://dev.azure.com/{org} --project {project} --output tsv --query "[][name]"
+az repos list --org https://dev.azure.com/{org} --project "{project}" --output tsv --query "[][name]"
 ```
 Then filter by the glob pattern using bash-style matching.
 

@@ -272,6 +272,12 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
                         break
                     await asyncio.sleep(0.01)
                     continue
+                # ConPTY sends \x1b[c (DA1 terminal capability query) at startup.
+                # cmd.exe blocks waiting for a response before outputting anything.
+                # Respond immediately from the server side so the client doesn't
+                # have to establish the full WebSocket echo cycle first.
+                if b"\x1b[c" in data:
+                    pty.write(b"\x1b[?1;2c")
                 try:
                     await websocket.send(data)
                 except websockets.ConnectionClosed:

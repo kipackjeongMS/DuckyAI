@@ -39,10 +39,10 @@ def terminal_start(ctx, port, foreground):
 
         if os.name == "nt":
             CREATE_NEW_PROCESS_GROUP = 0x00000200
-            DETACHED_PROCESS = 0x00000008
+            CREATE_NO_WINDOW = 0x08000000
             proc = subprocess.Popen(
                 cmd,
-                creationflags=CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS,
+                creationflags=CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 stdin=subprocess.DEVNULL,

@@ -67,7 +67,7 @@ $bash = & ./scripts/find-bash.ps1
 | Arg | Required | Description |
 |-----|----------|-------------|
 | `--org` | Yes | Azure DevOps organization |
-| `--project` | Yes | Project name (quote if spaces) |
+| `--project` | Yes | Project name (always wrap in quotes) |
 | `--repos` | Yes | Repo pattern — repeatable (`*`, `prefix*`, exact) |
 | `--target` | No | Target directory (default: `.`) |
 | `--depth` | No | Shallow clone depth |
