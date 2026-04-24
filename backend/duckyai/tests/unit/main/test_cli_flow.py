@@ -70,7 +70,6 @@ def test_default_command_runs_onboarding_when_no_home_vault_is_configured(monkey
     monkeypatch.setattr("duckyai.vault_registry.get_home_vault", lambda: None)
     monkeypatch.setattr(cli_module, "run_orchestrator_daemon", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not run orchestrator")))
     monkeypatch.setattr(cli_module, "ensure_init", lambda path: (_ for _ in ()).throw(AssertionError("should not init current dir")))
-    monkeypatch.setattr(cli_module, "launch_copilot", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not launch copilot")))
 
     def _run_onboarding(vault_root=None):
         onboarding_calls.append(vault_root)
@@ -96,46 +95,23 @@ def test_ensure_orchestrator_running_keeps_healthy_process(monkeypatch, tmp_path
     assert result is False
 
 
-def test_launch_copilot_uses_new_terminal_for_interactive_windows(monkeypatch, tmp_path):
+def test_config_subcommand_calls_show_config(monkeypatch, tmp_path):
+    """Test that `duckyai config` invokes show_config with vault_root."""
     vault_root = tmp_path / "Vault"
     vault_root.mkdir()
-    popen_calls = []
 
-    class _Proc:
-        pass
+    show_config_calls = []
 
-    monkeypatch.setattr(cli_module.os, "name", "nt", raising=False)
-    monkeypatch.setattr(cli_module, "get_mcp_config", lambda vault_root: None)
-    monkeypatch.setattr(cli_module, "_resolve_copilot_command", lambda: ["C:/copilot.exe"])
+    monkeypatch.setattr(cli_module, "resolve_vault", lambda working_dir=None: vault_root)
+    monkeypatch.setattr(cli_module.signal, "signal", lambda *args, **kwargs: None)
+    monkeypatch.setattr("duckyai.vault_registry.get_home_vault", lambda: {"path": str(vault_root)})
     monkeypatch.setattr(
-        cli_module.subprocess,
-        "Popen",
-        lambda cmd, cwd=None, creationflags=0: popen_calls.append((cmd, cwd, creationflags)) or _Proc(),
+        "duckyai.main.show_config.show_config",
+        lambda vault_path=None: show_config_calls.append(vault_path),
     )
 
-    result = cli_module.launch_copilot(vault_root)
+    runner = CliRunner()
+    result = runner.invoke(main, ["config"])
 
-    assert result == 0
-    assert popen_calls == [(["C:/copilot.exe"], str(vault_root), 0x00000010)]
-
-
-def test_launch_copilot_keeps_prompt_mode_inline(monkeypatch, tmp_path):
-    vault_root = tmp_path / "Vault"
-    vault_root.mkdir()
-    run_calls = []
-
-    class _Completed:
-        returncode = 7
-
-    monkeypatch.setattr(cli_module, "get_mcp_config", lambda vault_root: None)
-    monkeypatch.setattr(cli_module, "_resolve_copilot_command", lambda: ["copilot"])
-    monkeypatch.setattr(
-        cli_module.subprocess,
-        "run",
-        lambda cmd, cwd=None: run_calls.append((cmd, cwd)) or _Completed(),
-    )
-
-    result = cli_module.launch_copilot(vault_root, prompt="hello")
-
-    assert result == 7
-    assert run_calls == [(["copilot", "--prompt", "hello"], str(vault_root))]
+    assert result.exit_code == 0
+    assert show_config_calls == [vault_root]

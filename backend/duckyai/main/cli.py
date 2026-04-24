@@ -14,7 +14,7 @@ from pathlib import Path
 from .install_health import get_duckyai_launch_cmd
 from .show_config import show_config as show_config_handler
 from .orchestrator import run_orchestrator_daemon
-from .orch_cmd import orchestrator_group, _cleanup_orchestrator_processes, _read_pid, orch_status, orch_list_agents
+from .orch_cmd import orchestrator_group, _cleanup_orchestrator_processes
 from .vault import find_vault_root, is_inside_vault, resolve_vault
 
 
@@ -27,19 +27,12 @@ def signal_handler(sig, frame):
 def _get_onboarding_target(
     *,
     invoked_subcommand,
-    orchestrator: bool,
-    orchestrator_status: bool,
-    show_config: bool,
-    list_agents: bool,
     working_dir: str | None,
 ) -> Path | None:
     """Return the path that should trigger first-run onboarding, if any."""
     from ..vault_registry import get_home_vault
 
     if invoked_subcommand is not None:
-        return None
-
-    if orchestrator or orchestrator_status or show_config or list_agents:
         return None
 
     candidate = Path(working_dir).resolve() if working_dir else Path.cwd().resolve()
@@ -504,166 +497,8 @@ def get_mcp_config(vault_root: Path) -> str:
     return json.dumps(config) if config["mcpServers"] else None
 
 
-def _resolve_copilot_command() -> list[str]:
-    """Resolve the best available Copilot launcher for the current platform."""
-    if os.name == "nt":
-        for candidate in ("copilot.exe", "copilot.bat", "copilot"):
-            resolved = shutil.which(candidate)
-            if resolved:
-                return [resolved]
-    return ["copilot"]
-
-
-def _launch_copilot_in_new_terminal(cmd: list[str], vault_root: Path) -> int:
-    """Launch Copilot in a separate terminal window when supported."""
-    if os.name == "nt":
-        CREATE_NEW_CONSOLE = 0x00000010
-        subprocess.Popen(
-            cmd,
-            cwd=str(vault_root),
-            creationflags=CREATE_NEW_CONSOLE,
-        )
-        click.echo("Launching Copilot in a new terminal...")
-        return 0
-
-    result = subprocess.run(cmd, cwd=str(vault_root))
-    return result.returncode
-
-
-def launch_copilot(vault_root: Path, prompt: str = None, interactive_prompt: str = None,
-                   mcp_config: tuple = None, session_id: str = None, model: str = None):
-    """Launch GitHub Copilot CLI from the vault root."""
-    cmd = _resolve_copilot_command()
-
-    if prompt:
-        cmd.extend(['--prompt', prompt])
-    elif interactive_prompt:
-        cmd.extend(['-i', interactive_prompt])
-    # else: no args = fully interactive
-
-    # Auto-configure vault MCP server
-    auto_mcp = get_mcp_config(vault_root)
-    if auto_mcp:
-        cmd.extend(['--additional-mcp-config', auto_mcp])
-
-    # Additional MCP configs from CLI flags
-    if mcp_config:
-        for config in mcp_config:
-            cmd.extend(['--additional-mcp-config', config])
-
-    if session_id:
-        cmd.extend(['--session-id', session_id])
-
-    if model:
-        cmd.extend(['--model', model])
-
-    try:
-        if prompt is None:
-            return _launch_copilot_in_new_terminal(cmd, vault_root)
-
-        result = subprocess.run(cmd, cwd=str(vault_root))
-        return result.returncode
-    except FileNotFoundError:
-        click.echo("Error: 'copilot' CLI not found. Install GitHub Copilot CLI first.", err=True)
-        click.echo("  brew install gh && gh extension install github/gh-copilot", err=True)
-        return 1
-
-
-def _show_global_orchestrator_status():
-    """Show orchestrator status for the configured home vault."""
-    from ..vault_registry import get_home_vault
-    from rich.table import Table
-    from rich.console import Console
-
-    home_vault = get_home_vault()
-    if not home_vault:
-        click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
-        return
-
-    table = Table(title="Orchestrator Status")
-    table.add_column("Vault", style="cyan bold")
-    table.add_column("Status", justify="center")
-    table.add_column("PID", justify="right")
-    table.add_column("Agents", justify="right")
-    table.add_column("Path")
-
-    vault_path = Path(home_vault["path"])
-    if not vault_path.exists():
-        table.add_row(home_vault["name"], "⚠️  Missing", "-", "-", home_vault["path"])
-    else:
-        pid, alive = _read_pid(vault_path)
-        status_str = "🟢 Running" if alive else "🔴 Stopped"
-        pid_str = str(pid) if pid else "-"
-
-        agent_count = "-"
-        try:
-            from ..config import Config
-            from ..orchestrator.core import Orchestrator
-            config = Config(vault_path=vault_path)
-            orch = Orchestrator(vault_path=vault_path, config=config)
-            status = orch.get_status()
-            agent_count = str(status.get("agents_loaded", 0))
-        except Exception:
-            pass
-
-        table.add_row(home_vault["name"], status_str, pid_str, agent_count, home_vault["path"])
-
-    Console().print(table)
-
-
-def _show_global_agents():
-    """Show agents for the configured home vault."""
-    from ..vault_registry import get_home_vault
-    from ..config import Config
-    from ..orchestrator.core import Orchestrator
-    from rich.table import Table
-    from rich.console import Console
-
-    home_vault = get_home_vault()
-    if not home_vault:
-        click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
-        return
-
-    table = Table(title="Agents")
-    table.add_column("Vault", style="cyan")
-    table.add_column("Abbr", style="bold")
-    table.add_column("Name")
-    table.add_column("Category")
-    table.add_column("Cron")
-
-    vault_path = Path(home_vault["path"])
-    if vault_path.exists():
-        try:
-            config = Config(vault_path=vault_path)
-            orch = Orchestrator(vault_path=vault_path, config=config)
-            status = orch.get_status()
-            for a in status.get("agent_list", []):
-                agent_obj = orch.agent_registry.agents.get(a["abbreviation"])
-                cron = agent_obj.cron if agent_obj else "-"
-                table.add_row(
-                    home_vault["name"], a["abbreviation"], a["name"],
-                    a.get("category", "-"), cron or "-"
-                )
-        except Exception:
-            table.add_row(home_vault["name"], "⚠️", "Error loading agents", "-", "-")
-
-    Console().print(table)
-
-
 @click.group(invoke_without_command=True)
 @click.version_option(package_name="duckyai", prog_name="duckyai")
-@click.option(
-    "-o",
-    "--orchestrator",
-    "orchestrator",
-    is_flag=True,
-    help="Run orchestrator daemon (file watcher + cron scheduler)",
-)
-@click.option(
-    "--orchestrator-status",
-    is_flag=True,
-    help="Show orchestrator status and loaded agents",
-)
 @click.option(
     "-c",
     "--config-file",
@@ -672,10 +507,6 @@ def _show_global_agents():
     help="Path to vault config file (default: duckyai.yml)",
 )
 @click.option("-d", "--debug", is_flag=True, help="Enable debug logging")
-@click.option(
-    "--list-agents", is_flag=True, help="List available AI agents and their status"
-)
-@click.option("--show-config", is_flag=True, help="Show current configuration")
 @click.option(
     "-w",
     "--working-dir",
@@ -688,25 +519,13 @@ def _show_global_agents():
     multiple=True,
     help="Additional MCP server config (JSON file or string, repeatable)",
 )
-@click.option(
-    "-m",
-    "--model",
-    "model",
-    type=str,
-    help="AI model to use",
-)
 @click.pass_context
 def main(
     ctx,
-    orchestrator,
-    orchestrator_status,
     config_file,
     debug,
-    list_agents,
-    show_config,
     working_dir,
     mcp_config,
-    model,
 ):
     """DuckyAI — AI-powered developer assistant.
 
@@ -719,6 +538,7 @@ def main(
         duckyai update                   # Self-update from GitHub
         duckyai orchestrator start       # Start orchestrator daemon
         duckyai doctor                   # Check installation health
+        duckyai config                   # Show current configuration
     """
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -728,10 +548,6 @@ def main(
 
     onboarding_target = _get_onboarding_target(
         invoked_subcommand=ctx.invoked_subcommand,
-        orchestrator=orchestrator,
-        orchestrator_status=orchestrator_status,
-        show_config=show_config,
-        list_agents=list_agents,
         working_dir=working_dir,
     )
     if onboarding_target is not None:
@@ -744,15 +560,12 @@ def main(
     # Resolve vault root
     vault_root = None
     if ctx.invoked_subcommand is not None:
-        # Subcommand will handle its own vault resolution if needed
         from .vault import is_inside_vault
         candidate = Path(working_dir) if working_dir else None
         if is_inside_vault(candidate):
             vault_root = find_vault_root(candidate)
         else:
             vault_root = resolve_vault(working_dir)
-    elif orchestrator or show_config or orchestrator_status or list_agents:
-        vault_root = resolve_vault(working_dir)
     else:
         vault_root = resolve_vault(working_dir)
 
@@ -774,25 +587,8 @@ def main(
     if ctx.invoked_subcommand is not None:
         return
 
-    # Handle flag-based commands (shortcuts for subcommands)
-    if orchestrator_status:
-        if vault_root:
-            ctx.invoke(orch_status, json_out=False)
-        else:
-            _show_global_orchestrator_status()
-    elif orchestrator:
-        run_orchestrator_daemon(vault_path=vault_root, debug=debug, working_dir=working_dir, config_file=config_file, mcp_config=mcp_config)
-    elif list_agents:
-        if vault_root:
-            ctx.invoke(orch_list_agents, json_out=False)
-        else:
-            _show_global_agents()
-    elif show_config:
-        show_config_handler(vault_root)
-    else:
-        # No flags, no subcommand — show help with all available commands
-        click.echo(ctx.get_help())
-        return
+    # No flags, no subcommand — show help
+    click.echo(ctx.get_help())
 
 
 # Register subcommand groups
@@ -822,6 +618,16 @@ main.add_command(update_cli)
 # Chat server
 from .chat_cmd import chat_group
 main.add_command(chat_group)
+
+
+# Configuration display
+@main.command()
+@click.pass_context
+def config(ctx):
+    """Show current DuckyAI configuration."""
+    from .show_config import show_config as show_config_handler
+    vault_root = ctx.obj.get("vault_root")
+    show_config_handler(vault_root)
 
 
 # Version subcommand (mirrors --version flag)
