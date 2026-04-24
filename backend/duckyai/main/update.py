@@ -195,17 +195,29 @@ def _stop_duckyai_processes() -> list[dict]:
         except Exception:
             pass
 
-    # 3. Kill any remaining duckyai python processes (not ourselves)
+    # 3. Kill any remaining duckyai processes (not ourselves)
     my_pid = os.getpid()
-    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+    for proc in psutil.process_iter(["pid", "name", "cmdline", "exe"]):
         try:
             if proc.pid == my_pid:
                 continue
-            cmdline = " ".join(proc.info.get("cmdline") or [])
-            if "duckyai" in cmdline and ("orchestrator" in cmdline or "chat" in cmdline or "daemon" in cmdline):
+            pname = (proc.info.get("name") or "").lower()
+            exe_path = (proc.info.get("exe") or "").lower()
+            cmdline = " ".join(proc.info.get("cmdline") or []).lower()
+
+            # Match duckyai executables (duckyai.exe, duckyai-vault-mcp.exe)
+            is_duckyai_exe = "duckyai" in pname
+
+            # Match duckyai python subprocesses (orchestrator, chat, daemon)
+            is_duckyai_py = "duckyai" in cmdline and any(
+                k in cmdline for k in ("orchestrator", "chat", "daemon", "vault-mcp")
+            )
+
+            if is_duckyai_exe or is_duckyai_py:
                 proc.terminate()
                 proc.wait(timeout=5)
-                click.echo(f"  Terminated orphan process PID {proc.pid}")
+                click.echo(f"  Terminated process PID {proc.pid} ({pname})")
+                stopped.append({"type": "process", "pid": proc.pid, "name": pname})
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
             pass
 
