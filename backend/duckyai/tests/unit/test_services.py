@@ -180,6 +180,20 @@ class TestAddService:
         assert len(entries) == 1
         assert entries[0]["name"] == "NewSvc"
 
+    def test_adding_service_preserves_existing_metadata(self, temp_vault):
+        """Regression: adding a second service must not destroy the first's
+        metadata, pr_scan, or other fields (old regex writer data-loss bug)."""
+        add_service(temp_vault, "Rich", metadata={
+            "type": "ado", "organization": "myorg", "project": "myproj",
+        }, pr_scan=True)
+        # Adding a second service must leave the first intact
+        add_service(temp_vault, "Plain")
+        entries = _read_yml_entries(temp_vault)
+        rich = next(e for e in entries if e["name"] == "Rich")
+        assert rich["metadata"]["organization"] == "myorg"
+        assert rich["metadata"]["project"] == "myproj"
+        assert rich["pr_scan"] is True
+
 
 class TestRemoveService:
     """Tests for remove_service()."""
