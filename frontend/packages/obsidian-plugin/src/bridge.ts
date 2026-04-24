@@ -152,6 +152,32 @@ async function spawnTerminalServer(vaultPath: string): Promise<void> {
 }
 
 
+/** Kill a running terminal server by reading its PID file and sending SIGTERM. */
+async function stopTerminalServer(vaultPath: string): Promise<void> {
+  const pidFile = path.join(vaultPath, ".duckyai", "terminal.pid");
+  if (!fs.existsSync(pidFile)) return;
+
+  let pid: number | null = null;
+  try {
+    pid = parseInt(fs.readFileSync(pidFile, "utf-8").trim(), 10);
+  } catch {
+    // PID file unreadable — nothing to kill
+  }
+
+  try {
+    if (pid && !isNaN(pid)) {
+      process.kill(pid, "SIGTERM");
+      console.log(`[duckyai] Sent SIGTERM to terminal server (PID ${pid})`);
+    }
+  } catch (err) {
+    // Process already dead — that's fine
+    console.log(`[duckyai] Terminal server (PID ${pid}) already stopped`);
+  } finally {
+    try { fs.unlinkSync(pidFile); } catch { /* ignore */ }
+  }
+}
+
+
 async function chatHealthCheck(): Promise<boolean> {
   try {
     const res = await requestUrl({
@@ -455,6 +481,9 @@ export function createObsidianBridge(obsidianApp: App): DuckyAIApi {
       wsUrl: "ws://127.0.0.1:52847/ws/terminal",
       start: async () => {
         await spawnTerminalServer(vaultPath);
+      },
+      stop: async () => {
+        await stopTerminalServer(vaultPath);
       },
     },
 

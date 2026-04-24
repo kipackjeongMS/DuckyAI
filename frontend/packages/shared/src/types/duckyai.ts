@@ -28,6 +28,8 @@ export interface DuckyAIApi {
     wsUrl: string;
     /** Ensure the terminal server is running (spawns it if not). */
     start: () => Promise<void>;
+    /** Stop the terminal server (kills the process via PID file). */
+    stop: () => Promise<void>;
   };
   onNotification: (callback: (data: NotificationData) => void) => () => void;
 }

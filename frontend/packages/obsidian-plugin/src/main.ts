@@ -230,6 +230,12 @@ export default class DuckyAIPlugin extends Plugin {
   }
 
   async onunload(): Promise<void> {
+    // Kill the terminal server so it doesn't orphan when Obsidian reloads/closes
+    try {
+      await this.api.terminal.stop();
+    } catch {
+      // Best-effort — don't block unload
+    }
     this.app.workspace.detachLeavesOfType(DUCKYAI_VIEW_TYPE);
   }
 
