@@ -104,10 +104,11 @@ def _clear_pid(vault_path: str):
 class PtyProcess:
     """Cross-platform PTY process wrapper."""
 
-    def __init__(self, command: str, cols: int = 120, rows: int = 30):
+    def __init__(self, command: str, cols: int = 120, rows: int = 30, cwd: str | None = None):
         self.command = command
         self.cols = cols
         self.rows = rows
+        self.cwd = cwd
         self._pty = None
         self._process = None
 
@@ -123,6 +124,7 @@ class PtyProcess:
         import winpty  # pywinpty
         self._pty = winpty.PtyProcess.spawn(
             self.command,
+            cwd=self.cwd,
             dimensions=(self.rows, self.cols),
         )
 
@@ -134,7 +136,9 @@ class PtyProcess:
 
         pid, fd = pty_mod.fork()
         if pid == 0:
-            # Child — exec the shell
+            # Child — set working dir then exec the shell
+            if self.cwd:
+                os.chdir(self.cwd)
             os.execvp(self.command, [self.command])
         else:
             # Parent — store fd and pid
@@ -220,20 +224,24 @@ class PtyProcess:
 
 # ── WebSocket handler ──────────────────────────────────────────────
 
-async def _handle_terminal(websocket):
+async def _handle_terminal(websocket, vault_path: str | None = None):
     """Handle a single terminal WebSocket connection."""
     import websockets
 
     shell = _get_default_shell()
-    pty = PtyProcess(shell)
+    pty = PtyProcess(shell, cwd=vault_path)
 
     try:
         await pty.spawn()
-        log.info(f"[terminal] PTY spawned: {shell}")
+        log.info(f"[terminal] PTY spawned: {shell} (cwd={vault_path})")
     except Exception as e:
         log.error(f"[terminal] Failed to spawn PTY: {e}")
         await websocket.close(1011, f"PTY spawn failed: {e}")
         return
+
+    # Pre-execute initial command after shell initializes
+    await asyncio.sleep(0.3)
+    pty.write(b"copilot\n")
 
     stop_event = asyncio.Event()
 
@@ -288,12 +296,14 @@ async def _handle_terminal(websocket):
 
 # ── Server lifecycle ───────────────────────────────────────────────
 
-async def _run_server(host: str, port: int):
+async def _run_server(host: str, port: int, vault_path: str | None = None):
     """Run the WebSocket terminal server."""
     import websockets
+    from functools import partial
 
+    handler = partial(_handle_terminal, vault_path=vault_path)
     async with websockets.serve(
-        _handle_terminal,
+        handler,
         host,
         port,
         ping_interval=20,
@@ -329,7 +339,7 @@ def start_terminal_server(vault_path: str, port: int = DEFAULT_PORT, host: str =
     log.info(f"[terminal] Starting on {host}:{port} for vault: {vault_path}")
 
     try:
-        asyncio.run(_run_server(host, port))
+        asyncio.run(_run_server(host, port, vault_path=vault_path))
     finally:
         _clear_pid(vault_path)
 

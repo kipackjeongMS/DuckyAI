@@ -170,6 +170,7 @@ export default function DuckyAIApp({
             {sidebarOnly ? (
               /* Sidebar-only mode (Obsidian plugin) */
               <div className="w-full h-full flex flex-col bg-[#080c16]">
+                {/* Header */}
                 <div className="px-5 pt-6 pb-4 border-b border-[rgba(0,212,255,0.06)] flex items-center justify-between">
                   <div>
                     <h1
@@ -185,41 +186,71 @@ export default function DuckyAIApp({
                       Your Intelligent Duck Assistant
                     </p>
                   </div>
-                  <button
-                    onClick={() => setTerminalOpen((v) => !v)}
-                    className="p-1.5 rounded-md transition-colors hover:bg-[rgba(0,212,255,0.08)]"
-                    title={terminalOpen ? "Hide terminal" : "Show terminal"}
-                  >
-                    <Terminal size={16} className={terminalOpen ? "text-[#00d4ff]" : "text-muted-foreground"} />
-                  </button>
+                  {terminalOpen && (
+                    <button
+                      onClick={() => setTerminalOpen(false)}
+                      className="p-1.5 rounded-md transition-colors hover:bg-[rgba(0,212,255,0.08)] text-muted-foreground hover:text-foreground"
+                      title="Close terminal"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
                 </div>
 
-                {/* Sidebar + Terminal split */}
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  <div className={`${terminalOpen ? "h-1/2" : "flex-1"} overflow-auto`}>
-                    <Sidebar
-                      orchestratorRunning={orch.running}
-                      agents={orch.agents}
-                      triggeringId={orch.triggeringId}
-                      onToggleOrchestrator={orch.toggleOrchestrator}
-                      onTriggerAgent={orch.triggerAgent}
-                      restarting={orch.restarting}
-                      onRestartDaemon={orch.restartDaemon}
-                      onOpenWorkspace={onOpenWorkspace}
-                      onChatSend={api.chat.send}
-                      activityEntries={activity.entries}
-                      activityLoading={activity.loading}
-                      activityAgentFilter={activity.agentFilter}
-                      onActivityFilterChange={activity.setAgentFilter}
-                      onActivityRefresh={activity.refresh}
-                      onFetchLog={activity.fetchLog}
-                    />
-                  </div>
-                  {terminalOpen && (
-                    <div className="flex-1 border-t border-[rgba(0,212,255,0.08)]">
-                      <TerminalPanel wsUrl={api.terminal.wsUrl} />
-                    </div>
-                  )}
+                {/* Orchestrator / Agent monitoring (top half) */}
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  <Sidebar
+                    orchestratorRunning={orch.running}
+                    agents={orch.agents}
+                    triggeringId={orch.triggeringId}
+                    onToggleOrchestrator={orch.toggleOrchestrator}
+                    onTriggerAgent={orch.triggerAgent}
+                    restarting={orch.restarting}
+                    onRestartDaemon={orch.restartDaemon}
+                    onOpenWorkspace={onOpenWorkspace}
+                    onChatSend={api.chat.send}
+                    activityEntries={activity.entries}
+                    activityLoading={activity.loading}
+                    activityAgentFilter={activity.agentFilter}
+                    onActivityFilterChange={activity.setAgentFilter}
+                    onActivityRefresh={activity.refresh}
+                    onFetchLog={activity.fetchLog}
+                  />
+                </div>
+
+                {/* Talk with Ducky → Terminal (bottom half) */}
+                <div className="border-t border-[rgba(0,212,255,0.06)]" style={{ height: terminalOpen ? "50%" : "auto", minHeight: terminalOpen ? 0 : undefined }}>
+                  <AnimatePresence mode="wait">
+                    {!terminalOpen ? (
+                      <motion.div
+                        key="talk-button"
+                        className="flex items-center justify-center py-4"
+                        exit={{ opacity: 0, scale: 1.08 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <motion.button
+                          onClick={() => setTerminalOpen(true)}
+                          className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-[rgba(0,212,255,0.15)] bg-[rgba(0,212,255,0.04)] hover:bg-[rgba(0,212,255,0.08)] text-foreground cursor-pointer transition-colors"
+                          style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                        >
+                          <Terminal size={20} className="text-[#00d4ff]" />
+                          Talk with Ducky
+                        </motion.button>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="terminal-panel"
+                        className="h-full overflow-hidden"
+                        initial={{ opacity: 0, clipPath: "inset(40% 10% 40% 10% round 16px)" }}
+                        animate={{ opacity: 1, clipPath: "inset(0% 0% 0% 0% round 0px)" }}
+                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        <TerminalPanel wsUrl={api.terminal.wsUrl} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             ) : (
