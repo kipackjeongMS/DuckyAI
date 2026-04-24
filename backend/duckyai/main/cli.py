@@ -651,6 +651,7 @@ def _show_global_agents():
 
 
 @click.group(invoke_without_command=True)
+@click.version_option(package_name="duckyai", prog_name="duckyai")
 @click.option(
     "-o",
     "--orchestrator",
@@ -821,6 +822,14 @@ main.add_command(update_cli)
 # Chat server
 from .chat_cmd import chat_group
 main.add_command(chat_group)
+
+
+# Version subcommand (mirrors --version flag)
+@main.command()
+def version():
+    """Show the installed DuckyAI version."""
+    from duckyai import __version__
+    click.echo(f"duckyai {__version__}")
 
 
 if __name__ == "__main__":
