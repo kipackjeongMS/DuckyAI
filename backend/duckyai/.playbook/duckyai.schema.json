@@ -1,0 +1,513 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/kipackjeongMS/DuckyAI/blob/main/backend/duckyai/.playbook/duckyai.schema.json",
+  "title": "DuckyAI Configuration",
+  "description": "Configuration schema for duckyai.yml — the single source of truth for DuckyAI vault settings, orchestrator behavior, and agent definitions.",
+  "type": "object",
+  "required": ["id", "name"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version of this config file.",
+      "default": "0.0.18"
+    },
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for this vault (used in runtime directories and logging).",
+      "examples": ["main", "work", "personal"]
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name for this vault.",
+      "examples": ["Main", "Work Vault"]
+    },
+    "user": {
+      "type": "object",
+      "description": "User profile information used by agents for personalization.",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Your display name (used in agent prompts and output).",
+          "examples": ["Jane Doe"]
+        },
+        "primaryLanguage": {
+          "type": "string",
+          "description": "ISO 639-1 language code for agent output.",
+          "default": "en",
+          "examples": ["en", "ko", "ja"]
+        },
+        "timezone": {
+          "type": "string",
+          "description": "IANA or Windows timezone name for date/time formatting.",
+          "examples": ["Pacific Standard Time", "America/Los_Angeles", "UTC"]
+        }
+      }
+    },
+    "services": {
+      "type": "object",
+      "description": "Code repositories linked to this vault for PR scanning and service sync.",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative or absolute path to the services directory containing cloned repos.",
+          "examples": ["../Main-Services", "C:/repos"]
+        },
+        "entries": {
+          "type": "array",
+          "description": "List of registered service definitions.",
+          "items": {
+            "$ref": "#/$defs/serviceEntry"
+          }
+        }
+      }
+    },
+    "orchestrator": {
+      "type": "object",
+      "description": "Global orchestrator settings controlling agent execution, file watching, and container isolation.",
+      "additionalProperties": false,
+      "properties": {
+        "auto_start": {
+          "type": "boolean",
+          "description": "Automatically start the orchestrator daemon when running CLI commands.",
+          "default": true
+        },
+        "prompts_dir": {
+          "type": "string",
+          "description": "Relative path (from vault root) to the directory containing agent prompt files (.md).",
+          "default": ".github/prompts-agent"
+        },
+        "skills_dir": {
+          "type": "string",
+          "description": "Relative path to the skills directory for agent tools.",
+          "default": ".github/skills"
+        },
+        "bases_dir": {
+          "type": "string",
+          "description": "Relative path to the bases directory for shared prompt fragments.",
+          "default": ".github/bases"
+        },
+        "max_concurrent": {
+          "type": "integer",
+          "description": "Maximum number of agents that can execute simultaneously.",
+          "default": 3,
+          "minimum": 1
+        },
+        "poll_interval": {
+          "type": "number",
+          "description": "File-system polling interval in seconds.",
+          "default": 1,
+          "minimum": 0.5
+        },
+        "log_level": {
+          "type": "string",
+          "description": "Python logging level for orchestrator logs.",
+          "default": "INFO",
+          "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        },
+        "log_retention_days": {
+          "type": "integer",
+          "description": "Number of days to retain execution log files before cleanup.",
+          "default": 30,
+          "minimum": 1
+        },
+        "file_extensions": {
+          "type": "array",
+          "description": "File extensions the orchestrator watches for trigger events.",
+          "default": [".md", ".pdf", ".docx", ".doc", ".txt"],
+          "items": {
+            "type": "string",
+            "pattern": "^\\."
+          }
+        },
+        "use_container": {
+          "type": "boolean",
+          "description": "Global default for running agents in Docker containers. Per-agent use_container overrides this.",
+          "default": false
+        },
+        "container": {
+          "type": "object",
+          "description": "Docker container configuration (applies when use_container is true).",
+          "additionalProperties": false,
+          "properties": {
+            "image": {
+              "type": "string",
+              "description": "Docker image name for agent containers.",
+              "default": "duckyai-agent:latest"
+            },
+            "vault_mount": {
+              "type": "string",
+              "description": "Mount point for the vault inside the container.",
+              "default": "/vault"
+            },
+            "extra_mounts": {
+              "type": "array",
+              "description": "Additional volume mounts for all containerized agents.",
+              "items": {
+                "$ref": "#/$defs/mountSpec"
+              }
+            }
+          }
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "description": "Default values applied to all agents unless overridden per-node.",
+      "additionalProperties": false,
+      "properties": {
+        "executor": {
+          "type": "string",
+          "description": "Default executor engine for agents.",
+          "default": "copilot_sdk",
+          "enum": ["copilot_sdk", "claude_code", "copilot_cli"]
+        },
+        "timeout_minutes": {
+          "type": "integer",
+          "description": "Default execution timeout in minutes.",
+          "default": 30,
+          "minimum": 1
+        },
+        "max_parallel": {
+          "type": "integer",
+          "description": "Default max concurrent executions per agent.",
+          "default": 1,
+          "minimum": 1
+        },
+        "task_create": {
+          "type": "boolean",
+          "description": "Whether to create task tracking files for each execution.",
+          "default": true
+        },
+        "task_priority": {
+          "type": "string",
+          "description": "Default task priority level.",
+          "default": "medium",
+          "enum": ["low", "medium", "high"]
+        },
+        "task_archived": {
+          "type": "boolean",
+          "description": "Default archived status for completed tasks.",
+          "default": false
+        },
+        "agent_params": {
+          "type": "object",
+          "description": "Default agent parameters merged into every agent (per-agent values override).",
+          "properties": {
+            "model": {
+              "type": "string",
+              "description": "Default LLM model for all agents.",
+              "examples": ["claude-opus-4.6", "claude-sonnet-4.5", "claude-haiku-4.5"]
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "description": "List of agent definitions. Each node defines an agent with its trigger, input/output, and execution settings.",
+      "items": {
+        "$ref": "#/$defs/agentNode"
+      }
+    }
+  },
+  "$defs": {
+    "serviceEntry": {
+      "type": "object",
+      "description": "A code repository service linked to the vault.",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Directory name under the services path."
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Source control metadata for this service.",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Source control provider type.",
+              "enum": ["ado", "github", "gitlab"]
+            },
+            "organization": {
+              "type": "string",
+              "description": "Organization or owner name."
+            },
+            "project": {
+              "type": "string",
+              "description": "Project name (Azure DevOps) or repo namespace."
+            },
+            "repositories": {
+              "type": "array",
+              "description": "Repository names or glob patterns. Use [\"*\"] for all repos in the project.",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "pr_scan": {
+          "type": "boolean",
+          "description": "Whether the PR Scan agent should poll this service for new PRs.",
+          "default": false
+        }
+      }
+    },
+    "mountSpec": {
+      "type": "object",
+      "description": "Docker volume mount specification.",
+      "required": ["source", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Host path or variable (supports ${services_path}, ${repo_cache})."
+        },
+        "target": {
+          "type": "string",
+          "description": "Container mount path."
+        },
+        "readonly": {
+          "type": "boolean",
+          "description": "Mount as read-only.",
+          "default": false
+        }
+      }
+    },
+    "workerConfig": {
+      "type": "object",
+      "description": "Configuration for a single worker in a multi-worker agent.",
+      "required": ["executor", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "executor": {
+          "type": "string",
+          "description": "Executor engine for this worker.",
+          "enum": ["copilot_sdk", "claude_code", "copilot_cli"]
+        },
+        "label": {
+          "type": "string",
+          "description": "Human-readable label for this worker."
+        },
+        "agent_params": {
+          "type": "object",
+          "description": "Worker-specific agent parameters.",
+          "additionalProperties": true
+        },
+        "output_path": {
+          "type": "string",
+          "description": "Worker-specific output directory (overrides agent output_path)."
+        }
+      }
+    },
+    "agentNode": {
+      "type": "object",
+      "description": "An agent node definition specifying trigger conditions, I/O paths, and execution settings.",
+      "required": ["type", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Node type. Currently only 'agent' is supported.",
+          "const": "agent"
+        },
+        "name": {
+          "type": "string",
+          "description": "Agent display name. Must contain an abbreviation in parentheses, e.g. 'PR Review (PR)'. The abbreviation is used to locate the prompt file.",
+          "pattern": ".*\\([A-Z]+\\).*",
+          "examples": ["PR Review (PR)", "Teams Chat Summary (TCS)", "Task Manager (TM)"]
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Explicit prompt file reference (abbreviation). If omitted, extracted from the (ABBR) in the name."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether this agent is active. Disabled agents are not loaded.",
+          "default": true
+        },
+
+        "cron": {
+          "type": "string",
+          "description": "Cron expression for scheduled execution. Agents with cron run on a timer instead of file triggers.",
+          "examples": ["0 */2 * * *", "15 */2 * * *", "0 9 * * 1-5"]
+        },
+        "input_path": {
+          "description": "Vault-relative path(s) the agent watches for trigger files. Empty or omitted means manual/scheduled agent.",
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "examples": ["01-Work/PRReviews", ["01-Work/Tasks", "01-Work/Bugs"]]
+        },
+        "input_type": {
+          "type": "string",
+          "description": "How the agent is triggered. Inferred from input_path if omitted: 'manual' when no input_path, 'new_file' otherwise.",
+          "enum": ["new_file", "modified_file", "manual"],
+          "default": "new_file"
+        },
+        "input_pattern": {
+          "type": "string",
+          "description": "Glob pattern to filter input files within input_path.",
+          "examples": ["*.md", "*.txt"]
+        },
+        "trigger_content_pattern": {
+          "type": "string",
+          "description": "Regex pattern that must match inside the file content for the trigger to fire.",
+          "examples": ["^status:\\s*todo"]
+        },
+        "trigger_exclude_pattern": {
+          "type": "string",
+          "description": "Regex pattern — files matching this are excluded from triggering."
+        },
+        "trigger_wait_for": {
+          "description": "List of agent abbreviations that must complete first (dependency chain).",
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "examples": [["TCS", "TMS"]]
+        },
+        "require_parent_output": {
+          "type": "boolean",
+          "description": "If true, skip execution when no parent agent (from trigger_wait_for) produced output.",
+          "default": false
+        },
+
+        "output_path": {
+          "type": "string",
+          "description": "Vault-relative directory where the agent writes output files.",
+          "examples": ["04-Periodic/Daily", "01-Work/PRReviews"]
+        },
+        "output_type": {
+          "type": "string",
+          "description": "How output is written: 'new_file' creates a new file, 'update_file' modifies the input file in place.",
+          "enum": ["new_file", "update_file"],
+          "default": "new_file"
+        },
+        "output_naming": {
+          "type": "string",
+          "description": "Template for output file names. Supports {title}, {agent}, {date} placeholders.",
+          "default": "{title} - {agent}.md"
+        },
+        "output_optional": {
+          "type": "boolean",
+          "description": "If true, the agent may complete without producing output. Auto-inferred as true when input_path is empty.",
+          "default": false
+        },
+        "requires_input_file": {
+          "type": "boolean",
+          "description": "Whether the agent needs an input file to execute. Set false for agents that fetch their own data (e.g. API-based). Inferred from input_path if omitted."
+        },
+
+        "executor": {
+          "type": "string",
+          "description": "Executor engine (overrides defaults.executor).",
+          "enum": ["copilot_sdk", "claude_code", "copilot_cli"]
+        },
+        "max_parallel": {
+          "type": "integer",
+          "description": "Max concurrent executions of this agent (overrides defaults.max_parallel).",
+          "minimum": 1
+        },
+        "timeout_minutes": {
+          "type": "integer",
+          "description": "Execution timeout in minutes (overrides defaults.timeout_minutes).",
+          "minimum": 1
+        },
+        "agent_params": {
+          "type": "object",
+          "description": "Agent-specific parameters merged on top of defaults.agent_params.",
+          "properties": {
+            "model": {
+              "type": "string",
+              "description": "LLM model for this agent.",
+              "examples": ["claude-opus-4.6", "claude-sonnet-4.5", "claude-haiku-4.5"]
+            },
+            "lookback_hours": {
+              "type": "integer",
+              "description": "Hours of data to look back (used by TCS/TMS agents).",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": true
+        },
+        "workers": {
+          "type": "array",
+          "description": "Multi-worker configuration for parallel execution with different executors.",
+          "items": {
+            "$ref": "#/$defs/workerConfig"
+          }
+        },
+
+        "use_container": {
+          "type": "boolean",
+          "description": "Run this agent in a Docker container. Overrides the global orchestrator.use_container setting."
+        },
+        "extra_mounts": {
+          "type": "array",
+          "description": "Additional Docker volume mounts for this agent (only applies when running in a container).",
+          "items": {
+            "$ref": "#/$defs/mountSpec"
+          }
+        },
+
+        "skills": {
+          "description": "List of skill names to attach to this agent's execution.",
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+        "mcp_servers": {
+          "description": "List of MCP server names to attach to this agent.",
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ]
+        },
+
+        "task_create": {
+          "type": "boolean",
+          "description": "Create task tracking files for executions (overrides defaults.task_create)."
+        },
+        "task_priority": {
+          "type": "string",
+          "description": "Task priority (overrides defaults.task_priority).",
+          "enum": ["low", "medium", "high"]
+        },
+        "task_archived": {
+          "type": "boolean",
+          "description": "Default archived status for tasks (overrides defaults.task_archived)."
+        },
+
+        "log_prefix": {
+          "type": "string",
+          "description": "Prefix for log file names. Defaults to the agent abbreviation."
+        },
+        "log_pattern": {
+          "type": "string",
+          "description": "Template for log file names.",
+          "default": "{timestamp}-{agent}.log"
+        },
+        "post_process_action": {
+          "type": "string",
+          "description": "Action to run after agent completes.",
+          "examples": ["remove_trigger_content"]
+        },
+        "trigger_schedule": {
+          "type": "string",
+          "description": "Legacy trigger schedule (prefer cron instead)."
+        },
+        "version": {
+          "type": "string",
+          "description": "Agent definition version.",
+          "default": "1.0"
+        }
+      }
+    }
+  }
+}

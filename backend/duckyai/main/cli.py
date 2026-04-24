@@ -635,14 +635,41 @@ from .chat_cmd import chat_group
 main.add_command(chat_group)
 
 
-# Configuration display
-@main.command()
+# Configuration management
+@main.group(invoke_without_command=True)
 @click.pass_context
 def config(ctx):
-    """Show current DuckyAI configuration."""
-    from .show_config import show_config as show_config_handler
-    vault_root = ctx.obj.get("vault_root")
-    show_config_handler(vault_root)
+    """Show or manage DuckyAI configuration."""
+    if ctx.invoked_subcommand is None:
+        from .show_config import show_config as show_config_handler
+        vault_root = ctx.obj.get("vault_root")
+        show_config_handler(vault_root)
+
+
+@config.command()
+@click.option("--copy", "copy_to", type=click.Path(), help="Copy schema file to the given path.")
+def schema(copy_to):
+    """Print or copy the JSON Schema for duckyai.yml.
+
+    Add this comment to your duckyai.yml for editor autocompletion:
+
+      # yaml-language-server: $schema=<path-to-schema>
+    """
+    import importlib.resources as pkg_resources
+
+    schema_ref = pkg_resources.files("duckyai") / ".playbook" / "duckyai.schema.json"
+    schema_path = str(schema_ref)
+
+    if copy_to:
+        import shutil as _shutil
+        dest = Path(copy_to)
+        if dest.is_dir():
+            dest = dest / "duckyai.schema.json"
+        _shutil.copy2(schema_path, dest)
+        click.echo(f"Schema copied to {dest}")
+        click.echo(f'Add to your duckyai.yml:\n  # yaml-language-server: $schema={dest}')
+    else:
+        click.echo(Path(schema_path).read_text(encoding="utf-8"))
 
 
 # Version subcommand (mirrors --version flag)

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/kipackjeongMS/DuckyAI/main/backend/duckyai/.playbook/duckyai.schema.json
 version: "0.0.18"
 id: ${vault_id}
 name: ${vault_name}
