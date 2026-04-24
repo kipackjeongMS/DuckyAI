@@ -200,7 +200,7 @@ def test_log_pr_review_creates_pr_note_updates_daily_note_and_contact(monkeypatc
             "prNumber": "14653251",
             "prUrl": "https://example/pr/14653251",
             "description": "Add migration tests",
-            "action": "todo",
+            "action": "requested",
         },
     )
 
@@ -238,7 +238,7 @@ def test_log_pr_review_empty_pr_url_accepted(monkeypatch, tmp_path):
             "prNumber": "99999",
             "prUrl": "",
             "description": "No URL available",
-            "action": "todo",
+            "action": "requested",
         },
     )
 
@@ -269,7 +269,7 @@ def test_log_pr_review_no_pr_number_uses_description_as_title(monkeypatch, tmp_p
             "person": "Richard Muniu",
             "prNumber": "",
             "description": "Review and approve cherry-pick PRs",
-            "action": "todo",
+            "action": "requested",
         },
     )
 

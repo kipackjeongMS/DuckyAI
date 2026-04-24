@@ -88,7 +88,7 @@ Call `logPRReview` with:
 - `prNumber`: PR number if known; otherwise use an empty string `""`
 - `prUrl`: Full PR URL if provided in the highlight text. If not available, use an empty string `""`. Do NOT construct or guess URLs.
 - `description`: Brief PR description
-- `action`: `"todo"`
+- `action`: `"requested"`
 - `subsection`: `"my_prs"`
 
 This will:
@@ -102,8 +102,7 @@ Call `logPRReview` with:
 - `prNumber`: PR number if known; otherwise use an empty string `""`
 - `prUrl`: Full PR URL if provided in the highlight text. If not available, use an empty string `""`. Do NOT construct or guess URLs.
 - `description`: Brief PR description
-- `action`: `"todo"`
-- `subsection`: `"requested"`
+- `action`: `"requested"`
 
 This will:
 1. Create a file in `01-Work/PRReviews/` (named with PR number if available, otherwise description only)

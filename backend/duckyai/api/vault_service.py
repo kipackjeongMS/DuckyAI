@@ -330,12 +330,13 @@ class VaultService:
         pr_url = self._optional_string(arguments, "prUrl") or ""
         description = self._require_non_empty_string(arguments, "description")
         action = arguments.get("action")
-        if action not in {"todo", "reviewed", "commented"}:
-            raise ValueError("Field 'action' must be one of: todo, reviewed, commented")
+        if action not in {"discovered", "requested", "reviewed", "commented"}:
+            raise ValueError("Field 'action' must be one of: discovered, requested, reviewed, commented")
 
-        # Subsection: "requested" (from TM/Teams), "discovered" (from PRS/AzDO scan),
-        # or "my_prs" (PRs authored by user, tracked for others' review)
-        subsection = arguments.get("subsection", "requested")
+        # Subsection derived from action; explicit override still accepted for "my_prs"
+        subsection = arguments.get("subsection")
+        if subsection is None:
+            subsection = "discovered" if action == "discovered" else "requested"
         if subsection not in {"requested", "discovered", "my_prs"}:
             subsection = "requested"
 
@@ -384,7 +385,7 @@ class VaultService:
 
         daily_source = f"04-Periodic/Daily/{today}.md"
         if pr_marker not in content_lower:
-            if action == "todo":
+            if action in {"discovered", "requested"}:
                 pr_review_link = md_link(pr_display, f"01-Work/PRReviews/{final_pr_title}.md", daily_source)
                 pending_entry = f"- [ ] {pr_review_link} - {description}"
 
@@ -425,14 +426,14 @@ class VaultService:
                 )
         else:
             # PR marker already exists — check if we need to move between subsections
-            if action == "todo" and subsection == "requested":
+            if action in {"discovered", "requested"} and subsection == "requested":
                 content = self._promote_pr_to_requested(content, pr_marker)
 
         self._write_text(daily_path, content)
         contact_ref = f"[{pr_display}]({pr_url})" if pr_url else pr_display
         created_contact = self._ensure_contact_exists(person, f"First referenced in {contact_ref} - {description}")
         contact_msg = f" (created contact for {person})" if created_contact else ""
-        action_label = "queued for review" if action == "todo" else action
+        action_label = "queued for review" if action in {"discovered", "requested"} else action
         return self._text_response(f"Logged {action_label} on {person}'s PR review: {description}{contact_msg}")
 
     def tool_createMeeting(self, arguments: dict[str, Any]) -> dict[str, Any]:

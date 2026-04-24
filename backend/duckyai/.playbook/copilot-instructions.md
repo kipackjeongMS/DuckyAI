@@ -67,7 +67,7 @@ The DuckyAI vault has an MCP server (`mcp-server/`) that provides automated tool
 | Tool | Use When |
 |------|----------|
 | `prepareDailyNote` | Creating today's daily note |
-| `logPRReview` | Logging PR reviews — pending (`action: "todo"`) or completed (`action: "reviewed"/"commented"`) |
+| `logPRReview` | Logging PR reviews — pending (`action: "discovered"/"requested"`) or completed (`action: "reviewed"/"commented"`) |
 | `logAction` | Logging any completed action to daily note |
 | `createTask` | Creating a new task file in 01-Work/Tasks/ |
 | `logTask` | Adding an agent-discovered task to `## Tasks` in today's daily note |
@@ -81,7 +81,7 @@ The DuckyAI vault has an MCP server (`mcp-server/`) that provides automated tool
 
 **Always use MCP tools for:**
 - Creating daily notes → `prepareDailyNote`
-- Logging PR reviews (pending) → `logPRReview` with `action: "todo"`
+- Logging PR reviews (pending) → `logPRReview` with `action: "requested"` or `"discovered"`
 - Logging PR reviews (completed) → `logPRReview` with `action: "reviewed"` or `"commented"`
 - Logging completed actions → `logAction`
 - Creating tasks → `createTask` then `logTask`
@@ -614,7 +614,7 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
   3. Call `createTask` MCP tool to create the task file, then call `logTask` to add it to `## Tasks` in the daily note
 
 ### PR review tasks go in PRReviews/
-- When a PR review task arises: call `logPRReview` with `action: "todo"` — creates `01-Work/PRReviews/{title}.md` and adds `- [ ]` entry to `## PRs & Code Reviews`
+- When a PR review task arises: call `logPRReview` with `action: "requested"` — creates `01-Work/PRReviews/{title}.md` and adds `- [ ]` entry to `## PRs & Code Reviews`
 - When a PR review is completed: call `logPRReview` with `action: "reviewed"` or `"commented"` — logs `- [x]` entry to `## Tasks Completed`
 - Daily note pending format: `- [ ] [[01-Work/PRReviews/{PR Title}|PR {number}]] - {description}`
 

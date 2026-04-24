@@ -93,8 +93,7 @@ Arguments:
   prNumber: {PR ID}
   prUrl: {PR web URL}
   description: {PR title}
-  action: "todo"
-  subsection: "discovered"
+  action: "discovered"
 ```
 
 This creates the PR review file with `status: todo` frontmatter and adds an entry to `### Discovered` under `## PRs & Code Reviews` in the daily note. If the PR was already added to `### Requested` by TM (from Teams), it will NOT be duplicated.

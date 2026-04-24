@@ -86,7 +86,7 @@ def log_action(action: str, addToCarryForward: str | None = None) -> str:
 
 
 @mcp.tool(name="logPRReview", description="Create or update a PR review record and daily log entry.")
-def log_pr_review(person: str, description: str, action: str, prNumber: str = "", prUrl: str = "", subsection: str = "requested") -> str:
+def log_pr_review(person: str, description: str, action: str, prNumber: str = "", prUrl: str = "", subsection: str = "") -> str:
     return _call(
         "logPRReview",
         {

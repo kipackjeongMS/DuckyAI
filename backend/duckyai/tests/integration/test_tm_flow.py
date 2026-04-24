@@ -114,7 +114,7 @@ class TestTMFlow:
             "prNumber": "54321",
             "prUrl": "",
             "description": "Fix caching layer",
-            "action": "todo",
+            "action": "requested",
         })
         assert "Logged queued for review" in result["content"][0]["text"]
 
@@ -168,7 +168,7 @@ class TestTMFlow:
             "prNumber": "54321",
             "prUrl": "",
             "description": "Fix caching layer",
-            "action": "todo",
+            "action": "requested",
         })
 
         # --- General task 2 (from chat) ---
