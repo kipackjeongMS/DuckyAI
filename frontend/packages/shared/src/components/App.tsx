@@ -197,8 +197,8 @@ export default function DuckyAIApp({
                   )}
                 </div>
 
-                {/* Orchestrator / Agent monitoring (top half) */}
-                <div className="flex-1 overflow-y-auto min-h-0">
+                {/* Orchestrator / Agent monitoring (top ~50%) */}
+                <div className={terminalOpen ? "overflow-y-auto min-h-0" : "flex-1 overflow-y-auto min-h-0"} style={terminalOpen ? { height: "50%" } : undefined}>
                   <Sidebar
                     orchestratorRunning={orch.running}
                     agents={orch.agents}
@@ -208,7 +208,7 @@ export default function DuckyAIApp({
                     restarting={orch.restarting}
                     onRestartDaemon={orch.restartDaemon}
                     onOpenWorkspace={onOpenWorkspace}
-                    onChatSend={api.chat.send}
+                    onTalkWithDucky={terminalOpen ? undefined : () => setTerminalOpen(true)}
                     activityEntries={activity.entries}
                     activityLoading={activity.loading}
                     activityAgentFilter={activity.agentFilter}
@@ -218,40 +218,19 @@ export default function DuckyAIApp({
                   />
                 </div>
 
-                {/* Talk with Ducky → Terminal (bottom half) */}
-                <div className="border-t border-[rgba(0,212,255,0.06)]" style={{ height: terminalOpen ? "50%" : "auto", minHeight: terminalOpen ? 0 : undefined }}>
-                  <AnimatePresence mode="wait">
-                    {!terminalOpen ? (
-                      <motion.div
-                        key="talk-button"
-                        className="flex items-center justify-center py-4"
-                        exit={{ opacity: 0, scale: 1.08 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <motion.button
-                          onClick={() => setTerminalOpen(true)}
-                          className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-[rgba(0,212,255,0.15)] bg-[rgba(0,212,255,0.04)] hover:bg-[rgba(0,212,255,0.08)] text-foreground cursor-pointer transition-colors"
-                          style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                        >
-                          <Terminal size={20} className="text-[#00d4ff]" />
-                          Talk with Ducky
-                        </motion.button>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="terminal-panel"
-                        className="h-full overflow-hidden"
-                        initial={{ opacity: 0, clipPath: "inset(40% 10% 40% 10% round 16px)" }}
-                        animate={{ opacity: 1, clipPath: "inset(0% 0% 0% 0% round 0px)" }}
-                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                      >
-                        <TerminalPanel wsUrl={api.terminal.wsUrl} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                {/* Terminal (bottom ~50%, only when open) */}
+                {terminalOpen && (
+                  <div className="border-t border-[rgba(0,212,255,0.06)]" style={{ height: "50%" }}>
+                    <motion.div
+                      className="h-full overflow-hidden"
+                      initial={{ opacity: 0, clipPath: "inset(40% 10% 40% 10% round 16px)" }}
+                      animate={{ opacity: 1, clipPath: "inset(0% 0% 0% 0% round 0px)" }}
+                      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <TerminalPanel wsUrl={api.terminal.wsUrl} />
+                    </motion.div>
+                  </div>
+                )}
               </div>
             ) : (
             <>

@@ -9,11 +9,11 @@ import {
   Code2,
   Activity,
   RotateCcw,
+  Terminal,
 } from "lucide-react";
 import type { Agent } from "../hooks/use-orchestrator";
 import type { ExecutionEntry, ExecutionLogDetail, TokenUsage } from "../types/duckyai";
 import { AgentActivityLog } from "./agent-activity-log";
-import { ChatPanel } from "./chat-panel";
 
 type AgentStatus = "idle" | "running" | "offline" | "queued";
 
@@ -40,8 +40,8 @@ export interface SidebarProps {
   onTriggerAgent: (abbreviation: string) => void;
   onRestartDaemon?: () => void;
   onOpenWorkspace?: () => void;
-  // Chat
-  onChatSend?: (text: string) => Promise<string>;
+  // Talk with Ducky button
+  onTalkWithDucky?: () => void;
   // Activity log
   activityEntries?: ExecutionEntry[];
   activityLoading?: boolean;
@@ -60,7 +60,7 @@ export function Sidebar({
   onTriggerAgent,
   onRestartDaemon,
   onOpenWorkspace,
-  onChatSend,
+  onTalkWithDucky,
   activityEntries,
   activityLoading,
   activityAgentFilter,
@@ -97,10 +97,19 @@ export function Sidebar({
 
   return (
     <div className="h-full flex flex-col py-6 px-5 overflow-y-auto">
-      {/* Chat Panel */}
-      {onChatSend && (
-        <div className="mb-6">
-          <ChatPanel onSend={onChatSend} />
+      {/* Talk with Ducky */}
+      {onTalkWithDucky && (
+        <div className="mb-6 flex items-center justify-center py-6">
+          <motion.button
+            onClick={onTalkWithDucky}
+            className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-[rgba(0,212,255,0.15)] bg-[rgba(0,212,255,0.04)] hover:bg-[rgba(0,212,255,0.08)] text-foreground cursor-pointer transition-colors"
+            style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            <Terminal size={20} className="text-[#00d4ff]" />
+            Talk with Ducky
+          </motion.button>
         </div>
       )}
 
