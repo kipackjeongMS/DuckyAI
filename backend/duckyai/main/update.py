@@ -258,19 +258,106 @@ def _restart_duckyai_processes(stopped: list[dict]) -> None:
 def install_package(package_dir: Path) -> bool:
     """Install the package using pip."""
     click.echo("Installing...")
-    
+
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pip", "install", "--upgrade", str(package_dir)],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
         click.echo(result.stdout)
         return True
     except subprocess.CalledProcessError as e:
         click.echo(f"Installation failed: {e.stderr}", err=True)
         return False
+
+
+def _deferred_install(package_dir: Path, vaults: list[Path], stopped: list[dict]) -> None:
+    """Spawn a detached batch script that waits for us to exit, then runs pip install.
+
+    On Windows the running ``duckyai.exe`` shim holds a file-lock that
+    prevents pip from overwriting it.  This function writes a small batch
+    script that:
+      1. Waits for our parent ``duckyai.exe`` to exit (polls with ``tasklist``).
+      2. Runs ``python -m pip install --upgrade <package_dir>``.
+      3. Syncs vault files via ``duckyai update --sync-only``.
+      4. Restarts previously-stopped daemon processes.
+      5. Cleans up temp files and itself.
+    """
+    # Find our launcher PID (the duckyai.exe shim)
+    launcher_pid = os.getpid()
+    try:
+        parent = psutil.Process(os.getpid()).parent()
+        if parent and "duckyai" in (parent.name() or "").lower():
+            launcher_pid = parent.pid
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        pass
+
+    python_exe = sys.executable
+    scripts_dir = Path(sysconfig.get_path("scripts"))
+
+    # The temp directory containing the extracted release
+    tmpdir = package_dir.parent
+    if tmpdir.name == "backend":
+        tmpdir = tmpdir.parent
+
+    # Build vault restart commands
+    restart_cmds = ""
+    vault_paths_to_restart = {e["vault"] for e in stopped if e.get("vault")}
+    for vault_str in vault_paths_to_restart:
+        restart_cmds += (
+            f'start "" /B "{python_exe}" -m duckyai -o\n'
+        )
+
+    bat_path = Path(tempfile.gettempdir()) / "duckyai_update.bat"
+    bat_content = f"""@echo off
+REM DuckyAI deferred updater
+:wait
+tasklist /FI "PID eq {launcher_pid}" 2>NUL | find /I "{launcher_pid}" >NUL
+if not errorlevel 1 (
+    timeout /t 1 /nobreak >NUL
+    goto wait
+)
+
+echo.
+echo Running pip install...
+"{python_exe}" -m pip install --upgrade "{package_dir}"
+if errorlevel 1 (
+    echo.
+    echo DuckyAI update FAILED. Run 'duckyai update --force' to retry.
+    pause
+    goto cleanup
+)
+
+echo Syncing vault files...
+"{python_exe}" -m duckyai update --sync-only
+
+echo Cleaning up old executables...
+del /F /Q "{scripts_dir}\\duckyai*.exe.old" >NUL 2>&1
+
+{restart_cmds}
+
+echo.
+echo ====================================
+echo DuckyAI update completed successfully!
+echo ====================================
+timeout /t 3 /nobreak >NUL
+
+:cleanup
+rmdir /S /Q "{tmpdir}" >NUL 2>&1
+del /F /Q "%~f0" >NUL 2>&1
+"""
+    bat_path.write_text(bat_content, encoding="utf-8")
+
+    # Launch the batch script fully detached
+    subprocess.Popen(
+        ["cmd.exe", "/C", str(bat_path)],
+        creationflags=0x00000010 | 0x00000200,  # CREATE_NEW_CONSOLE | CREATE_NEW_PROCESS_GROUP
+        close_fds=True,
+    )
+    click.echo(f"  Deferred installer launched (waiting for PID {launcher_pid} to exit)")
+    click.echo("  The update will finish in a new console window.")
 
 
 # ---------------------------------------------------------------------------
@@ -440,39 +527,57 @@ def update_cli(force: bool, target_version: Optional[str], list_releases: bool, 
     if not stopped:
         click.echo("  No running processes found")
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir_path = Path(tmpdir)
-        zip_path = tmpdir_path / "release.zip"
+    # Use a persistent temp directory (not auto-deleted) so a deferred
+    # installer batch script can access the files after we exit.
+    tmpdir_path = Path(tempfile.mkdtemp(prefix="duckyai_update_"))
+    zip_path = tmpdir_path / "release.zip"
 
-        try:
-            download_zip(zipball_url, zip_path)
-            extracted_path = extract_zip(zip_path, tmpdir_path)
+    try:
+        download_zip(zipball_url, zip_path)
+        extracted_path = extract_zip(zip_path, tmpdir_path)
 
-            # pyproject.toml lives in backend/ subdirectory
-            backend_path = extracted_path / "backend"
-            install_dir = backend_path if backend_path.is_dir() and (backend_path / "pyproject.toml").exists() else extracted_path
+        # pyproject.toml lives in backend/ subdirectory
+        backend_path = extracted_path / "backend"
+        install_dir = backend_path if backend_path.is_dir() and (backend_path / "pyproject.toml").exists() else extracted_path
 
-            # Pre-install cleanup
-            cleaned = _cleanup_corrupt_distributions()
-            if cleaned:
-                click.echo(f"  Cleaned {cleaned} orphaned dist-info dir(s)")
+        # Pre-install cleanup
+        cleaned = _cleanup_corrupt_distributions()
+        if cleaned:
+            click.echo(f"  Cleaned {cleaned} orphaned dist-info dir(s)")
 
-            # On Windows, rename locked exes so pip can write new ones
-            renamed = _rename_locked_scripts()
+    except requests.RequestException as e:
+        shutil.rmtree(tmpdir_path, ignore_errors=True)
+        click.echo(f"Download failed: {e}", err=True)
+        sys.exit(1)
+    except zipfile.BadZipFile as e:
+        shutil.rmtree(tmpdir_path, ignore_errors=True)
+        click.echo(f"Extraction failed: {e}", err=True)
+        sys.exit(1)
 
-            if install_package(install_dir):
-                click.echo()
-                click.echo("✓ Python package updated")
-            else:
-                click.echo("Update failed.", err=True)
-                sys.exit(1)
+    # On Windows, delegate pip install to a batch script that runs after
+    # we exit — the running duckyai.exe shim holds a file-lock.
+    if platform.system() == "Windows":
+        click.echo()
+        click.echo("Launching deferred installer (Windows file-lock workaround)...")
+        vaults = _find_active_vaults()
+        _deferred_install(install_dir, vaults, stopped)
+        click.echo()
+        click.echo("=" * 50)
+        click.echo("Update will complete momentarily in a new window.")
+        click.echo("=" * 50)
+        sys.exit(0)
 
-        except requests.RequestException as e:
-            click.echo(f"Download failed: {e}", err=True)
-            sys.exit(1)
-        except zipfile.BadZipFile as e:
-            click.echo(f"Extraction failed: {e}", err=True)
-            sys.exit(1)
+    # Non-Windows: direct install
+    renamed = _rename_locked_scripts()
+    if install_package(install_dir):
+        click.echo()
+        click.echo("✓ Python package updated")
+    else:
+        shutil.rmtree(tmpdir_path, ignore_errors=True)
+        click.echo("Update failed.", err=True)
+        sys.exit(1)
+
+    shutil.rmtree(tmpdir_path, ignore_errors=True)
 
     # After pip install, sync vault files with the new package contents
     _sync_all_vaults()
