@@ -519,6 +519,7 @@ def get_mcp_config(vault_root: Path) -> str:
     multiple=True,
     help="Additional MCP server config (JSON file or string, repeatable)",
 )
+@click.option("-o", "orchestrator", is_flag=True, hidden=True, help="Internal: run orchestrator daemon")
 @click.pass_context
 def main(
     ctx,
@@ -526,6 +527,7 @@ def main(
     debug,
     working_dir,
     mcp_config,
+    orchestrator,
 ):
     """DuckyAI — AI-powered developer assistant.
 
@@ -545,6 +547,18 @@ def main(
     if debug:
         from ..logger import Logger
         Logger(console_output=True).set_level("DEBUG")
+
+    # Internal daemon entry point (used by subprocess spawning)
+    if orchestrator:
+        vault_root = resolve_vault(working_dir)
+        run_orchestrator_daemon(
+            vault_path=vault_root,
+            debug=debug,
+            working_dir=working_dir,
+            config_file=config_file,
+            mcp_config=mcp_config,
+        )
+        return
 
     onboarding_target = _get_onboarding_target(
         invoked_subcommand=ctx.invoked_subcommand,
