@@ -264,6 +264,7 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
     async def pty_reader():
         """Read PTY output → send to WebSocket."""
         loop = asyncio.get_event_loop()
+        da1_responded = False  # only respond to DA1 once at startup
         try:
             while not stop_event.is_set():
                 data = await loop.run_in_executor(None, pty.read, 4096)
@@ -272,12 +273,26 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
                         break
                     await asyncio.sleep(0.01)
                     continue
-                # ConPTY sends \x1b[c (DA1 terminal capability query) at startup.
-                # cmd.exe blocks waiting for a response before outputting anything.
-                # Respond immediately from the server side so the client doesn't
-                # have to establish the full WebSocket echo cycle first.
-                if b"\x1b[c" in data:
+
+                # DA1 response: ConPTY emits \x1b[c at startup; cmd.exe blocks
+                # until it receives a terminal capability response. Respond once
+                # so cmd.exe unblocks. We MUST NOT repeat this — injecting
+                # \x1b[?1;2c into stdin while an interactive picker (@ / #) is
+                # active via ReadConsoleInput corrupts its input stream.
+                if not da1_responded and b"\x1b[c" in data:
                     pty.write(b"\x1b[?1;2c")
+                    da1_responded = True
+
+                # Win32 input mode: ConPTY requests \x1b[?9001h so the terminal
+                # sends keyboard events in Win32 format. xterm.js supports this,
+                # but the Win32-encoded key events may not round-trip correctly
+                # through our WebSocket bridge back to ConPTY. Disable it so
+                # ConPTY stays in standard VT input mode — ConPTY correctly
+                # translates \x1b[A / \x1b[B arrow sequences to VK_UP / VK_DOWN
+                # events, making the @ and # pickers navigable.
+                if b"\x1b[?9001h" in data:
+                    pty.write(b"\x1b[?9001l")
+
                 try:
                     await websocket.send(data)
                 except websockets.ConnectionClosed:
