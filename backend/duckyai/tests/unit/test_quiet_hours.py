@@ -107,6 +107,14 @@ class TestConfigQuietHours:
         config = self._make_config(qh, time(2, 0))
         assert config.is_quiet_hours() is False
 
+    def test_start_equals_end(self):
+        """start == end → same-day branch, always False (effectively disabled)."""
+        qh = {"enabled": True, "start": "08:00", "end": "08:00"}
+        config = self._make_config(qh, time(8, 0))
+        assert config.is_quiet_hours() is False
+        config2 = self._make_config(qh, time(12, 0))
+        assert config2.is_quiet_hours() is False
+
 
 # ------------------------------------------------------------------ #
 # CronScheduler quiet hours gate

@@ -404,6 +404,7 @@ class Config:
         except (ValueError, TypeError):
             return False
 
+        # Truncate to minute granularity to match HH:MM config format
         now = self.user_now().time().replace(second=0, microsecond=0)
 
         if start > end:  # wraps past midnight (e.g. 23:00 → 08:00)
