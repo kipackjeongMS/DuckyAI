@@ -202,9 +202,9 @@ export default function DuckyAIApp({
                   </div>
                   {terminalOpen && (
                     <button
-                      onClick={() => setTerminalOpen(false)}
-                      className="p-1.5 rounded-md transition-colors hover:bg-[rgba(0,212,255,0.08)] text-muted-foreground hover:text-foreground"
-                      title="Close terminal"
+                      onClick={() => { setTerminalOpen(false); setTerminalLoading(false); }}
+                      className="p-1.5 rounded-md transition-colors hover:bg-[rgba(255,68,102,0.12)] text-muted-foreground hover:text-[#ff4466]"
+                      title="Kill terminal session"
                     >
                       <X size={14} />
                     </button>
@@ -241,83 +241,87 @@ export default function DuckyAIApp({
                   </button>
                 </div>
 
-                {/* Tab content */}
+                {/* Tab content — both panels stay mounted; only visibility toggled via display */}
                 <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-                  {obsidianTab === "dashboard" ? (
-                    <div className="flex-1 overflow-y-auto">
-                      <Sidebar
-                        orchestratorRunning={orch.running}
-                        agents={orch.agents}
-                        triggeringId={orch.triggeringId}
-                        onToggleOrchestrator={orch.toggleOrchestrator}
-                        onTriggerAgent={orch.triggerAgent}
-                        restarting={orch.restarting}
-                        onRestartDaemon={orch.restartDaemon}
-                        onOpenWorkspace={onOpenWorkspace}
-                        activityEntries={activity.entries}
-                        activityLoading={activity.loading}
-                        activityAgentFilter={activity.agentFilter}
-                        onActivityFilterChange={activity.setAgentFilter}
-                        onActivityRefresh={activity.refresh}
-                        onFetchLog={activity.fetchLog}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex flex-col min-h-0 relative">
-                      {!terminalOpen && !terminalLoading ? (
-                        <div className="flex-1 flex items-center justify-center">
-                          <motion.button
-                            onClick={() => {
-                              setTerminalOpen(true);
-                            }}
-                            className="flex flex-col items-center gap-3 px-10 py-6 rounded-2xl border border-[rgba(0,212,255,0.15)] bg-[rgba(0,212,255,0.04)] hover:bg-[rgba(0,212,255,0.08)] text-foreground cursor-pointer transition-colors"
-                            style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                          >
-                            <Terminal size={28} className="text-[#00d4ff]" />
-                            <span>Talk with Ducky</span>
-                            <span className="text-muted-foreground" style={{ fontSize: "0.65rem", letterSpacing: "0.05em" }}>
-                              Opens an interactive terminal session
-                            </span>
-                          </motion.button>
+                  {/* Dashboard tab */}
+                  <div
+                    className="flex-1 overflow-y-auto"
+                    style={{ display: obsidianTab === "dashboard" ? "block" : "none" }}
+                  >
+                    <Sidebar
+                      orchestratorRunning={orch.running}
+                      agents={orch.agents}
+                      triggeringId={orch.triggeringId}
+                      onToggleOrchestrator={orch.toggleOrchestrator}
+                      onTriggerAgent={orch.triggerAgent}
+                      restarting={orch.restarting}
+                      onRestartDaemon={orch.restartDaemon}
+                      onOpenWorkspace={onOpenWorkspace}
+                      activityEntries={activity.entries}
+                      activityLoading={activity.loading}
+                      activityAgentFilter={activity.agentFilter}
+                      onActivityFilterChange={activity.setAgentFilter}
+                      onActivityRefresh={activity.refresh}
+                      onFetchLog={activity.fetchLog}
+                    />
+                  </div>
+
+                  {/* Ducky tab — stays mounted once terminal opens so xterm session persists */}
+                  <div
+                    className="flex-1 flex flex-col min-h-0 relative"
+                    style={{ display: obsidianTab === "ducky" ? "flex" : "none" }}
+                  >
+                    {!terminalOpen && !terminalLoading ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <motion.button
+                          onClick={() => setTerminalOpen(true)}
+                          className="flex flex-col items-center gap-3 px-10 py-6 rounded-2xl border border-[rgba(0,212,255,0.15)] bg-[rgba(0,212,255,0.04)] hover:bg-[rgba(0,212,255,0.08)] text-foreground cursor-pointer transition-colors"
+                          style={{ fontSize: "0.85rem", letterSpacing: "0.1em" }}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                        >
+                          <Terminal size={28} className="text-[#00d4ff]" />
+                          <span>Talk with Ducky</span>
+                          <span className="text-muted-foreground" style={{ fontSize: "0.65rem", letterSpacing: "0.05em" }}>
+                            Opens an interactive terminal session
+                          </span>
+                        </motion.button>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Terminal mounts immediately (hidden behind loading overlay) */}
+                        <div className="flex-1 overflow-hidden min-h-0" style={{ height: "100%", visibility: terminalLoading ? "hidden" : "visible" }}>
+                          <TerminalPanel wsUrl={api.terminal.wsUrl} />
                         </div>
-                      ) : (
-                        <>
-                          {/* Terminal mounts immediately (hidden behind loading overlay) */}
-                          <div className="flex-1 overflow-hidden min-h-0" style={{ height: "100%", visibility: terminalLoading ? "hidden" : "visible" }}>
-                            <TerminalPanel wsUrl={api.terminal.wsUrl} />
-                          </div>
-                          <AnimatePresence>
-                            {terminalLoading && (
+                        <AnimatePresence>
+                          {terminalLoading && (
+                            <motion.div
+                              className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10"
+                              style={{ background: "var(--background, #0a0a0a)" }}
+                              initial={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.4 }}
+                            >
                               <motion.div
-                                className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10"
-                                style={{ background: "var(--background, #0a0a0a)" }}
-                                initial={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.4 }}
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                               >
-                                <motion.div
-                                  animate={{ rotate: 360 }}
-                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                >
-                                  <Terminal size={32} className="text-[#00d4ff]" />
-                                </motion.div>
-                                <motion.span
-                                  className="text-muted-foreground"
-                                  style={{ fontSize: "0.75rem", letterSpacing: "0.08em" }}
-                                  animate={{ opacity: [0.4, 1, 0.4] }}
-                                  transition={{ duration: 1.5, repeat: Infinity }}
-                                >
-                                  Waking up Ducky...
-                                </motion.span>
+                                <Terminal size={32} className="text-[#00d4ff]" />
                               </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </>
-                      )}
-                    </div>
-                  )}
+                              <motion.span
+                                className="text-muted-foreground"
+                                style={{ fontSize: "0.75rem", letterSpacing: "0.08em" }}
+                                animate={{ opacity: [0.4, 1, 0.4] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                              >
+                                Waking up Ducky...
+                              </motion.span>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
