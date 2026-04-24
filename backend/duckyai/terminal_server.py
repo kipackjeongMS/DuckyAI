@@ -264,8 +264,6 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
     async def pty_reader():
         """Read PTY output → send to WebSocket."""
         loop = asyncio.get_event_loop()
-        da1_responded = False        # only respond to DA1 once at startup
-        win32_input_disabled = False  # only disable Win32 input mode once at startup
         try:
             while not stop_event.is_set():
                 data = await loop.run_in_executor(None, pty.read, 4096)
@@ -275,29 +273,28 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
                     await asyncio.sleep(0.01)
                     continue
 
-                # DA1 response: ConPTY emits \x1b[c at startup; cmd.exe blocks
-                # until it receives a terminal capability response. Respond once
-                # so cmd.exe unblocks. We MUST NOT repeat this — injecting
-                # \x1b[?1;2c into stdin while an interactive picker (@ / #) is
-                # active via ReadConsoleInput corrupts its input stream.
-                if not da1_responded and b"\x1b[c" in data:
-                    pty.write(b"\x1b[?1;2c")
-                    da1_responded = True
+                # Strip sequences that must NOT be forwarded to xterm.js:
+                #
+                # \x1b[c — ConPTY's DA1 capability query directed at our terminal.
+                #   If xterm.js sees it, it auto-responds with \x1b[?1;2c via onData
+                #   → WebSocket → pty.write(). But ConPTY does NOT intercept that
+                #   response on its input pipe; it forwards it to cmd.exe's stdin as
+                #   raw bytes → echoed as ^[[?1;2c → corrupts the cmd.exe prompt.
+                #   Stripping prevents the xterm.js auto-response entirely.
+                #
+                # \x1b[?9001h — Win32 input mode request from Copilot CLI.
+                #   If xterm.js sees it, it switches to Win32 key-event reporting.
+                #   The Win32-format events xterm.js then sends don't round-trip
+                #   cleanly through our WebSocket bridge. More importantly, if this
+                #   sequence reaches xterm.js WHILE a filter character is being
+                #   typed, xterm.js temporarily drops keystrokes → picker freeze.
+                #   Stripping keeps xterm.js in standard VT input mode; ConPTY
+                #   correctly translates VT sequences (\x1b[A / \x1b[B / plain
+                #   chars) into INPUT_RECORDs for Copilot CLI regardless.
+                data = data.replace(b"\x1b[c", b"").replace(b"\x1b[?9001h", b"")
 
-                # Win32 input mode: ConPTY requests \x1b[?9001h so the terminal
-                # sends keyboard events in Win32 format. xterm.js supports this,
-                # but the Win32-encoded key events may not round-trip correctly
-                # through our WebSocket bridge back to ConPTY. Disable it ONCE
-                # so ConPTY stays in standard VT input mode — ConPTY correctly
-                # translates \x1b[A / \x1b[B arrow sequences to VK_UP / VK_DOWN
-                # events, making the @ and # pickers navigable.
-                # We MUST NOT repeat this — Copilot CLI re-emits \x1b[?9001h
-                # after each picker re-render (e.g. when typing a filter char),
-                # and injecting \x1b[?9001l into stdin mid-ReadConsoleInput
-                # corrupts the input stream → freeze on typed characters.
-                if not win32_input_disabled and b"\x1b[?9001h" in data:
-                    pty.write(b"\x1b[?9001l")
-                    win32_input_disabled = True
+                if not data:
+                    continue
 
                 try:
                     await websocket.send(data)
@@ -308,6 +305,7 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
 
     async def ws_reader():
         """Read WebSocket input → write to PTY."""
+        loop = asyncio.get_event_loop()
         try:
             async for message in websocket:
                 if isinstance(message, str):
@@ -321,10 +319,15 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
                             continue
                     except (json.JSONDecodeError, KeyError):
                         pass
-                    # Plain text input
-                    pty.write(message.encode("utf-8"))
+                    # Plain text input — run in executor so pty.write() (which
+                    # calls WriteFile on the ConPTY input pipe) never blocks the
+                    # asyncio event loop. If it blocked, pty_reader() would stall,
+                    # ConPTY's output buffer would fill, and ConPTY would stop
+                    # accepting input → deadlock during large output bursts (e.g.
+                    # picker re-render after typing a filter character).
+                    await loop.run_in_executor(None, pty.write, message.encode("utf-8"))
                 elif isinstance(message, bytes):
-                    pty.write(message)
+                    await loop.run_in_executor(None, pty.write, message)
         except Exception:
             pass
         finally:
