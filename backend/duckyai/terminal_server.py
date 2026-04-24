@@ -288,7 +288,7 @@ async def _handle_terminal(websocket, vault_path: str | None = None):
         delay = 2.0 if sys.platform == "win32" else 0.5
         await asyncio.sleep(delay)
         if not stop_event.is_set():
-            pty.write(b"copilot\n")
+            pty.write(b"copilot\r")
             log.info("[terminal] Auto-executed: copilot")
 
     try:
