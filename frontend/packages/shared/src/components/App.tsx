@@ -270,6 +270,7 @@ export default function DuckyAIApp({
                     restarting={orch.restarting}
                     onRestartDaemon={orch.restartDaemon}
                     onOpenWorkspace={onOpenWorkspace}
+                    onChatSend={api.chat.send}
                     activityEntries={activity.entries}
                     activityLoading={activity.loading}
                     activityAgentFilter={activity.agentFilter}
@@ -333,6 +334,7 @@ export default function DuckyAIApp({
                       restarting={orch.restarting}
                       onRestartDaemon={orch.restartDaemon}
                       onOpenWorkspace={onOpenWorkspace}
+                      onChatSend={api.chat.send}
                       activityEntries={activity.entries}
                       activityLoading={activity.loading}
                       activityAgentFilter={activity.agentFilter}

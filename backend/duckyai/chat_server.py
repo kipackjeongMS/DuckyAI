@@ -140,14 +140,21 @@ class ChatRuntime:
         if not self._started:
             await self.start()
 
-        from copilot import PermissionHandler
+        # SDK renamed PermissionHandler → SessionFsHandler across versions
+        try:
+            from copilot import PermissionHandler as _Handler
+        except ImportError:
+            from copilot import SessionFsHandler as _Handler
+
+        approve = getattr(_Handler, "approve_all", None)
 
         mcp_servers = self._build_mcp_config()
         session_opts = {
             "model": "claude-sonnet-4",
-            "on_permission_request": PermissionHandler.approve_all,
             "mcp_servers": mcp_servers,
         }
+        if approve is not None:
+            session_opts["on_permission_request"] = approve
 
         try:
             self._session = await self._client.create_session(**session_opts)

@@ -187,14 +187,23 @@ def _create_client(cwd: str | None):
 
 
 async def _create_session(client, *, model: str | None, mcp_servers: dict[str, dict[str, Any]]):
-    try:
-        from copilot.types import PermissionHandler
-    except ImportError:
-        from copilot.session import PermissionHandler
+    # SDK renamed PermissionHandler → SessionFsHandler across versions
+    _Handler = None
+    for _mod in ("copilot", "copilot.types", "copilot.session"):
+        try:
+            _m = __import__(_mod, fromlist=["PermissionHandler"])
+            _Handler = getattr(_m, "PermissionHandler", None)
+            if _Handler is None:
+                _Handler = getattr(_m, "SessionFsHandler", None)
+            if _Handler:
+                break
+        except ImportError:
+            continue
 
-    session_opts: dict[str, Any] = {
-        "on_permission_request": PermissionHandler.approve_all,
-    }
+    session_opts: dict[str, Any] = {}
+    approve = getattr(_Handler, "approve_all", None) if _Handler else None
+    if approve is not None:
+        session_opts["on_permission_request"] = approve
     if model:
         session_opts["model"] = model
     if mcp_servers:
