@@ -372,6 +372,46 @@ class Config:
         return datetime.now(tz)
 
     # --------------------------------------------------------------------- #
+    # Quiet hours
+    # --------------------------------------------------------------------- #
+    def is_quiet_hours(self) -> bool:
+        """Check if the current time falls within the configured quiet-hours window.
+
+        Reads ``orchestrator.quiet_hours`` from duckyai.yml:
+            enabled: bool
+            start: "HH:MM"  (24-hour, user timezone)
+            end:   "HH:MM"
+
+        Handles wrap-past-midnight (e.g. 23:00 → 08:00).
+        Returns ``False`` when the section is absent or ``enabled`` is false.
+        """
+        from datetime import time as _time
+
+        qh = self.get("orchestrator.quiet_hours")
+        if not qh or not isinstance(qh, dict) or not qh.get("enabled", False):
+            return False
+
+        raw_start = qh.get("start", "")
+        raw_end = qh.get("end", "")
+        if not raw_start or not raw_end:
+            return False
+
+        try:
+            sh, sm = (int(x) for x in raw_start.split(":"))
+            eh, em = (int(x) for x in raw_end.split(":"))
+            start = _time(sh, sm)
+            end = _time(eh, em)
+        except (ValueError, TypeError):
+            return False
+
+        now = self.user_now().time().replace(second=0, microsecond=0)
+
+        if start > end:  # wraps past midnight (e.g. 23:00 → 08:00)
+            return now >= start or now < end
+        else:  # same-day window (e.g. 08:00 → 17:00)
+            return start <= now < end
+
+    # --------------------------------------------------------------------- #
     # Services accessors
     # --------------------------------------------------------------------- #
     def get_services_path(self) -> str:

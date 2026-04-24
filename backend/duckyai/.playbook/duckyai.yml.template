@@ -29,6 +29,10 @@ orchestrator:
   use_container: ${use_container}
   container:
     image: duckyai-agent:latest
+  quiet_hours:
+    enabled: true
+    start: "23:00"
+    end: "08:00"
 defaults:
   executor: copilot_sdk
   timeout_minutes: 30

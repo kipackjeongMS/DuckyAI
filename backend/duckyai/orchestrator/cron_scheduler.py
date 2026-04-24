@@ -92,6 +92,11 @@ class CronScheduler:
         """
         Check if any agents with cron expressions should be triggered now.
         """
+        # Quiet hours — skip all cron checks
+        if self.config.is_quiet_hours():
+            logger.debug("Quiet hours active — skipping cron check")
+            return
+
         now = self.config.user_now()
 
         # Get all agents with cron expressions

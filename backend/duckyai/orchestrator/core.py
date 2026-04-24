@@ -485,6 +485,14 @@ class Orchestrator:
         """
         logger.debug(f"Processing event: {trigger_event.event_type} {trigger_event.path}")
 
+        # Quiet hours — drop non-manual events
+        if trigger_event.event_type != "manual" and self.config.is_quiet_hours():
+            logger.info(
+                f"Quiet hours active — dropping {trigger_event.event_type} event: "
+                f"{trigger_event.path or trigger_event.target_agent}"
+            )
+            return
+
         # 1. Handle Task Files
         # Task files are special: they control execution flow and shouldn't trigger other agents
         if self._is_task_file(trigger_event.path):

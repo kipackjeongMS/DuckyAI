@@ -477,6 +477,7 @@ The vault includes a Python CLI orchestrator (`cli/`) for automated workflows:
 - **Trigger agent:** `duckyai trigger EIC --file 00-Inbox/article.md`
 - **Config:** `duckyai.yml` at vault root — defines agents, triggers, schedules
 - **Hot-reload:** Edit `duckyai.yml` while daemon runs — zero-downtime updates
+- **Quiet hours:** Set `orchestrator.quiet_hours` in `duckyai.yml` to suppress automated agents overnight (default 23:00–08:00). Manual triggers always bypass.
 
 The CLI handles automation (file triggers + cron scheduling). Copilot + MCP handles interactive work. Both coexist.
 

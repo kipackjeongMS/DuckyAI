@@ -150,6 +150,31 @@
               }
             }
           }
+        },
+        "quiet_hours": {
+          "type": "object",
+          "description": "Suppress automated agent execution during a daily time window (user timezone). Manual triggers always bypass.",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Whether quiet hours are active.",
+              "default": false
+            },
+            "start": {
+              "type": "string",
+              "description": "Start of quiet window in 24-hour HH:MM format (user timezone).",
+              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+              "default": "23:00"
+            },
+            "end": {
+              "type": "string",
+              "description": "End of quiet window in 24-hour HH:MM format (user timezone).",
+              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+              "default": "08:00"
+            }
+          },
+          "required": ["enabled", "start", "end"]
         }
       }
     },
