@@ -16,11 +16,19 @@ export function TerminalPanel({ wsUrl }: TerminalPanelProps) {
   const termRef = useRef<XTerm | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retriesRef = useRef(0);
   const [connState, setConnState] = useState<ConnState>("disconnected");
+
+  const MAX_RETRIES = 4;
+  const BASE_DELAY_MS = 1500;
 
   const connect = useCallback(() => {
     if (!termRef.current) return;
     const term = termRef.current;
+
+    // Clear any pending retry
+    if (retryRef.current) { clearTimeout(retryRef.current); retryRef.current = null; }
 
     setConnState("connecting");
     const ws = new WebSocket(wsUrl);
@@ -28,8 +36,8 @@ export function TerminalPanel({ wsUrl }: TerminalPanelProps) {
     wsRef.current = ws;
 
     ws.onopen = () => {
+      retriesRef.current = 0;
       setConnState("connected");
-      // Send initial size
       if (fitRef.current) {
         const dims = fitRef.current.proposeDimensions();
         if (dims) {
@@ -46,14 +54,23 @@ export function TerminalPanel({ wsUrl }: TerminalPanelProps) {
       }
     };
 
-    ws.onclose = () => {
+    const handleDisconnect = () => {
       setConnState("disconnected");
-      term.write("\r\n\x1b[90m[Terminal disconnected — click to reconnect]\x1b[0m\r\n");
+      if (retriesRef.current < MAX_RETRIES) {
+        const delay = BASE_DELAY_MS * Math.pow(2, retriesRef.current);
+        retriesRef.current++;
+        term.write(`\r\n\x1b[90m[Reconnecting in ${(delay / 1000).toFixed(0)}s…]\x1b[0m\r\n`);
+        retryRef.current = setTimeout(connect, delay);
+      } else {
+        term.write(
+          "\r\n\x1b[90m[Terminal server unreachable. Run: \x1b[37mduckyai terminal start\x1b[90m]\x1b[0m\r\n" +
+          "\x1b[90m[Click to retry]\x1b[0m\r\n"
+        );
+      }
     };
 
-    ws.onerror = () => {
-      setConnState("disconnected");
-    };
+    ws.onclose = handleDisconnect;
+    ws.onerror = () => { /* onclose will fire after onerror */ };
   }, [wsUrl]);
 
   // Initialize xterm + addons
@@ -123,6 +140,7 @@ export function TerminalPanel({ wsUrl }: TerminalPanelProps) {
     ro.observe(containerRef.current);
 
     return () => {
+      if (retryRef.current) clearTimeout(retryRef.current);
       ro.disconnect();
       wsRef.current?.close();
       term.dispose();
@@ -132,15 +150,18 @@ export function TerminalPanel({ wsUrl }: TerminalPanelProps) {
     };
   }, []);
 
-  // Connect on mount
+  // Connect once after terminal is initialized
+  const mountedRef = useRef(false);
   useEffect(() => {
-    if (termRef.current && connState === "disconnected") {
+    if (termRef.current && !mountedRef.current) {
+      mountedRef.current = true;
       connect();
     }
-  }, [connect, connState]);
+  }, [connect]);
 
   const handleClick = useCallback(() => {
     if (connState === "disconnected") {
+      retriesRef.current = 0; // reset retries on manual click
       connect();
     }
     termRef.current?.focus();
