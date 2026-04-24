@@ -38,8 +38,24 @@ RUN npm install -g @anthropic-ai/copilot@latest 2>/dev/null || true
 # ── MCP servers (npm global) ──
 RUN npm install -g @microsoft/workiq
 
-# ── DuckyAI (from PyPI / internal feed) ──
-RUN pip install --no-cache-dir duckyai
+# ── DuckyAI (from GitHub release) ──
+ARG DUCKYAI_VERSION=latest
+RUN set -ex && \
+    if [ "$DUCKYAI_VERSION" = "latest" ]; then \
+        DUCKYAI_URL="https://api.github.com/repos/kipackjeongMS/DuckyAI/releases/latest"; \
+    else \
+        DUCKYAI_URL="https://api.github.com/repos/kipackjeongMS/DuckyAI/releases/tags/${DUCKYAI_VERSION}"; \
+    fi && \
+    TARBALL=$(curl -sL "$DUCKYAI_URL" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tarball_url',''))") && \
+    if [ -z "$TARBALL" ]; then \
+        echo "Could not resolve release tarball — installing from git HEAD" && \
+        pip install --no-cache-dir "git+https://github.com/kipackjeongMS/DuckyAI.git#subdirectory=backend"; \
+    else \
+        mkdir -p /tmp/duckyai-src && \
+        curl -sL "$TARBALL" | tar xz -C /tmp/duckyai-src --strip-components=1 && \
+        pip install --no-cache-dir /tmp/duckyai-src/backend && \
+        rm -rf /tmp/duckyai-src; \
+    fi
 
 # ── Container marker ──
 ENV DUCKYAI_CONTAINER=1
