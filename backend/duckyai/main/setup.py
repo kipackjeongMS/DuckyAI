@@ -713,7 +713,7 @@ tags:
     click.echo(f"  ✓ Configured as home vault in ~/.duckyai/config.json")
 
     # Create services directory and register services
-    from ..services import ensure_services_dir, add_service, add_repo_to_service, get_services_path
+    from ..services import ensure_services_dir, add_service, get_services_path
     from ..ado import clone_repo as ado_clone_repo
     services_dir = ensure_services_dir(vault_path)
     click.echo(f"  ✓ Services directory: {services_dir}")
@@ -721,9 +721,16 @@ tags:
     # Build clone jobs: (svc_name, service_dir, repo) for each repo to clone
     clone_jobs = []
     for svc_name, ado_org, ado_project, selected_repos in service_entries:
+        svc_metadata = {}
+        if ado_org:
+            svc_metadata["organization"] = ado_org
+        if ado_project:
+            svc_metadata["project"] = ado_project
+        if svc_metadata:
+            svc_metadata["type"] = "ado"
         service_dir = add_service(
             vault_path, svc_name,
-            ado_org=ado_org, ado_project=ado_project,
+            metadata=svc_metadata or None,
         )
         click.echo(f"    ✓ Service: {svc_name}/")
         for repo in selected_repos:
@@ -750,7 +757,6 @@ tags:
             for future in as_completed(futures):
                 svc, repo, ok = future.result()
                 if ok:
-                    add_repo_to_service(vault_path, svc, repo.name, repo.remote_url)
                     click.echo(f"      ✓ {svc}/{repo.name}")
                 else:
                     click.echo(f"      ⚠ Failed: {svc}/{repo.name}")

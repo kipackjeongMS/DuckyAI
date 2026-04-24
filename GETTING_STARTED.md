@@ -106,7 +106,7 @@ duckyai service add-repo MyService
 duckyai service add-repo MyService --url "https://dev.azure.com/myorg/MyProject" --repo my-repo
 ```
 
-The repo metadata is stored in `.services.json` alongside each service directory.
+Service and repo metadata is stored in `duckyai.yml` under the `services.entries` section.
 
 ## Step 7: Create Your First Daily Note
 

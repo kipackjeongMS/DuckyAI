@@ -4,7 +4,6 @@ Uses real git repos in tmp_path (not mocks) since worktree operations
 are tightly coupled to git state.
 """
 
-import json
 import os
 import subprocess
 import time
@@ -64,21 +63,11 @@ def services_with_repo(tmp_path):
 
     Layout:
         <tmp>/Services/
-            .services.json
             DEPA/
                 DevOpsDeploymentAgents/   ← real git repo with main + feature branch
     """
     services_dir = tmp_path / "Services"
     services_dir.mkdir()
-
-    # .services.json
-    meta = {
-        "vault_id": "test",
-        "services": [{"name": "DEPA", "created": "2026-01-01"}],
-    }
-    (services_dir / ".services.json").write_text(
-        json.dumps(meta, indent=2), encoding="utf-8"
-    )
 
     # Real git repo
     repo_path = services_dir / "DEPA" / "DevOpsDeploymentAgents"
@@ -144,14 +133,9 @@ class TestFindRepoInServices:
         # Add a second service with another repo
         other_repo = services_dir / "AppConfig" / "AzureAppConfigService"
         _init_bare_like_repo(other_repo)
-        # Update metadata
-        meta = json.loads(
-            (services_dir / ".services.json").read_text(encoding="utf-8")
-        )
-        meta["services"].append({"name": "AppConfig", "created": "2026-01-02"})
-        (services_dir / ".services.json").write_text(
-            json.dumps(meta, indent=2), encoding="utf-8"
-        )
+        # Register the service via duckyai.yml
+        from duckyai.services import add_service
+        add_service(vault, "AppConfig")
 
         result = find_repo_in_services(vault, "AzureAppConfigService")
         assert result is not None

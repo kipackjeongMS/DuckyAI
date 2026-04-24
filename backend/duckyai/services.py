@@ -4,21 +4,24 @@ Each vault has an associated services directory (outside the vault) containing
 user code services and their git repos:
 
     <VaultParent>/<VaultName>-Services/
-    ├── .services.json          # Metadata about registered services
     ├── ServiceA/
     │   ├── repo1/              # Git repos
     │   └── repo2/
     └── ServiceB/
         └── main-repo/
+
+Service metadata is stored exclusively in ``duckyai.yml`` under
+``services.entries``.  The legacy ``.services.json`` sidecar file is no longer
+read or written.
 """
 
-import json
-import os
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .config import Config
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
+
+from .config import Config, get_config_path
 
 
 def get_services_path(vault_path: Path) -> Path:
@@ -45,92 +48,116 @@ def ensure_services_dir(vault_path: Path) -> Path:
     """
     services_dir = get_services_path(vault_path)
     services_dir.mkdir(parents=True, exist_ok=True)
-
-    # Initialize .services.json if missing
-    meta_file = services_dir / ".services.json"
-    if not meta_file.exists():
-        meta = {
-            "vault_id": Config(vault_path=vault_path).get("id", "default"),
-            "vault_path": str(Path(vault_path).resolve()),
-            "created": datetime.now().isoformat(),
-            "services": [],
-        }
-        meta_file.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-
     return services_dir
 
 
-def _read_services_meta(services_dir: Path) -> Dict[str, Any]:
-    """Read .services.json metadata from the services directory."""
-    meta_file = services_dir / ".services.json"
-    try:
-        return json.loads(meta_file.read_text(encoding="utf-8"))
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {"services": []}
+# ------------------------------------------------------------------ #
+# Internal YAML helpers (ruamel round-trip for comment preservation)
+# ------------------------------------------------------------------ #
 
+def _load_config(vault_path: Path):
+    """Load duckyai.yml via ruamel round-trip.
 
-def _write_services_meta(services_dir: Path, meta: Dict[str, Any]) -> None:
-    """Write .services.json metadata to the services directory."""
-    meta_file = services_dir / ".services.json"
-    meta_file.write_text(json.dumps(meta, indent=2), encoding="utf-8")
-
-
-def _update_duckyai_yml(vault_path: Path, services: List[Dict]) -> None:
-    """Update the services.entries list in duckyai.yml."""
-    config_path = Path(vault_path) / ".duckyai" / "duckyai.yml"
+    Returns ``(yml, data, config_path)``.
+    If the file does not exist, returns ``(None, None, config_path)``.
+    """
+    config_path = get_config_path(vault_path)
     if not config_path.exists():
-        return
+        return None, None, config_path
+    yml = YAML()
+    yml.preserve_quotes = True
+    yml.width = 4096
+    with open(config_path, encoding="utf-8") as f:
+        data = yml.load(f)
+    return yml, data if data else CommentedMap(), config_path
 
-    content = config_path.read_text(encoding="utf-8")
-    import re
 
-    # Build the new entries YAML block
-    if services:
-        entries_lines = "\n".join(f'    - name: "{s["name"]}"' for s in services)
-        entries_block = f"  entries:\n{entries_lines}"
-    else:
-        entries_block = "  entries: []"
+def _save_config(config_path: Path, yml, data) -> None:
+    """Write *data* back to *config_path* preserving formatting."""
+    with open(config_path, "w", encoding="utf-8") as f:
+        yml.dump(data, f)
 
-    # Replace existing entries block
-    pattern = r"(  entries:).*?(?=\n\w|\n\n\w|\Z)"
-    if re.search(pattern, content, re.DOTALL):
-        content = re.sub(pattern, entries_block, content, count=1, flags=re.DOTALL)
-    else:
-        # No entries key — append under services section
-        content = content.replace("services:", f"services:\n{entries_block}", 1)
 
-    config_path.write_text(content, encoding="utf-8")
+def _get_entries(data) -> list:
+    """Return the ``services.entries`` list from loaded YAML data.
 
+    Returns the live reference (may be a ``CommentedSeq``) so callers can
+    mutate in-place before saving.  Returns ``[]`` if the path is missing.
+    """
+    if data is None:
+        return []
+    services = data.get("services") if hasattr(data, "get") else None
+    if not isinstance(services, dict):
+        return []
+    entries = services.get("entries")
+    if not isinstance(entries, list):
+        return []
+    return entries
+
+
+def _ensure_entries(data) -> list:
+    """Ensure ``services.entries`` exists, creating sections as needed.
+
+    Returns the *live* entries list.
+    """
+    if "services" not in data or not isinstance(data.get("services"), dict):
+        data["services"] = CommentedMap()
+    services = data["services"]
+    if "entries" not in services or not isinstance(services.get("entries"), list):
+        services["entries"] = CommentedSeq()
+    return services["entries"]
+
+
+def _entry_name(entry) -> str:
+    """Extract the service name from an entry (dict-like or plain string)."""
+    if isinstance(entry, str):
+        return entry
+    return entry.get("name", "") if hasattr(entry, "get") else str(entry)
+
+
+def _to_plain(obj):
+    """Recursively convert ruamel types to plain Python types."""
+    if isinstance(obj, dict):
+        return {str(k): _to_plain(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_to_plain(v) for v in obj]
+    return obj
+
+
+# ------------------------------------------------------------------ #
+# Public API
+# ------------------------------------------------------------------ #
 
 def add_service(vault_path: Path, name: str, *,
-                ado_org: Optional[str] = None,
-                ado_project: Optional[str] = None) -> Path:
+                metadata: Optional[Dict[str, Any]] = None,
+                pr_scan: bool = False) -> Path:
     """Add a new service to the vault's services directory.
 
-    Creates the service subdirectory and updates metadata.
+    Creates the service subdirectory and adds an entry to
+    ``duckyai.yml  services.entries`` (using ruamel round-trip so
+    comments and formatting are preserved).
+
     Returns the path to the created service directory.
     """
     services_dir = ensure_services_dir(vault_path)
     service_dir = services_dir / name
     service_dir.mkdir(parents=True, exist_ok=True)
 
-    # Update .services.json
-    meta = _read_services_meta(services_dir)
-    existing_names = {s["name"] for s in meta.get("services", [])}
-    if name not in existing_names:
-        entry: Dict[str, Any] = {
-            "name": name,
-            "created": datetime.now().isoformat(),
-        }
-        if ado_org:
-            entry["ado_org"] = ado_org
-        if ado_project:
-            entry["ado_project"] = ado_project
-        meta.setdefault("services", []).append(entry)
-        _write_services_meta(services_dir, meta)
+    yml, data, config_path = _load_config(vault_path)
+    if yml is None:
+        return service_dir
 
-    # Update duckyai.yml
-    _update_duckyai_yml(vault_path, meta["services"])
+    entries = _ensure_entries(data)
+
+    if not any(_entry_name(e) == name for e in entries):
+        entry = CommentedMap()
+        entry["name"] = name
+        if metadata:
+            entry["metadata"] = metadata
+        if pr_scan:
+            entry["pr_scan"] = True
+        entries.append(entry)
+        _save_config(config_path, yml, data)
 
     return service_dir
 
@@ -140,33 +167,42 @@ def remove_service(vault_path: Path, name: str) -> bool:
 
     Returns True if the service was found and removed.
     """
-    services_dir = get_services_path(vault_path)
-    meta = _read_services_meta(services_dir)
+    yml, data, config_path = _load_config(vault_path)
+    if yml is None:
+        return False
 
-    original_count = len(meta.get("services", []))
-    meta["services"] = [s for s in meta.get("services", []) if s["name"] != name]
+    entries = _get_entries(data)
+    if not entries:
+        return False
 
-    if len(meta["services"]) < original_count:
-        _write_services_meta(services_dir, meta)
-        _update_duckyai_yml(vault_path, meta["services"])
-        return True
-    return False
+    indices = [i for i, e in enumerate(entries) if _entry_name(e) == name]
+    if not indices:
+        return False
+
+    for idx in reversed(indices):
+        del entries[idx]
+
+    _save_config(config_path, yml, data)
+    return True
 
 
 def list_services(vault_path: Path) -> List[Dict[str, Any]]:
     """List all services with their repos.
 
-    Returns list of dicts: [{name, path, repos: [{name, path, is_git}]}]
+    Returns list of dicts: ``[{name, path, exists, repos: [{name, path, is_git}]}]``
     """
     services_dir = get_services_path(vault_path)
     if not services_dir.exists():
         return []
 
-    meta = _read_services_meta(services_dir)
+    yml, data, _ = _load_config(vault_path)
+    entries = _get_entries(data)
     result = []
 
-    for entry in meta.get("services", []):
-        name = entry["name"]
+    for entry in entries:
+        name = _entry_name(entry)
+        if not name:
+            continue
         svc_path = services_dir / name
         repos = []
         if svc_path.is_dir():
@@ -182,7 +218,6 @@ def list_services(vault_path: Path) -> List[Dict[str, Any]]:
             "path": str(svc_path),
             "exists": svc_path.exists(),
             "repos": repos,
-            "created": entry.get("created"),
         })
 
     return result
@@ -202,29 +237,13 @@ def get_all_repo_paths(vault_path: Path) -> List[str]:
 
 
 def get_service_entry(vault_path: Path, name: str) -> Optional[Dict[str, Any]]:
-    """Return the .services.json entry for a named service, or None."""
-    services_dir = get_services_path(vault_path)
-    meta = _read_services_meta(services_dir)
-    for entry in meta.get("services", []):
-        if entry["name"] == name:
-            return entry
+    """Return the ``duckyai.yml`` entry for a named service, or ``None``.
+
+    The returned dict is a plain Python dict (no ruamel types).
+    """
+    yml, data, _ = _load_config(vault_path)
+    entries = _get_entries(data)
+    for entry in entries:
+        if _entry_name(entry) == name:
+            return _to_plain(entry) if hasattr(entry, "items") else {"name": name}
     return None
-
-
-def add_repo_to_service(vault_path: Path, service_name: str,
-                        repo_name: str, remote_url: str) -> None:
-    """Record a cloned repo in the service's metadata."""
-    services_dir = get_services_path(vault_path)
-    meta = _read_services_meta(services_dir)
-    for entry in meta.get("services", []):
-        if entry["name"] == service_name:
-            repos = entry.setdefault("repos", [])
-            # Don't duplicate
-            if not any(r["name"] == repo_name for r in repos):
-                repos.append({
-                    "name": repo_name,
-                    "remote_url": remote_url,
-                    "cloned_at": datetime.now().isoformat(),
-                })
-            _write_services_meta(services_dir, meta)
-            return

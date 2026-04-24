@@ -7,7 +7,6 @@ Tests the host-side PR worktree preparation flow:
 - Fallback to shallow clone when repo not in Services
 """
 
-import json
 import subprocess
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -58,9 +57,7 @@ def vault_with_pr_setup(tmp_path):
     _init_repo(repo_path)
     _create_branch(repo_path, "feature/my-change")
 
-    # Services metadata
-    meta = {"vault_id": "test", "services": [{"name": "DEPA", "created": "2026-01-01"}]}
-    (services_dir / ".services.json").write_text(json.dumps(meta), encoding="utf-8")
+    # Services metadata is in duckyai.yml (no .services.json needed)
 
     # Vault
     vault = tmp_path / "TestVault"

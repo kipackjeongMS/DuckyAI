@@ -1,11 +1,11 @@
 """Unit tests for services.py — service directory management."""
 
-import json
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
+import yaml
 
 from duckyai.services import (
     get_services_path,
@@ -15,9 +15,6 @@ from duckyai.services import (
     list_services,
     get_all_repo_paths,
     get_service_entry,
-    add_repo_to_service,
-    _read_services_meta,
-    _write_services_meta,
 )
 
 
@@ -59,6 +56,13 @@ def temp_vault_no_services_config(tmp_path):
     return vault
 
 
+def _read_yml_entries(vault: Path) -> list:
+    """Helper to read services.entries from duckyai.yml for assertions."""
+    config_path = vault / ".duckyai" / "duckyai.yml"
+    data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    return (data.get("services") or {}).get("entries") or []
+
+
 class TestGetServicesPath:
     """Tests for get_services_path()."""
 
@@ -97,22 +101,14 @@ class TestEnsureServicesDir:
         assert svc_dir.exists()
         assert svc_dir.is_dir()
 
-    def test_creates_metadata_file(self, temp_vault):
+    def test_no_services_json_created(self, temp_vault):
         svc_dir = ensure_services_dir(temp_vault)
-        meta_file = svc_dir / ".services.json"
-        assert meta_file.exists()
-        meta = json.loads(meta_file.read_text(encoding="utf-8"))
-        assert meta["vault_id"] == "test_vault"
-        assert "created" in meta
-        assert meta["services"] == []
+        assert not (svc_dir / ".services.json").exists()
 
     def test_idempotent(self, temp_vault):
         svc_dir1 = ensure_services_dir(temp_vault)
         svc_dir2 = ensure_services_dir(temp_vault)
         assert svc_dir1 == svc_dir2
-        # Metadata should not be overwritten
-        meta = json.loads((svc_dir1 / ".services.json").read_text(encoding="utf-8"))
-        assert meta["services"] == []
 
 
 class TestAddService:
@@ -124,46 +120,76 @@ class TestAddService:
         assert svc_dir.is_dir()
         assert svc_dir.name == "MyService"
 
-    def test_updates_metadata(self, temp_vault):
-        add_service(temp_vault, "SvcA")
-        services_dir = get_services_path(temp_vault)
-        meta = _read_services_meta(services_dir)
-        names = [s["name"] for s in meta["services"]]
-        assert "SvcA" in names
-
     def test_updates_duckyai_yml(self, temp_vault):
         add_service(temp_vault, "SvcB")
-        content = (temp_vault / ".duckyai" / "duckyai.yml").read_text(encoding="utf-8")
-        assert '"SvcB"' in content
+        entries = _read_yml_entries(temp_vault)
+        names = [e["name"] for e in entries]
+        assert "SvcB" in names
 
     def test_idempotent_add(self, temp_vault):
         add_service(temp_vault, "SvcC")
-        add_service(temp_vault, "SvcC")  # Add again
-        services_dir = get_services_path(temp_vault)
-        meta = _read_services_meta(services_dir)
-        count = sum(1 for s in meta["services"] if s["name"] == "SvcC")
+        add_service(temp_vault, "SvcC")
+        entries = _read_yml_entries(temp_vault)
+        count = sum(1 for e in entries if e["name"] == "SvcC")
         assert count == 1, "Should not duplicate entries"
 
     def test_multiple_services(self, temp_vault):
         add_service(temp_vault, "Alpha")
         add_service(temp_vault, "Beta")
         add_service(temp_vault, "Gamma")
-        services_dir = get_services_path(temp_vault)
-        meta = _read_services_meta(services_dir)
-        names = [s["name"] for s in meta["services"]]
+        entries = _read_yml_entries(temp_vault)
+        names = [e["name"] for e in entries]
         assert names == ["Alpha", "Beta", "Gamma"]
+
+    def test_preserves_existing_yml_content(self, temp_vault):
+        """Adding a service must not destroy other duckyai.yml fields."""
+        add_service(temp_vault, "Svc1")
+        content = (temp_vault / ".duckyai" / "duckyai.yml").read_text(encoding="utf-8")
+        data = yaml.safe_load(content)
+        assert data["version"] == "1.0.0"
+        assert data["id"] == "test_vault"
+
+    def test_with_metadata(self, temp_vault):
+        add_service(temp_vault, "WithMeta", metadata={
+            "type": "ado",
+            "organization": "myorg",
+            "project": "myproj",
+        })
+        entries = _read_yml_entries(temp_vault)
+        entry = entries[0]
+        assert entry["metadata"]["type"] == "ado"
+        assert entry["metadata"]["organization"] == "myorg"
+        assert entry["metadata"]["project"] == "myproj"
+
+    def test_with_pr_scan(self, temp_vault):
+        add_service(temp_vault, "Scanned", pr_scan=True)
+        entries = _read_yml_entries(temp_vault)
+        assert entries[0]["pr_scan"] is True
+
+    def test_metadata_optional(self, temp_vault):
+        add_service(temp_vault, "NoMeta")
+        entries = _read_yml_entries(temp_vault)
+        entry = entries[0]
+        assert "metadata" not in entry
+        assert "pr_scan" not in entry
+
+    def test_creates_services_section_if_missing(self, temp_vault_no_services_config):
+        svc_dir = add_service(temp_vault_no_services_config, "NewSvc")
+        assert svc_dir.exists()
+        entries = _read_yml_entries(temp_vault_no_services_config)
+        assert len(entries) == 1
+        assert entries[0]["name"] == "NewSvc"
 
 
 class TestRemoveService:
     """Tests for remove_service()."""
 
-    def test_removes_from_metadata(self, temp_vault):
+    def test_removes_from_yml(self, temp_vault):
         add_service(temp_vault, "ToRemove")
         result = remove_service(temp_vault, "ToRemove")
         assert result is True
-        services_dir = get_services_path(temp_vault)
-        meta = _read_services_meta(services_dir)
-        names = [s["name"] for s in meta["services"]]
+        entries = _read_yml_entries(temp_vault)
+        names = [e["name"] for e in entries]
         assert "ToRemove" not in names
 
     def test_returns_false_for_nonexistent(self, temp_vault):
@@ -179,8 +205,28 @@ class TestRemoveService:
     def test_updates_duckyai_yml(self, temp_vault):
         add_service(temp_vault, "Gone")
         remove_service(temp_vault, "Gone")
-        content = (temp_vault / ".duckyai" / "duckyai.yml").read_text(encoding="utf-8")
-        assert '"Gone"' not in content
+        entries = _read_yml_entries(temp_vault)
+        names = [e.get("name") for e in entries]
+        assert "Gone" not in names
+
+    def test_preserves_other_entries(self, temp_vault):
+        add_service(temp_vault, "Keep1")
+        add_service(temp_vault, "Remove")
+        add_service(temp_vault, "Keep2")
+        remove_service(temp_vault, "Remove")
+        entries = _read_yml_entries(temp_vault)
+        names = [e["name"] for e in entries]
+        assert names == ["Keep1", "Keep2"]
+
+    def test_preserves_metadata_of_remaining_entries(self, temp_vault):
+        """Removing a service must not wipe metadata of other entries."""
+        add_service(temp_vault, "Rich", metadata={"type": "ado", "organization": "o"}, pr_scan=True)
+        add_service(temp_vault, "Doomed")
+        remove_service(temp_vault, "Doomed")
+        entries = _read_yml_entries(temp_vault)
+        assert len(entries) == 1
+        assert entries[0]["metadata"]["organization"] == "o"
+        assert entries[0]["pr_scan"] is True
 
 
 class TestListServices:
@@ -202,10 +248,9 @@ class TestListServices:
 
     def test_includes_repo_info(self, temp_vault):
         svc_dir = add_service(temp_vault, "WithRepo")
-        # Create a fake git repo
         repo = svc_dir / "my-repo"
         repo.mkdir()
-        (repo / ".git").mkdir()  # Fake git dir
+        (repo / ".git").mkdir()
         result = list_services(temp_vault)
         svc = [s for s in result if s["name"] == "WithRepo"][0]
         assert len(svc["repos"]) == 1
@@ -264,47 +309,6 @@ class TestGetAllRepoPaths:
         assert result == []
 
 
-class TestMetadataIO:
-    """Tests for _read_services_meta / _write_services_meta."""
-
-    def test_round_trip(self, tmp_path):
-        meta = {"services": [{"name": "Test", "created": "2026-01-01"}]}
-        _write_services_meta(tmp_path, meta)
-        result = _read_services_meta(tmp_path)
-        assert result["services"][0]["name"] == "Test"
-
-    def test_read_missing_file(self, tmp_path):
-        result = _read_services_meta(tmp_path)
-        assert result == {"services": []}
-
-    def test_read_corrupt_file(self, tmp_path):
-        (tmp_path / ".services.json").write_text("not json!", encoding="utf-8")
-        result = _read_services_meta(tmp_path)
-        assert result == {"services": []}
-
-
-class TestAddServiceWithAdo:
-    """Tests for add_service() with ADO metadata."""
-
-    def test_stores_ado_org_and_project(self, temp_vault):
-        add_service(temp_vault, "WithAdo", ado_org="msazure", ado_project="MyProject")
-        services_dir = get_services_path(temp_vault)
-        meta = _read_services_meta(services_dir)
-        entry = meta["services"][0]
-        assert entry["name"] == "WithAdo"
-        assert entry["ado_org"] == "msazure"
-        assert entry["ado_project"] == "MyProject"
-
-    def test_ado_fields_optional(self, temp_vault):
-        add_service(temp_vault, "NoAdo")
-        services_dir = get_services_path(temp_vault)
-        meta = _read_services_meta(services_dir)
-        entry = meta["services"][0]
-        assert entry["name"] == "NoAdo"
-        assert "ado_org" not in entry or entry.get("ado_org") is None
-        assert "ado_project" not in entry or entry.get("ado_project") is None
-
-
 class TestGetServiceEntry:
     """Tests for get_service_entry()."""
 
@@ -319,49 +323,17 @@ class TestGetServiceEntry:
         entry = get_service_entry(temp_vault, "DoesNotExist")
         assert entry is None
 
-    def test_returns_ado_metadata(self, temp_vault):
-        add_service(temp_vault, "AdoSvc", ado_org="myorg", ado_project="myproj")
-        entry = get_service_entry(temp_vault, "AdoSvc")
-        assert entry["ado_org"] == "myorg"
-        assert entry["ado_project"] == "myproj"
+    def test_returns_metadata(self, temp_vault):
+        add_service(temp_vault, "MetaSvc", metadata={
+            "type": "ado",
+            "organization": "myorg",
+            "project": "myproj",
+        })
+        entry = get_service_entry(temp_vault, "MetaSvc")
+        assert entry["metadata"]["organization"] == "myorg"
+        assert entry["metadata"]["project"] == "myproj"
 
-
-class TestAddRepoToService:
-    """Tests for add_repo_to_service()."""
-
-    def test_adds_repo_entry(self, temp_vault):
-        add_service(temp_vault, "Svc")
-        add_repo_to_service(
-            temp_vault, "Svc", "my-repo", "https://dev.azure.com/org/proj/_git/my-repo"
-        )
-        services_dir = get_services_path(temp_vault)
-        meta = _read_services_meta(services_dir)
-        entry = meta["services"][0]
-        assert len(entry["repos"]) == 1
-        assert entry["repos"][0]["name"] == "my-repo"
-        assert entry["repos"][0]["remote_url"] == "https://dev.azure.com/org/proj/_git/my-repo"
-        assert "cloned_at" in entry["repos"][0]
-
-    def test_does_not_duplicate(self, temp_vault):
-        add_service(temp_vault, "Svc")
-        add_repo_to_service(temp_vault, "Svc", "repo1", "https://example.com/repo1")
-        add_repo_to_service(temp_vault, "Svc", "repo1", "https://example.com/repo1")
-        services_dir = get_services_path(temp_vault)
-        meta = _read_services_meta(services_dir)
-        entry = meta["services"][0]
-        assert len(entry["repos"]) == 1
-
-    def test_multiple_repos(self, temp_vault):
-        add_service(temp_vault, "Multi")
-        add_repo_to_service(temp_vault, "Multi", "r1", "https://a.com/r1")
-        add_repo_to_service(temp_vault, "Multi", "r2", "https://a.com/r2")
-        services_dir = get_services_path(temp_vault)
-        meta = _read_services_meta(services_dir)
-        entry = meta["services"][0]
-        names = [r["name"] for r in entry["repos"]]
-        assert names == ["r1", "r2"]
-
-    def test_noop_for_nonexistent_service(self, temp_vault):
-        ensure_services_dir(temp_vault)
-        # Should not raise
-        add_repo_to_service(temp_vault, "Ghost", "repo", "https://a.com/repo")
+    def test_returns_plain_dict(self, temp_vault):
+        add_service(temp_vault, "Plain")
+        entry = get_service_entry(temp_vault, "Plain")
+        assert type(entry) is dict

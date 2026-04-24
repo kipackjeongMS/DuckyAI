@@ -130,7 +130,7 @@ def service_add_repo(ctx, service_name, ado_url, repo_name):
     from ..ado import is_az_devops_available, parse_ado_project_url, list_repos, clone_repo
     from ..services import (
         get_services_path, get_service_entry,
-        add_repo_to_service, add_service,
+        add_service,
     )
 
     vault_root = _resolve_vault_root(ctx)
@@ -161,9 +161,10 @@ def service_add_repo(ctx, service_name, ado_url, repo_name):
             click.echo(f"  ❌ Could not parse org/project from URL: {ado_url}", err=True)
             sys.exit(1)
     else:
-        # Try from service metadata
-        ado_org = (entry or {}).get("ado_org")
-        ado_project = (entry or {}).get("ado_project")
+        # Try from service metadata (duckyai.yml entry)
+        meta = (entry or {}).get("metadata") or {}
+        ado_org = meta.get("organization")
+        ado_project = meta.get("project")
 
     if not ado_org or not ado_project:
         ado_url = click.prompt(
@@ -209,7 +210,6 @@ def service_add_repo(ctx, service_name, ado_url, repo_name):
 
     click.echo(f"  Cloning {selected.name}...")
     if clone_repo(selected.remote_url, dest):
-        add_repo_to_service(vault_root, service_name, selected.name, selected.remote_url)
         click.echo(f"  ✅ Cloned {selected.name} into {dest}")
     else:
         click.echo(f"  ❌ Clone failed. Check git credentials and network.", err=True)
