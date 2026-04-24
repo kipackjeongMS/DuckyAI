@@ -50,7 +50,6 @@ async function spawnDaemon(vaultPath: string): Promise<void> {
       const spawnOpts: Record<string, unknown> = {
         cwd: candidate.cwd,
         stdio: "ignore",
-        detached: true,
       };
 
       if (process.platform === "win32") {
@@ -59,6 +58,8 @@ async function spawnDaemon(vaultPath: string): Promise<void> {
         spawnOpts.windowsHide = true;
         (spawnOpts as any).creationflags =
           CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW;
+      } else {
+        spawnOpts.detached = true;
       }
 
       const child = spawn(candidate.command, args, spawnOpts as any);
@@ -86,7 +87,6 @@ async function spawnChatServer(vaultPath: string): Promise<void> {
       const spawnOpts: Record<string, unknown> = {
         cwd: candidate.cwd,
         stdio: "ignore",
-        detached: true,
       };
 
       if (process.platform === "win32") {
@@ -95,6 +95,8 @@ async function spawnChatServer(vaultPath: string): Promise<void> {
         spawnOpts.windowsHide = true;
         (spawnOpts as any).creationflags =
           CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW;
+      } else {
+        spawnOpts.detached = true;
       }
 
       const child = spawn(candidate.command, args, spawnOpts as any);
@@ -121,7 +123,6 @@ async function spawnTerminalServer(vaultPath: string): Promise<void> {
       const spawnOpts: Record<string, unknown> = {
         cwd: vaultPath,
         stdio: "ignore",
-        detached: true,
       };
 
       if (process.platform === "win32") {
@@ -130,6 +131,8 @@ async function spawnTerminalServer(vaultPath: string): Promise<void> {
         spawnOpts.windowsHide = true;
         (spawnOpts as any).creationflags =
           CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW;
+      } else {
+        spawnOpts.detached = true;
       }
 
       const child = spawn(candidate.command, args, spawnOpts as any);
