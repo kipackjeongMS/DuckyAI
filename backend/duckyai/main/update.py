@@ -196,10 +196,19 @@ def _stop_duckyai_processes() -> list[dict]:
             pass
 
     # 3. Kill any remaining duckyai processes (not ourselves)
-    my_pid = os.getpid()
+    # Collect our own PID and all ancestor PIDs — on Windows duckyai.exe
+    # is a launcher shim (PID A) that spawns python.exe (PID B, us).
+    # We must skip both to avoid killing the running update process.
+    exclude_pids = {os.getpid()}
+    try:
+        for parent in psutil.Process(os.getpid()).parents():
+            exclude_pids.add(parent.pid)
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        pass
+
     for proc in psutil.process_iter(["pid", "name", "cmdline", "exe"]):
         try:
-            if proc.pid == my_pid:
+            if proc.pid in exclude_pids:
                 continue
             pname = (proc.info.get("name") or "").lower()
             exe_path = (proc.info.get("exe") or "").lower()
