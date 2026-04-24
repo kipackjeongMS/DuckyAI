@@ -114,6 +114,8 @@ export function TerminalPanel({ wsUrl }: TerminalPanelProps) {
 
     term.open(containerRef.current);
     fit.fit();
+    // Re-fit after a short delay to handle containers that haven't fully laid out
+    setTimeout(() => fit.fit(), 100);
 
     termRef.current = term;
     fitRef.current = fit;
@@ -198,7 +200,7 @@ export function TerminalPanel({ wsUrl }: TerminalPanelProps) {
       </div>
 
       {/* Terminal viewport */}
-      <div ref={containerRef} className="flex-1 overflow-hidden p-1" />
+      <div ref={containerRef} className="flex-1 overflow-hidden p-1" style={{ minHeight: 0 }} />
     </div>
   );
 }

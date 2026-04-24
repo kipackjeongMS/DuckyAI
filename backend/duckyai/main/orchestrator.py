@@ -88,11 +88,43 @@ def run_orchestrator_daemon(vault_path: Path = None, debug: bool = False, workin
     if api_port is not None:
         api_thread = start_api_server(orch, config, port=api_port)
 
+    # Start terminal server in background (stop stale instance first)
+    _terminal_proc = None
+    try:
+        from ..terminal_server import stop_terminal_server
+        stop_terminal_server(str(vault_path))
+    except Exception:
+        pass
+    try:
+        import subprocess as _sp
+        _term_cmd = [sys.executable, "-m", "duckyai.terminal_server", "--vault", str(vault_path)]
+        if os.name == "nt":
+            _terminal_proc = _sp.Popen(
+                _term_cmd,
+                creationflags=0x00000200 | 0x00000008,
+                stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, stdin=_sp.DEVNULL,
+            )
+        else:
+            _terminal_proc = _sp.Popen(
+                _term_cmd,
+                start_new_session=True,
+                stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, stdin=_sp.DEVNULL,
+            )
+        logger.info(f"[green]✓[/green] Terminal server started (PID {_terminal_proc.pid})")
+    except Exception as _te:
+        logger.warning(f"Terminal server auto-start failed: {_te}")
+
     # Setup signal handlers — clean up PID file + discovery file on exit
     def signal_handler(sig, frame):
         logger.info("\n[yellow]Received interrupt signal, shutting down...[/yellow]")
         pid_file.unlink(missing_ok=True)
         cleanup_discovery_file(vault_path)
+        # Stop terminal server
+        try:
+            from ..terminal_server import stop_terminal_server
+            stop_terminal_server(str(vault_path))
+        except Exception:
+            pass
         if orch:
             orch.stop()
         sys.exit(0)

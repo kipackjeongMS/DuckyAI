@@ -250,7 +250,7 @@ export default function DuckyAIApp({
                       />
                     </div>
                   ) : (
-                    <div className="flex-1 flex flex-col">
+                    <div className="flex-1 flex flex-col min-h-0">
                       {!terminalOpen ? (
                         <div className="flex-1 flex items-center justify-center">
                           <motion.button
@@ -269,7 +269,8 @@ export default function DuckyAIApp({
                         </div>
                       ) : (
                         <motion.div
-                          className="flex-1 overflow-hidden"
+                          className="flex-1 overflow-hidden min-h-0"
+                          style={{ height: "100%" }}
                           initial={{ opacity: 0, clipPath: "inset(40% 10% 40% 10% round 16px)" }}
                           animate={{ opacity: 1, clipPath: "inset(0% 0% 0% 0% round 0px)" }}
                           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
