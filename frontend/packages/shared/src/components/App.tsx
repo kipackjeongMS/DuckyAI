@@ -170,37 +170,57 @@ export default function DuckyAIApp({
             {sidebarOnly ? (
               /* Sidebar-only mode (Obsidian plugin) */
               <div className="w-full h-full flex flex-col bg-[#080c16]">
-                <div className="px-5 pt-6 pb-4 border-b border-[rgba(0,212,255,0.06)]">
-                  <h1
-                    className="text-foreground tracking-wide"
-                    style={{ fontSize: "1.2rem", letterSpacing: "0.25em" }}
+                <div className="px-5 pt-6 pb-4 border-b border-[rgba(0,212,255,0.06)] flex items-center justify-between">
+                  <div>
+                    <h1
+                      className="text-foreground tracking-wide"
+                      style={{ fontSize: "1.2rem", letterSpacing: "0.25em" }}
+                    >
+                      DUCKAI
+                    </h1>
+                    <p
+                      className="text-muted-foreground mt-1"
+                      style={{ fontSize: "0.68rem", letterSpacing: "0.05em" }}
+                    >
+                      Your Intelligent Duck Assistant
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setTerminalOpen((v) => !v)}
+                    className="p-1.5 rounded-md transition-colors hover:bg-[rgba(0,212,255,0.08)]"
+                    title={terminalOpen ? "Hide terminal" : "Show terminal"}
                   >
-                    DUCKAI
-                  </h1>
-                  <p
-                    className="text-muted-foreground mt-1"
-                    style={{ fontSize: "0.68rem", letterSpacing: "0.05em" }}
-                  >
-                    Your Intelligent Duck Assistant
-                  </p>
+                    <Terminal size={16} className={terminalOpen ? "text-[#00d4ff]" : "text-muted-foreground"} />
+                  </button>
                 </div>
-                <Sidebar
-                  orchestratorRunning={orch.running}
-                  agents={orch.agents}
-                  triggeringId={orch.triggeringId}
-                  onToggleOrchestrator={orch.toggleOrchestrator}
-                  onTriggerAgent={orch.triggerAgent}
-                  restarting={orch.restarting}
-                  onRestartDaemon={orch.restartDaemon}
-                  onOpenWorkspace={onOpenWorkspace}
-                  onChatSend={api.chat.send}
-                  activityEntries={activity.entries}
-                  activityLoading={activity.loading}
-                  activityAgentFilter={activity.agentFilter}
-                  onActivityFilterChange={activity.setAgentFilter}
-                  onActivityRefresh={activity.refresh}
-                  onFetchLog={activity.fetchLog}
-                />
+
+                {/* Sidebar + Terminal split */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <div className={`${terminalOpen ? "h-1/2" : "flex-1"} overflow-auto`}>
+                    <Sidebar
+                      orchestratorRunning={orch.running}
+                      agents={orch.agents}
+                      triggeringId={orch.triggeringId}
+                      onToggleOrchestrator={orch.toggleOrchestrator}
+                      onTriggerAgent={orch.triggerAgent}
+                      restarting={orch.restarting}
+                      onRestartDaemon={orch.restartDaemon}
+                      onOpenWorkspace={onOpenWorkspace}
+                      onChatSend={api.chat.send}
+                      activityEntries={activity.entries}
+                      activityLoading={activity.loading}
+                      activityAgentFilter={activity.agentFilter}
+                      onActivityFilterChange={activity.setAgentFilter}
+                      onActivityRefresh={activity.refresh}
+                      onFetchLog={activity.fetchLog}
+                    />
+                  </div>
+                  {terminalOpen && (
+                    <div className="flex-1 border-t border-[rgba(0,212,255,0.08)]">
+                      <TerminalPanel wsUrl={api.terminal.wsUrl} />
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
             <>

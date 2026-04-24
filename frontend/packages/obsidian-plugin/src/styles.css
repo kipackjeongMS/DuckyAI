@@ -10,6 +10,9 @@
 /* Import shared theme (CSS variables + @theme inline + @layer base) */
 @import '../../shared/src/styles/theme.css';
 
+/* xterm.js terminal styles */
+@import '../../../node_modules/@xterm/xterm/css/xterm.css';
+
 /* Obsidian plugin overrides */
 .duckyai-root {
   font-family: 'Inter', sans-serif;
