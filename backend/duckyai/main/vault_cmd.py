@@ -199,7 +199,32 @@ def init_command(vault_path):
     click.echo("Initialized .github/ and services wiring.")
 
 
-@vault_group.command("list")
+@vault_group.command("open")
+def vault_open():
+    """Open the home vault folder in the system file explorer."""
+    import subprocess as _sp
+    import sys
+
+    home_vault = get_home_vault()
+    if not home_vault:
+        click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
+        return
+
+    vault_path = Path(home_vault["path"])
+    if not vault_path.exists():
+        click.echo(f"Vault path does not exist: {vault_path}", err=True)
+        raise SystemExit(1)
+
+    click.echo(f"Opening {vault_path} ...")
+    if sys.platform == "win32":
+        os.startfile(vault_path)
+    elif sys.platform == "darwin":
+        _sp.Popen(["open", str(vault_path)])
+    else:
+        _sp.Popen(["xdg-open", str(vault_path)])
+
+
+@vault_group.command("list", hidden=True)
 @click.option("--json-output", "json_out", is_flag=True, help="Output JSON")
 def vault_list(json_out):
     """Show the configured home vault."""
@@ -251,7 +276,7 @@ def vault_list(json_out):
         Console().print(table)
 
 
-@vault_group.command("new")
+@vault_group.command("new", hidden=True)
 def vault_new():
     """Create and configure a new DuckyAI home vault via the onboarding wizard.
 
@@ -269,7 +294,7 @@ def vault_new():
     run_onboarding()
 
 
-@vault_group.command("remove")
+@vault_group.command("remove", hidden=True)
 @click.argument("vault_id", required=False)
 @click.option("--force", is_flag=True, help="Skip confirmation")
 def vault_remove(vault_id, force):
@@ -352,7 +377,7 @@ def vault_remove(vault_id, force):
     click.echo(f"\n  Vault '{vault_name}' has been removed.")
 
 
-@vault_group.command("cleanup-legacy-runtime")
+@vault_group.command("cleanup-legacy-runtime", hidden=True)
 @click.option("--apply", "apply_changes", is_flag=True, help="Delete eligible legacy runtime directories")
 @click.option("--include-orphans", is_flag=True, help="Also delete orphaned legacy directories")
 @click.option("--force", is_flag=True, help="Skip confirmation when used with --apply")
