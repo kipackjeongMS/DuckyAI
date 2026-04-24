@@ -16,6 +16,7 @@ from typing import Optional
 
 import click
 import requests
+import psutil
 
 # GitHub repository configuration
 GITHUB_REPO = "kipackjeongMS/DuckyAI"
@@ -165,6 +166,72 @@ def _cleanup_old_scripts() -> None:
             old_file.unlink()
         except OSError:
             pass
+
+
+def _stop_duckyai_processes() -> list[dict]:
+    """Stop all running DuckyAI daemon and chat server processes.
+
+    Returns a list of stopped process dicts (pid, vault_path) for restarting.
+    """
+    stopped: list[dict] = []
+
+    # 1. Stop orchestrator daemons via the existing stop mechanism
+    for vault_path in _find_active_vaults():
+        try:
+            from .orch_cmd import _stop_single_vault
+            result = _stop_single_vault(vault_path, vault_path.name)
+            if result.get("status") == "stopped":
+                stopped.append({"type": "daemon", "vault": str(vault_path), "pid": result.get("pid")})
+                click.echo(f"  Stopped daemon for {vault_path.name}")
+        except Exception:
+            pass
+
+        # 2. Stop chat server for this vault
+        try:
+            from ..chat_server import stop_chat_server
+            if stop_chat_server(str(vault_path)):
+                stopped.append({"type": "chat", "vault": str(vault_path)})
+                click.echo(f"  Stopped chat server for {vault_path.name}")
+        except Exception:
+            pass
+
+    # 3. Kill any remaining duckyai python processes (not ourselves)
+    my_pid = os.getpid()
+    for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+        try:
+            if proc.pid == my_pid:
+                continue
+            cmdline = " ".join(proc.info.get("cmdline") or [])
+            if "duckyai" in cmdline and ("orchestrator" in cmdline or "chat" in cmdline or "daemon" in cmdline):
+                proc.terminate()
+                proc.wait(timeout=5)
+                click.echo(f"  Terminated orphan process PID {proc.pid}")
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired):
+            pass
+
+    return stopped
+
+
+def _restart_duckyai_processes(stopped: list[dict]) -> None:
+    """Restart previously stopped DuckyAI processes."""
+    vault_paths_to_restart = set()
+    for entry in stopped:
+        if entry.get("vault"):
+            vault_paths_to_restart.add(entry["vault"])
+
+    for vault_str in vault_paths_to_restart:
+        try:
+            subprocess.Popen(
+                [sys.executable, "-m", "duckyai", "-o"],
+                cwd=vault_str,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+                **({"creationflags": 0x00000200 | 0x08000000} if platform.system() == "Windows" else {}),
+            )
+            click.echo(f"  Restarted daemon for {Path(vault_str).name}")
+        except Exception as e:
+            click.echo(f"  ⚠️  Failed to restart daemon for {Path(vault_str).name}: {e}", err=True)
 
 
 def install_package(package_dir: Path) -> bool:
@@ -346,6 +413,12 @@ def update_cli(force: bool, target_version: Optional[str], list_releases: bool, 
         click.echo("Error: No download URL found for release.", err=True)
         sys.exit(1)
 
+    # Stop running DuckyAI processes so pip can overwrite files
+    click.echo("Stopping DuckyAI processes...")
+    stopped = _stop_duckyai_processes()
+    if not stopped:
+        click.echo("  No running processes found")
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir_path = Path(tmpdir)
         zip_path = tmpdir_path / "release.zip"
@@ -382,6 +455,12 @@ def update_cli(force: bool, target_version: Optional[str], list_releases: bool, 
 
     # After pip install, sync vault files with the new package contents
     _sync_all_vaults()
+
+    # Restart previously stopped processes
+    if stopped:
+        click.echo()
+        click.echo("Restarting DuckyAI processes...")
+        _restart_duckyai_processes(stopped)
 
     click.echo()
     click.echo("=" * 50)
