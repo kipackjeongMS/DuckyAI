@@ -17,14 +17,10 @@ from typing import Dict, List
 import click
 
 from ..logger import Logger
-from .vault import find_vault_root
 from ..vault_registry import (
     clear_home_vault,
     get_home_vault,
-    set_home_vault,
 )
-from ..config import Config
-from ..services import ensure_services_dir
 from .orch_cmd import _read_pid
 
 logger = Logger(console_output=True)
@@ -122,83 +118,6 @@ def vault_group():
     pass
 
 
-def init_existing_vault(vault_path: Path) -> Dict[str, object]:
-    """Configure an existing DuckyAI vault as the single home vault."""
-    resolved_input = Path(vault_path).resolve()
-    resolved_vault = find_vault_root(resolved_input)
-    config_path = resolved_vault / ".duckyai" / "duckyai.yml"
-
-    if not config_path.exists():
-        raise click.ClickException(
-            f"No duckyai.yml found in {resolved_vault}/.duckyai/. Use 'duckyai setup' for a new vault."
-        )
-
-    config = Config(vault_path=resolved_vault)
-    vault_id = str(config.get("id", "")).strip() or resolved_vault.name.lower()
-    vault_name = str(config.get("name", "")).strip() or resolved_vault.name
-
-    previous_home = get_home_vault()
-    existing_by_path = previous_home and str(Path(previous_home["path"]).resolve()) == str(resolved_vault)
-
-    set_home_vault(vault_id=vault_id, name=vault_name, path=resolved_vault)
-    services_dir = ensure_services_dir(resolved_vault)
-    set_home_vault(
-        vault_id=vault_id,
-        name=vault_name,
-        path=resolved_vault,
-        services_path=str(services_dir),
-    )
-
-    from .cli import ensure_init
-
-    ensure_init(resolved_vault)
-
-    return {
-        "vault_id": vault_id,
-        "vault_name": vault_name,
-        "vault_path": str(resolved_vault),
-        "services_path": str(services_dir),
-        "already_registered": existing_by_path is not None,
-        "previous_home_path": previous_home.get("path") if previous_home else None,
-    }
-
-
-@click.command("init")
-@click.argument(
-    "vault_path",
-    required=False,
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-)
-def init_command(vault_path):
-    """Configure an existing DuckyAI vault as the single home vault.
-
-    \b
-    Use this for an existing vault directory that already has duckyai.yml but
-    is not yet configured as your DuckyAI home vault.
-
-    \b
-    Examples:
-        duckyai init
-        duckyai init .
-        duckyai init C:/Users/me/Documents/MyVault
-    """
-    target = vault_path or Path.cwd()
-    result = init_existing_vault(target)
-
-    previous_home_path = result.get("previous_home_path")
-    if result["already_registered"]:
-        click.echo(f"Home vault already configured: {result['vault_name']} ({result['vault_id']})")
-    elif previous_home_path and previous_home_path != result["vault_path"]:
-        click.echo(f"Configured home vault: {result['vault_name']} ({result['vault_id']})")
-        click.echo(f"Previous home vault: {previous_home_path}")
-    else:
-        click.echo(f"Configured home vault: {result['vault_name']} ({result['vault_id']})")
-
-    click.echo(f"Vault path: {result['vault_path']}")
-    click.echo(f"Services path: {result['services_path']}")
-    click.echo("Initialized .github/ and services wiring.")
-
-
 @vault_group.command("open")
 def vault_open():
     """Open the home vault folder in the system file explorer."""
@@ -207,7 +126,7 @@ def vault_open():
 
     home_vault = get_home_vault()
     if not home_vault:
-        click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
+        click.echo("No home vault configured. Use 'duckyai setup'.")
         return
 
     vault_path = Path(home_vault["path"])
@@ -234,7 +153,7 @@ def vault_list(json_out):
         if json_out:
             click.echo(json.dumps({"home_vault": None}))
         else:
-            click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
+            click.echo("No home vault configured. Use 'duckyai setup'.")
         return
 
     results = []

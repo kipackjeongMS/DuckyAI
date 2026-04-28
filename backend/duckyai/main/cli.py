@@ -610,9 +610,8 @@ def main(
 main.add_command(orchestrator_group)
 
 # Vault management (global scope)
-from .vault_cmd import init_command, vault_group
+from .vault_cmd import vault_group
 main.add_command(vault_group)
-main.add_command(init_command)
 
 # Onboarding wizard
 from .setup import setup_command

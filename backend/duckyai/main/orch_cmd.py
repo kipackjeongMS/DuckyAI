@@ -286,7 +286,7 @@ def _show_all_vault_status(json_out: bool = False):
         if json_out:
             click.echo(json.dumps({"home_vault": None}))
         else:
-            click.echo("No home vault configured. Use 'duckyai init' or 'duckyai setup'.")
+            click.echo("No home vault configured. Use 'duckyai setup'.")
         return
 
     if json_out:
