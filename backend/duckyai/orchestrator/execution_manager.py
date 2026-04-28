@@ -1591,16 +1591,24 @@ class ExecutionManager:
 
         Returns ISO timestamp string or None if no watermark exists.
         """
+        state = self._read_teams_watermark_state(agent_abbr)
+        return state.get("lastSynced") if state else None
+
+    def _read_teams_watermark_state(self, agent_abbr: str) -> Optional[dict]:
+        """Read the full watermark state (lastSynced + processed IDs) for a Teams agent.
+
+        Returns dict with keys: lastSynced, processedThreads, processedMeetings.
+        """
         import json
         from ..config import get_global_runtime_dir
         vault_id = self.config.get("id", "default")
         filename = "tcs-last-sync.json" if agent_abbr == "TCS" else "tms-last-sync.json"
         state_file = get_global_runtime_dir(vault_id, vault_path=self.vault_path) / "state" / filename
         try:
-            data = json.loads(state_file.read_text(encoding="utf-8"))
-            return data.get("lastSynced")
+            return json.loads(state_file.read_text(encoding="utf-8"))
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             return None
+
 
     def _read_pending_highlight_dates(self, agent_abbr: str) -> list:
         """Read pendingHighlightDates from watermark state for retry."""
@@ -1647,16 +1655,27 @@ class ExecutionManager:
         params['current_utc'] = now_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
         # Determine overall start time (UTC)
+        # Sync resilience floor: even if the watermark is recent, always look back
+        # at least MIN_OVERLAP_HOURS so we tolerate Graph API indexing lag, missed
+        # runs, runtime downtime, and OneDrive sync delays. Content-level dedup
+        # (processed_message_ids / processed_meeting_ids) keeps overlap safe.
+        MIN_OVERLAP_HOURS = 12
+        overlap_floor = now_utc - timedelta(hours=MIN_OVERLAP_HOURS)
+
         if params.get('ignore_watermark'):
             lookback = int(params.get('lookback_hours', 1))
             range_start = now_utc - timedelta(hours=lookback)
         else:
-            watermark = self._read_teams_watermark(agent.abbreviation)
+            watermark_state = self._read_teams_watermark_state(agent.abbreviation) or {}
+            watermark = watermark_state.get('lastSynced')
             if watermark:
                 try:
                     range_start = datetime.fromisoformat(watermark.replace('Z', '+00:00'))
                     if range_start.tzinfo is None:
                         range_start = range_start.replace(tzinfo=timezone.utc)
+                    # Apply overlap floor — never query a window narrower than 12h
+                    if range_start > overlap_floor:
+                        range_start = overlap_floor
                 except ValueError:
                     # Malformed watermark — fall back to lookback
                     lookback = int(params.get('lookback_hours', 1))
@@ -1665,6 +1684,13 @@ class ExecutionManager:
                 # No watermark — first run
                 lookback = int(params.get('lookback_hours', 1))
                 range_start = now_utc - timedelta(hours=lookback)
+
+            # Inject content-level dedup IDs for the LLM to filter against
+            if agent.abbreviation == 'TCS':
+                params['processed_message_ids'] = list(watermark_state.get('processedThreads') or [])
+            elif agent.abbreviation == 'TMS':
+                params['processed_meeting_ids'] = list(watermark_state.get('processedMeetings') or [])
+
 
         range_end = now_utc
         # For TMS: shift range_end back so we only query meetings that have

@@ -35,7 +35,11 @@ If `retry_highlight_dates` is present in Agent Parameters, previous syncs failed
 
 ### Step 2: Read fetch windows (pre-resolved)
 
-The fetch windows have been **pre-computed** for you in the Agent Parameters section below. The `fetch_windows` parameter contains a list of UTC datetime ranges, each covering at most 6 hours. Example:
+The fetch windows have been **pre-computed** for you in the Agent Parameters section below. The `fetch_windows` parameter contains a list of UTC datetime ranges, each covering at most 6 hours.
+
+The total range is **at least 12 hours** even when the watermark is recent — this overlap intentionally re-queries already-seen time periods to defeat Graph API indexing lag and OneDrive sync delays. The `processed_meeting_ids` parameter (also in Agent Parameters) lists meetings already processed; **content-level dedup happens in Step 2d**, not via narrowing the time window.
+
+Example:
 
 ```json
 [
@@ -65,6 +69,23 @@ For each meeting returned:
 2. Compare to `current_utc` (provided in Agent Parameters — do NOT compute your own)
 3. If `meeting_end_time > current_utc` → **skip it entirely, do not process, do not log**
 4. Only proceed with meetings that have fully concluded
+
+### Step 2d: Content-level deduplication
+
+The `processed_meeting_ids` parameter contains stable IDs of meetings already processed in prior runs. Build a stable ID for **each** remaining meeting:
+- Preferred: use the `iCalUId` or `eventId` from WorkIQ if available
+- Fallback: `{title}:{start_time_utc}` (e.g., `Sprint Planning:2026-04-27T17:00:00Z`)
+
+**Skip any meeting whose stable ID is in `processed_meeting_ids`.** Track ALL meeting IDs you saw (NEW + DEDUP'd) — you'll send them in Step 6.
+
+Print a diagnostic:
+
+```
+[TMS Diagnostic] WorkIQ returned N meetings:
+  1. "Sprint Planning" 2026-04-27 10:00-11:00 (id=Sprint Planning:2026-04-27T17:00:00Z) — NEW
+  2. "1:1 with Bob" 2026-04-27 13:00-13:30 (id=...) — DEDUP (already processed)
+Processing M new meetings after filtering.
+```
 
 ### Step 3: Process and summarize
 
@@ -144,9 +165,11 @@ Embed a standard markdown link in the H3 title using `[Meeting Title]({vault_roo
 
 ### Step 6: Update watermark
 
-After all processing is complete, call `updateTeamsMeetingSyncState` with:
+After all processing is complete, **always** call `updateTeamsMeetingSyncState` — even when no new meetings were found. The overlap-based fetch window means re-running with the same watermark is safe (content dedup prevents duplicates).
+
+Pass:
 - `lastSynced`: Current ISO timestamp (the time of THIS sync, not the meeting timestamps)
-- `processedMeetingIds`: Array of meeting/event IDs processed (if available from WorkIQ response)
+- `processedMeetingIds`: Array of stable per-meeting IDs for ALL meetings observed in this run — both NEW and DEDUP'd. Format: prefer `iCalUId`/`eventId`, fallback to `{title}:{start_time_utc}`. Sending these grows the dedup set so future runs can skip them.
 - `processedDates`: Array of all dates (YYYY-MM-DD) that had `appendTeamsMeetingHighlights` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
 
 ## Important Rules
@@ -156,9 +179,9 @@ After all processing is complete, call `updateTeamsMeetingSyncState` with:
 - **In attendee lists, write "I"**: Replace the user's name with "I" in meeting note attendee lists.
 - **Always-explicit subjects**: Every bullet in meeting notes and daily highlights must have a clear subject. Write "I proposed..." or "John agreed to..." — never just "proposed..." where the actor is ambiguous.
 - **Skip meetings without transcripts**: If a meeting has no transcript, recap, or notes available from WorkIQ, do NOT create a meeting note or daily note entry for it. Only process meetings with actual content.
-- **Never re-process**: Always check the watermark first. Only process new meetings.
+- **Never re-process**: Use **content-level dedup** via `processed_meeting_ids`. The fetch window intentionally overlaps prior runs to defeat indexing lag — duplicates are caught by ID, not by narrowing the time range.
 - **Idempotent**: If a meeting note already exists in `02-People/Meetings/`, skip creating it.
 - **Details in meeting note, bullet points in daily note**: Full discussion/decisions/action items go in the per-meeting note. The daily note gets only concise bullet points per key context with the meeting title linked to the full note.
 - **Never modify existing content**: The daily note's existing sections are immutable. Only append new data.
 - **Separate from chats**: Do NOT include chat messages. Only process calendar meetings with Teams links.
-- **If no new meetings**: Simply update the watermark and report "No new Teams meetings since last sync."
+- **If no new meetings**: Always call `updateTeamsMeetingSyncState` (with `processedMeetingIds` containing all observed meeting IDs, even dedup'd ones) and report "No new Teams meetings since last sync."

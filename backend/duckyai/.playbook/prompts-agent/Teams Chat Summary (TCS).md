@@ -33,7 +33,11 @@ If `retry_highlight_dates` is present in Agent Parameters, previous syncs failed
 
 ### Step 2: Read fetch windows (pre-resolved)
 
-The fetch windows have been **pre-computed** for you in the Agent Parameters section below. The `fetch_windows` parameter contains a list of UTC datetime ranges, each covering at most 6 hours. Example:
+The fetch windows have been **pre-computed** for you in the Agent Parameters section below. The `fetch_windows` parameter contains a list of UTC datetime ranges, each covering at most 6 hours.
+
+The total range is **at least 12 hours** even when the watermark is recent — this overlap intentionally re-queries already-seen time periods to defeat Graph API indexing lag and OneDrive sync delays. The `processed_message_ids` parameter (also in Agent Parameters) lists messages already processed; **content-level dedup happens in Step 3.5**, not via narrowing the time window.
+
+Example:
 
 ```json
 [
@@ -58,28 +62,37 @@ Where `{start}` and `{end}` are the exact UTC ISO timestamps from the window.
 
 Repeat until all messages are retrieved. Merge results from all windows before proceeding to Step 3.5.
 
-### Step 3.5: Log raw results and filter (diagnostic)
+### Step 3.5: Log raw results and filter (diagnostic + dedup)
 
-**IMPORTANT**: Before processing, print a diagnostic summary of what WorkIQ returned AND filter out any channel messages that slipped through:
-- Total number of messages/threads received
-- For each message: sender name, timestamp, thread topic, chat type (one line each)
-- Mark channel messages as `(SKIP)` — drop them before proceeding
+**IMPORTANT**: Before processing, print a diagnostic summary AND apply two filters:
 
-**How to identify channel messages to exclude:**
+**Filter 1 — Message-level deduplication (overlap-safe sync):**
+The `processed_message_ids` parameter contains stable IDs of messages already processed in prior runs. Build a stable ID for **each** message:
+- Preferred: use the `messageId` from WorkIQ if available
+- Fallback: `{threadId}:{utc_timestamp}` (e.g., `19:abc...@thread.v2:2026-04-27T18:30:00Z`)
+
+**Skip any message whose stable ID is in `processed_message_ids`.** This is a per-message check, NOT per-thread — a thread may have new messages even if it was processed before.
+
+**Filter 2 — Channel exclusion:**
+Drop any message that is from a Teams channel, identified by:
 - `chatType` is "channel" (if WorkIQ provides this field)
 - Topic/thread name matches a Teams channel pattern (e.g., "General", "Announcements", team-scoped names)
 - Large participant count (>15 members is likely a channel, not a group chat)
 - Message originates from a Team rather than a direct chat
 
-Format:
+Print the diagnostic summary in this format:
 
 ```
-[TCS Diagnostic] WorkIQ returned N messages:
-  1. [1:1] John Smith - 2026-03-13 10:30 - "Project sync" 
+[TCS Diagnostic] WorkIQ returned N messages across all windows:
+  1. [1:1] John Smith - 2026-03-13 10:30 - "Project sync" (id=msg-abc123) — NEW
   2. [channel] #General - 2026-03-13 11:00 - "Sprint update" (SKIP - channel)
-  3. [group] Team Chat - 2026-03-13 11:45 - "Deployment plan"
-Processing M messages after filtering.
+  3. [group] Team Chat - 2026-03-13 11:45 - "Deployment plan" (id=msg-def456) — DEDUP (already processed)
+  4. [1:1] John Smith - 2026-03-13 13:20 - "Re: Project sync" (id=msg-ghi789) — NEW
+Processing M new messages after filtering (skipped K dedup, J channel).
 ```
+
+Track ALL message IDs you saw (including dedup'd ones) — you'll use them in Step 7.
+
 
 ### Step 4: Process and summarize
 
@@ -148,10 +161,14 @@ Processing M messages after filtering.
 
 ### Step 7: Update watermark
 
-After all processing is complete, call `updateTeamsChatSyncState` with:
+After all processing is complete, **always** call `updateTeamsChatSyncState` — even when no new messages were found. The overlap-based fetch window means re-running with the same watermark is safe (content dedup prevents duplicates).
+
+Pass:
 - `lastSynced`: Current ISO timestamp (the time of THIS sync, not the chat timestamps)
-- `processedThreadIds`: Array of thread/conversation IDs processed (if available from WorkIQ response)
+- `processedThreadIds`: **Array of stable per-message IDs** (NOT thread IDs) for ALL messages you observed in this run — both NEW and DEDUP'd. Format: prefer `messageId` from WorkIQ, fallback to `{threadId}:{utc_timestamp}`. Sending these grows the dedup set so future runs can skip them.
 - `processedDates`: Array of all dates (YYYY-MM-DD) that had `appendTeamsChatHighlights` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
+
+⚠️ **Field naming note**: The parameter is `processedThreadIds` for backwards compatibility, but the **values you send must be message-level stable IDs**, not thread IDs. The watermark system caps this list at 500 entries and dedups internally.
 
 ## Important Rules
 
@@ -160,7 +177,7 @@ After all processing is complete, call `updateTeamsChatSyncState` with:
 - **H3 = person, never topic**: Every `###` heading under Teams Chat Highlights must be a person's name. Group chat topics go as bullets under the primary person's H3. Never create `### Topic Name` headings.
 - **Always-explicit subjects**: Every bullet must have a clear subject. Write "I asked John about..." or "John told me that..." — never just "asked about..." where the actor is ambiguous.
 - **1:1 and group chats only**: Exclude all Teams channel messages. Only process person-to-person (1:1) chats and group chats. If a message originates from a Teams channel (e.g., a channel post or reply), skip it entirely.
-- **Never re-process**: Always check the watermark first. Only process new chats.
+- **Never re-process**: Use **content-level dedup** via `processed_message_ids` (per-message stable IDs). Never skip an entire thread just because the thread ID was processed before — check each message individually. The fetch window intentionally overlaps prior runs.
 - **Concise summaries**: Focus on decisions, action items, and key information. Skip pleasantries.
 - **Never modify existing content**: The daily note's existing sections are immutable. Only append new data.
-- **If no new chats**: Simply update the watermark and report "No new Teams chats since last sync."
+- **If no new chats**: Always call `updateTeamsChatSyncState` (with `processedThreadIds` containing all observed message IDs, even dedup'd ones) and report "No new Teams chats since last sync."
