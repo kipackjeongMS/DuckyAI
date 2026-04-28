@@ -8,10 +8,13 @@ This guide walks you through setting up your DuckyAI vault step by step.
 
 | Tool | Required | Why |
 |------|----------|-----|
+| **Python 3.10+** ([download](https://www.python.org/downloads/)) | ✅ | Runs the `duckyai` package and orchestrator daemon |
 | [Obsidian](https://obsidian.md/) | ✅ | The vault viewer/editor |
 | [VS Code](https://code.visualstudio.com/) | ✅ | Copilot host + vault automation |
 | [GitHub Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot) | ✅ | AI assistant with skills/prompts |
 | Git | ✅ | Repo sync, version control |
+
+> ℹ️ `pip install duckyai` will refuse to install on Python <3.10. `duckyai setup` also runs a prerequisite check (Step 0) and will block with actionable guidance if anything is missing.
 
 ## Step 1: Clone the Template
 

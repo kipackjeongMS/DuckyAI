@@ -19,6 +19,7 @@ AI assistants forget everything between conversations. DuckyAI gives Copilot a *
 
 ### Prerequisites
 
+- **Python 3.10+** — required for the `duckyai` package ([download](https://www.python.org/downloads/))
 - [Obsidian](https://obsidian.md/) (free)
 - [VS Code](https://code.visualstudio.com/) with [GitHub Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot)
 - Git

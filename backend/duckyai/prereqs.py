@@ -365,19 +365,47 @@ def auto_fix(report: PrereqReport) -> List[str]:
 
 def print_report(report: PrereqReport) -> None:
     """Print a formatted prereq report to stdout."""
-    print("\n🔍 Checking prerequisites...\n")
+    # Ensure Windows console can render emoji/unicode (cp1252 default crashes on ✅/❌/🔍)
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError):
+        pass
+
+    try:
+        import click
+        echo = click.echo
+    except ImportError:
+        def echo(msg: str = "") -> None:
+            try:
+                print(msg)
+            except UnicodeEncodeError:
+                print(msg.encode("ascii", "replace").decode("ascii"))
+
+    echo("")
+    echo("🔍 Checking prerequisites...")
+    echo("")
+    echo("  Minimum required versions:")
+    echo("    • Python  3.10+   (https://www.python.org/downloads/)")
+    echo("    • Node.js 18+     (https://nodejs.org/en/download/)")
+    echo("    • Git             (https://git-scm.com/downloads)")
+    echo("    • Copilot SDK     (pip install github-copilot-sdk)")
+    echo("")
     for check in report.checks:
         ver = f" {check.version}" if check.version else ""
         line = f"  {check.symbol} {check.name}{ver}"
         if check.message and check.status != CheckStatus.OK:
             line += f" — {check.message}"
-        print(line)
+        echo(line)
         if check.fix_command and check.status != CheckStatus.OK:
-            print(f"     → {check.fix_command}")
-    print()
+            echo(f"     → {check.fix_command}")
+    echo("")
     if report.has_blocking_failures:
-        print("  ❌ Blocking issues found. Please resolve them before continuing.\n")
+        echo("  ❌ Blocking issues found. Please resolve them before continuing.")
+        echo("")
     elif report.fixable:
-        print("  ⚠️  Some optional tools missing (auto-fixable).\n")
+        echo("  ⚠️  Some optional tools missing (auto-fixable).")
+        echo("")
     else:
-        print("  All prerequisites met! ✅\n")
+        echo("  All prerequisites met! ✅")
+        echo("")

@@ -39,6 +39,12 @@ def doctor_command(repair_install: bool, source_dir: Path | None, json_out: bool
         click.echo(json.dumps(diagnostics, indent=2))
         return
 
+    # ── Prerequisites (same surface as `duckyai setup` Step 0) ──
+    from ..prereqs import check_all, print_report
+
+    prereq_report = check_all()
+    print_report(prereq_report)
+
     click.echo("DuckyAI installation health")
     click.echo(f"  Python: {diagnostics['python_executable']}")
     click.echo(f"  Site-packages: {diagnostics['purelib']}")

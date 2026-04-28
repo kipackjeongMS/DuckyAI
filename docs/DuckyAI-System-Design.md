@@ -749,7 +749,7 @@ graph TB
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Orchestrator** | Python 3.9+, Click, watchdog, croniter | Daemon, CLI, file monitoring, scheduling |
+| **Orchestrator** | Python 3.10+, Click, watchdog, croniter | Daemon, CLI, file monitoring, scheduling |
 | **Vault MCP** | Python, FastMCP, VaultService | Native vault tools for AI assistants |
 | **AI Executors** | Claude Code SDK, Copilot SDK, Gemini CLI | Agent execution backends |
 | **Desktop App** | Tauri 2.x (Rust + TypeScript) | Native wrapper (in development) |
