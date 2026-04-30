@@ -38,6 +38,7 @@ export function useOrchestrator() {
   const [running, setRunning] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [triggeringId, setTriggeringId] = useState<string | null>(null);
+  const [toggling, setToggling] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const togglingRef = useRef(false);
   const lastHashRef = useRef("");
@@ -95,6 +96,7 @@ export function useOrchestrator() {
   const toggleOrchestrator = useCallback(async () => {
     if (togglingRef.current) return;
     togglingRef.current = true;
+    setToggling(true);
     try {
       if (running) {
         const result = await api.orchestrator.stop();
@@ -119,6 +121,7 @@ export function useOrchestrator() {
       await refresh();
     } finally {
       togglingRef.current = false;
+      setToggling(false);
     }
   }, [running, refresh, api]);
 
@@ -161,6 +164,7 @@ export function useOrchestrator() {
     running,
     agents,
     triggeringId,
+    toggling,
     restarting,
     toggleOrchestrator,
     triggerAgent,

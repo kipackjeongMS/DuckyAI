@@ -34,6 +34,7 @@ export interface SidebarProps {
   orchestratorRunning: boolean;
   agents: Agent[];
   triggeringId: string | null;
+  toggling?: boolean;
   restarting?: boolean;
   onToggleOrchestrator: () => void;
   onTriggerAgent: (abbreviation: string) => void;
@@ -54,6 +55,7 @@ export function Sidebar({
   orchestratorRunning,
   agents,
   triggeringId,
+  toggling,
   restarting,
   onToggleOrchestrator,
   onTriggerAgent,
@@ -117,15 +119,30 @@ export function Sidebar({
                 letterSpacing: "0.05em",
                 background: orchestratorRunning
                   ? "rgba(0,255,163,0.08)"
-                  : "rgba(255,68,102,0.08)",
-                border: `1px solid ${orchestratorRunning ? "rgba(0,255,163,0.2)" : "rgba(255,68,102,0.2)"}`,
-                color: orchestratorRunning ? "#00ffa3" : "#ff4466",
+                  : toggling
+                    ? "rgba(255,190,11,0.08)"
+                    : "rgba(255,68,102,0.08)",
+                border: `1px solid ${orchestratorRunning ? "rgba(0,255,163,0.2)" : toggling ? "rgba(255,190,11,0.2)" : "rgba(255,68,102,0.2)"}`,
+                color: orchestratorRunning ? "#00ffa3" : toggling ? "#ffbe0b" : "#ff4466",
               }}
               whileTap={{ scale: 0.95 }}
               onClick={onToggleOrchestrator}
+              disabled={!!toggling}
             >
-              {orchestratorRunning ? <Pause size={10} /> : <Play size={10} />}
-              {orchestratorRunning ? "Running" : "Stopped"}
+              {toggling && !orchestratorRunning ? (
+                <Loader2 size={10} className="animate-spin" />
+              ) : orchestratorRunning ? (
+                <Pause size={10} />
+              ) : (
+                <Play size={10} />
+              )}
+              {toggling && !orchestratorRunning
+                ? "Starting..."
+                : toggling && orchestratorRunning
+                  ? "Stopping..."
+                  : orchestratorRunning
+                    ? "Running"
+                    : "Stopped"}
             </motion.button>
             {onRestartDaemon && (
               <motion.button

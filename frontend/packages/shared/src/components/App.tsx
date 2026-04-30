@@ -246,6 +246,7 @@ export default function DuckyAIApp({
                       orchestratorRunning={orch.running}
                       agents={orch.agents}
                       triggeringId={orch.triggeringId}
+                      toggling={orch.toggling}
                       onToggleOrchestrator={orch.toggleOrchestrator}
                       onTriggerAgent={orch.triggerAgent}
                       restarting={orch.restarting}
@@ -396,6 +397,7 @@ export default function DuckyAIApp({
                     orchestratorRunning={orch.running}
                     agents={orch.agents}
                     triggeringId={orch.triggeringId}
+                    toggling={orch.toggling}
                     onToggleOrchestrator={orch.toggleOrchestrator}
                     onTriggerAgent={orch.triggerAgent}
                     restarting={orch.restarting}
@@ -459,6 +461,7 @@ export default function DuckyAIApp({
                       orchestratorRunning={orch.running}
                       agents={orch.agents}
                       triggeringId={orch.triggeringId}
+                      toggling={orch.toggling}
                       onToggleOrchestrator={orch.toggleOrchestrator}
                       onTriggerAgent={orch.triggerAgent}
                       restarting={orch.restarting}
