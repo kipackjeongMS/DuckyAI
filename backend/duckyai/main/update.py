@@ -3,11 +3,13 @@
 
 import os
 import platform
+import re
 import shutil
 import site
 import sys
 import sysconfig
 import tempfile
+import time
 import zipfile
 import subprocess
 from pathlib import Path
@@ -103,6 +105,40 @@ def extract_zip(zip_path: Path, dest_dir: Path) -> Path:
 def _normalize_version(v: str) -> str:
     """Strip leading 'v' for consistent comparison (v0.1.20 → 0.1.20)."""
     return v.lstrip("v") if v else v
+
+
+def _get_update_log_dir() -> Path:
+    """Return the persistent directory for update logs (~/.duckyai/logs/)."""
+    log_dir = Path.home() / ".duckyai" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
+
+
+def _recent_failed_update_log() -> Optional[Path]:
+    """Return the most recent update-*.log if it indicates a failed update.
+
+    Used by ``duckyai doctor`` to surface silent install failures.
+    """
+    log_dir = Path.home() / ".duckyai" / "logs"
+    if not log_dir.is_dir():
+        return None
+    logs = sorted(log_dir.glob("update-*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not logs:
+        return None
+    most_recent = logs[0]
+    try:
+        # Only flag logs from the last 7 days
+        if time.time() - most_recent.stat().st_mtime > 7 * 86400:
+            return None
+        text = most_recent.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    # Markers written by the deferred bat or non-Windows install
+    failure_markers = ("UPDATE FAILED", "VERSION MISMATCH", "ERROR: Could not install")
+    success_marker = "UPDATE VERIFIED"
+    if any(m in text for m in failure_markers) and success_marker not in text.split("UPDATE VERIFIED")[-1:][0]:
+        return most_recent
+    return None
 
 
 def _cleanup_corrupt_distributions() -> int:
@@ -282,7 +318,12 @@ def install_package(package_dir: Path) -> bool:
         return False
 
 
-def _deferred_install(package_dir: Path, vaults: list[Path], stopped: list[dict]) -> None:
+def _deferred_install(
+    package_dir: Path,
+    vaults: list[Path],
+    stopped: list[dict],
+    expected_version: Optional[str] = None,
+) -> None:
     """Spawn a detached batch script that waits for us to exit, then runs pip install.
 
     On Windows the running ``duckyai.exe`` shim holds a file-lock that
@@ -290,9 +331,11 @@ def _deferred_install(package_dir: Path, vaults: list[Path], stopped: list[dict]
     script that:
       1. Waits for our parent ``duckyai.exe`` to exit (polls with ``tasklist``).
       2. Runs ``python -m pip install --upgrade <package_dir>``.
-      3. Syncs vault files via ``duckyai update --sync-only``.
-      4. Restarts previously-stopped daemon processes.
-      5. Cleans up temp files and itself.
+      3. Verifies the installed version matches ``expected_version``.
+      4. Syncs vault files via ``duckyai update --sync-only``.
+      5. Restarts previously-stopped daemon processes.
+      6. Writes a persistent log to ``~/.duckyai/logs/update-{ts}.log``.
+      7. Cleans up temp files and itself.
     """
     # Find our launcher PID (the duckyai.exe shim)
     launcher_pid = os.getpid()
@@ -306,10 +349,19 @@ def _deferred_install(package_dir: Path, vaults: list[Path], stopped: list[dict]
     python_exe = sys.executable
     scripts_dir = Path(sysconfig.get_path("scripts"))
 
+    # Rename any locked duckyai*.exe shims to .exe.old so pip can write
+    # fresh ones — Windows allows rename of held files but not overwrite.
+    _rename_locked_scripts()
+
     # The temp directory containing the extracted release
     tmpdir = package_dir.parent
     if tmpdir.name == "backend":
         tmpdir = tmpdir.parent
+
+    # Persistent log file for diagnosing silent failures
+    log_dir = _get_update_log_dir()
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    logfile = log_dir / f"update-{timestamp}.log"
 
     # Build vault restart commands
     restart_cmds = ""
@@ -319,9 +371,27 @@ def _deferred_install(package_dir: Path, vaults: list[Path], stopped: list[dict]
             f'start "" /B "{python_exe}" -m duckyai -o\n'
         )
 
+    expected_clean = (expected_version or "").lstrip("v") or "unknown"
+
     bat_path = Path(tempfile.gettempdir()) / "duckyai_update.bat"
     bat_content = f"""@echo off
 REM DuckyAI deferred updater
+setlocal EnableDelayedExpansion
+set "LOGFILE={logfile}"
+set "EXPECTED={expected_clean}"
+
+echo ====================================  >> "%LOGFILE%" 2>&1
+echo DuckyAI deferred update                  >> "%LOGFILE%" 2>&1
+echo Started: %DATE% %TIME%                   >> "%LOGFILE%" 2>&1
+echo Expected version: %EXPECTED%             >> "%LOGFILE%" 2>&1
+echo Python: {python_exe}                     >> "%LOGFILE%" 2>&1
+echo Package: {package_dir}                   >> "%LOGFILE%" 2>&1
+echo ====================================  >> "%LOGFILE%" 2>&1
+
+echo DuckyAI deferred installer
+echo Log: %LOGFILE%
+echo.
+
 :wait
 tasklist /FI "PID eq {launcher_pid}" 2>NUL | find /I "{launcher_pid}" >NUL
 if not errorlevel 1 (
@@ -329,33 +399,66 @@ if not errorlevel 1 (
     goto wait
 )
 
-echo.
 echo Running pip install...
-"{python_exe}" -m pip install --upgrade "{package_dir}"
-if errorlevel 1 (
+echo Running pip install...                   >> "%LOGFILE%" 2>&1
+"{python_exe}" -m pip install --upgrade --force-reinstall --no-deps "{package_dir}"  >> "%LOGFILE%" 2>&1
+set PIP_EXIT=%ERRORLEVEL%
+echo pip --no-deps exit code: %PIP_EXIT%      >> "%LOGFILE%" 2>&1
+
+echo Updating dependencies...
+echo Updating dependencies...                 >> "%LOGFILE%" 2>&1
+"{python_exe}" -m pip install --upgrade "{package_dir}"  >> "%LOGFILE%" 2>&1
+set PIP_DEPS_EXIT=%ERRORLEVEL%
+echo pip deps exit code: %PIP_DEPS_EXIT%      >> "%LOGFILE%" 2>&1
+
+REM Verify installed version matches expected
+echo Verifying installed version...
+for /f "tokens=2" %%v in ('"{python_exe}" -m pip show duckyai 2^>NUL ^| findstr /B /C:"Version:"') do set "INSTALLED=%%v"
+echo Installed version after pip: %INSTALLED% >> "%LOGFILE%" 2>&1
+
+if /I "%INSTALLED%"=="%EXPECTED%" (
+    echo UPDATE VERIFIED: %INSTALLED% matches expected  >> "%LOGFILE%" 2>&1
     echo.
-    echo DuckyAI update FAILED. Run 'duckyai update --force' to retry.
-    pause
-    goto cleanup
-)
+    echo ====================================
+    echo DuckyAI updated to %INSTALLED%
+    echo ====================================
 
-echo Syncing vault files...
-"{python_exe}" -m duckyai update --sync-only
+    echo Syncing vault files...
+    echo Syncing vault files...               >> "%LOGFILE%" 2>&1
+    "{python_exe}" -m duckyai update --sync-only  >> "%LOGFILE%" 2>&1
 
-echo Cleaning up old executables...
-del /F /Q "{scripts_dir}\\duckyai*.exe.old" >NUL 2>&1
+    echo Cleaning up old executables...
+    del /F /Q "{scripts_dir}\\duckyai*.exe.old" >NUL 2>&1
 
 {restart_cmds}
-
-echo.
-echo ====================================
-echo DuckyAI update completed successfully!
-echo ====================================
-timeout /t 3 /nobreak >NUL
+    timeout /t 3 /nobreak >NUL
+) else (
+    echo UPDATE FAILED: VERSION MISMATCH      >> "%LOGFILE%" 2>&1
+    echo Expected: %EXPECTED%                 >> "%LOGFILE%" 2>&1
+    echo Got: %INSTALLED%                     >> "%LOGFILE%" 2>&1
+    echo.
+    echo ====================================
+    echo  DuckyAI UPDATE FAILED
+    echo ====================================
+    echo Expected: %EXPECTED%
+    echo Got:      %INSTALLED%
+    echo.
+    echo Most likely cause: a duckyai.exe or duckyai-vault-mcp.exe was
+    echo locked by Obsidian, Copilot CLI, or a daemon during install.
+    echo.
+    echo Log file: %LOGFILE%
+    echo.
+    echo Run 'duckyai doctor' to see this error again.
+    echo Run 'duckyai update --force' after closing Obsidian / Copilot
+    echo to retry.
+    echo.
+    pause
+)
 
 :cleanup
 rmdir /S /Q "{tmpdir}" >NUL 2>&1
 del /F /Q "%~f0" >NUL 2>&1
+endlocal
 """
     bat_path.write_text(bat_content, encoding="utf-8")
 
@@ -366,6 +469,7 @@ del /F /Q "%~f0" >NUL 2>&1
         close_fds=True,
     )
     click.echo(f"  Deferred installer launched (waiting for PID {launcher_pid} to exit)")
+    click.echo(f"  Log: {logfile}")
     click.echo("  The update will finish in a new console window.")
 
 
@@ -569,7 +673,7 @@ def update_cli(force: bool, target_version: Optional[str], list_releases: bool, 
         click.echo()
         click.echo("Launching deferred installer (Windows file-lock workaround)...")
         vaults = _find_active_vaults()
-        _deferred_install(install_dir, vaults, stopped)
+        _deferred_install(install_dir, vaults, stopped, expected_version=release_ver_normalized)
         click.echo()
         click.echo("=" * 50)
         click.echo("Update will complete momentarily in a new window.")

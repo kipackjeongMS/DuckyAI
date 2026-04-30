@@ -45,6 +45,24 @@ def doctor_command(repair_install: bool, source_dir: Path | None, json_out: bool
     prereq_report = check_all()
     print_report(prereq_report)
 
+    # ── Recent update failure (helps diagnose silent self-update bugs) ──
+    from .update import _recent_failed_update_log
+
+    failed_log = _recent_failed_update_log()
+    if failed_log is not None:
+        click.echo("Recent update failure detected")
+        click.echo(f"  Log: {failed_log}")
+        try:
+            tail = failed_log.read_text(encoding="utf-8", errors="replace").splitlines()
+            for line in tail[-15:]:
+                click.echo(f"  | {line}")
+        except OSError:
+            pass
+        click.echo("  Likely cause: duckyai.exe / duckyai-vault-mcp.exe was locked by")
+        click.echo("  Obsidian or Copilot CLI during install. Close those apps and run")
+        click.echo("  'duckyai update --force' to retry.")
+        click.echo()
+
     click.echo("DuckyAI installation health")
     click.echo(f"  Python: {diagnostics['python_executable']}")
     click.echo(f"  Site-packages: {diagnostics['purelib']}")
