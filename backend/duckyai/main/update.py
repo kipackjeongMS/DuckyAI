@@ -485,12 +485,79 @@ _SYSTEM_FILES = {
 }
 
 
+def _sync_config_nodes(vault_root: Path) -> None:
+    """Add missing agent nodes to the user's duckyai.yml.
+
+    Compares node names in the user's config against the canonical
+    nodes-defaults.yml shipped with the package. Any nodes not present
+    (by name) are appended to the user's config file.
+    """
+    import yaml
+
+    config_path = vault_root / ".duckyai" / "duckyai.yml"
+    if not config_path.is_file():
+        return
+
+    defaults_path = Path(__file__).resolve().parent.parent / ".playbook" / "nodes-defaults.yml"
+    if not defaults_path.is_file():
+        return
+
+    # Load user config
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            user_config = yaml.safe_load(f) or {}
+    except Exception:
+        click.echo("  ⚠ Could not parse duckyai.yml — skipping node sync", err=True)
+        return
+
+    # Load canonical defaults
+    try:
+        with open(defaults_path, "r", encoding="utf-8") as f:
+            default_nodes = yaml.safe_load(f) or []
+    except Exception:
+        return
+
+    if not isinstance(default_nodes, list):
+        return
+
+    user_nodes = user_config.get("nodes", []) or []
+    existing_names = {n.get("name", "") for n in user_nodes if isinstance(n, dict)}
+
+    # Find missing nodes
+    missing = [n for n in default_nodes if n.get("name", "") not in existing_names]
+    if not missing:
+        return
+
+    # Append missing nodes to the YAML file (preserving user formatting)
+    # We append raw YAML text to avoid rewriting/reordering the entire file
+    with open(config_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    additions = []
+    for node in missing:
+        # Serialize each node as a YAML block
+        node_yaml = yaml.dump([node], default_flow_style=False, sort_keys=False)
+        # yaml.dump wraps in a list; strip the leading "- " at top level
+        # and re-indent as a proper nodes list entry
+        lines = node_yaml.strip().splitlines()
+        additions.append("\n" + "\n".join(lines))
+
+    content = content.rstrip() + "\n" + "\n".join(additions) + "\n"
+
+    with open(config_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    names = [n["name"] for n in missing]
+    click.echo(f"  ✓ {len(missing)} new agent node(s) added: {', '.join(names)}")
+
+
 def sync_vault(vault_root: Path) -> None:
     """Sync CLI-managed vault files after a package update.
 
     1. Calls ensure_init() to sync .playbook prompts, copilot-instructions, skills.
     2. Force-overwrites CLI-managed system files (Obsidian plugin).
     3. Copies new vault-template files that don't exist yet (skip-if-exists).
+    4. Adds missing agent nodes to duckyai.yml.
     """
     from .cli import ensure_init
 
@@ -534,6 +601,9 @@ def sync_vault(vault_root: Path) -> None:
         click.echo(f"  ✓ {created} new template file(s) added")
     if not updated and not created:
         click.echo("  · Vault files already up to date")
+
+    # 3) Sync missing agent nodes into duckyai.yml
+    _sync_config_nodes(vault_root)
 
 
 def _find_active_vaults() -> list[Path]:
