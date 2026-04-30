@@ -152,6 +152,16 @@ class VaultService:
             description="Generate the daily roundup.",
             implemented=True,
         ),
+        ToolDefinition(
+            name="gatherOpenItems",
+            description="Gather all open tasks, PRs, and carried items from vault. Returns structured JSON.",
+            implemented=True,
+        ),
+        ToolDefinition(
+            name="writeDailyNoteFromPlan",
+            description="Write today's daily note from a structured plan (JSON with focus_today, carried_items, context_note, at_risk).",
+            implemented=True,
+        ),
     )
 
     _TOOL_MAP: dict[str, ToolDefinition] = {tool.name: tool for tool in TOOL_DEFINITIONS}
@@ -250,6 +260,180 @@ class VaultService:
         return self._text_response(
             f"Created {target_date}.md with {len(carry_forward)} carried items from {previous_label}"
         )
+
+    # ------------------------------------------------------------------
+    # gatherOpenItems / writeDailyNoteFromPlan — Daily Note Prep agent
+    # ------------------------------------------------------------------
+
+    def tool_gatherOpenItems(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Deterministically collect all open tasks, PRs, and carry-forward items."""
+        today = self._get_today_date()
+
+        # 1. Open tasks (status != done/cancelled)
+        open_tasks: list[dict[str, str]] = []
+        if self.tasks_dir.exists():
+            for task_file in sorted(self.tasks_dir.iterdir()):
+                if not task_file.is_file() or task_file.suffix != ".md":
+                    continue
+                content = self._read_text(task_file)
+                status = self._read_frontmatter_field(content, "status") or "todo"
+                if status in ("done", "cancelled"):
+                    continue
+                priority = self._read_frontmatter_field(content, "priority") or "P2"
+                project = self._read_frontmatter_field(content, "project") or ""
+                due = self._read_frontmatter_field(content, "due") or ""
+                created = self._read_frontmatter_field(content, "created") or ""
+                open_tasks.append({
+                    "title": task_file.stem,
+                    "status": status,
+                    "priority": priority,
+                    "project": project,
+                    "due": due,
+                    "created": created,
+                })
+
+        # 2. Open PR reviews (status != done/cancelled)
+        open_prs: list[dict[str, str]] = []
+        if self.pr_reviews_dir.exists():
+            for pr_file in sorted(self.pr_reviews_dir.iterdir()):
+                if not pr_file.is_file() or pr_file.suffix != ".md":
+                    continue
+                content = self._read_text(pr_file)
+                status = self._read_frontmatter_field(content, "status") or "todo"
+                if status in ("done", "cancelled"):
+                    continue
+                priority = self._read_frontmatter_field(content, "priority") or "P2"
+                created = self._read_frontmatter_field(content, "created") or ""
+                open_prs.append({
+                    "title": pr_file.stem,
+                    "status": status,
+                    "priority": priority,
+                    "created": created,
+                })
+
+        # 3. Carry-forward from recent daily notes (look back up to 7 days)
+        carried_items: list[str] = []
+        prev_note = self._find_previous_daily_note(today)
+        if prev_note is not None:
+            carried_items = self._extract_carry_forward(prev_note)
+
+        # 4. Uncompleted items from recent notes beyond yesterday (deep lookback)
+        deep_items: list[str] = []
+        if self.daily_dir.exists():
+            recent_notes = sorted(
+                (p for p in self.daily_dir.iterdir()
+                 if p.is_file() and p.suffix == ".md" and p.name < f"{today}.md"),
+                reverse=True,
+            )
+            # Scan last 7 notes (skip first — already handled by carry_forward)
+            for note_path in recent_notes[1:7]:
+                try:
+                    content = self._read_text(note_path)
+                except OSError:
+                    continue
+                # Extract unchecked items from Focus Today that aren't already carried
+                focus_match = re.search(
+                    r"## Focus Today\n([\s\S]*?)(?=\n## )", content
+                )
+                if focus_match:
+                    for line in focus_match.group(1).split("\n"):
+                        stripped = line.strip()
+                        if re.match(r"^- \[ \]", stripped) and stripped not in carried_items and stripped not in deep_items:
+                            deep_items.append(stripped)
+
+        result = {
+            "date": today,
+            "open_tasks": open_tasks,
+            "open_prs": open_prs,
+            "carried_from_yesterday": carried_items,
+            "forgotten_items": deep_items,
+        }
+        return self._text_response(json.dumps(result, indent=2))
+
+    def tool_writeDailyNoteFromPlan(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Write today's daily note using AI-generated plan (structured JSON)."""
+        plan_raw = arguments.get("plan")
+        if not plan_raw:
+            raise ValueError("Field 'plan' is required (JSON object with focus_today, carried_items, etc.)")
+
+        # Accept plan as dict or JSON string
+        if isinstance(plan_raw, str):
+            try:
+                plan = json.loads(plan_raw)
+            except json.JSONDecodeError:
+                raise ValueError("Field 'plan' must be valid JSON")
+        else:
+            plan = plan_raw
+
+        raw_date = arguments.get("date")
+        target_date = self._get_today_date() if raw_date is None else self._coerce_target_date(raw_date)
+        target_path = self._daily_note_path(target_date)
+
+        if target_path.exists():
+            return self._text_response(f"Daily note for {target_date} already exists. Skipped.")
+
+        # Extract plan fields
+        focus_today: list[str] = plan.get("focus_today", [])
+        carried_items: list[str] = plan.get("carried_items", [])
+        context_note: str = plan.get("context_note", "")
+        at_risk: list[str] = plan.get("at_risk", [])
+        pr_items: list[str] = plan.get("pr_items", [])
+
+        # Build sections
+        focus_section = "\n".join(f"- [ ] {item}" for item in focus_today) if focus_today else "- [ ]"
+        carry_section = "\n".join(f"- [ ] {item}" if not item.startswith("- ") else item for item in carried_items) if carried_items else "- (none)"
+        pr_section = "\n".join(f"- [ ] {item}" for item in pr_items) if pr_items else ""
+
+        # Build note from template
+        note_content = self._build_daily_note_from_template(target_date, carry_section)
+
+        # Replace Focus Today section with AI-prioritized items
+        note_content = self._replace_or_append_h2_section(
+            note_content, section_header="Focus Today", new_content=focus_section
+        )
+
+        # Add PR items if provided
+        if pr_section:
+            note_content = self._replace_or_append_h2_section(
+                note_content, section_header="PRs & Code Reviews", new_content=pr_section
+            )
+
+        # Add context note and at-risk items to Notes section
+        notes_content = ""
+        if context_note:
+            notes_content += f"> {context_note}\n"
+        if at_risk:
+            notes_content += "\n**⚠️ At Risk:**\n"
+            notes_content += "\n".join(f"- {item}" for item in at_risk)
+        if notes_content:
+            note_content = self._replace_or_append_h2_section(
+                note_content, section_header="Notes", new_content=notes_content.strip()
+            )
+
+        self.daily_dir.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(note_content, encoding="utf-8")
+
+        return self._text_response(
+            f"Created {target_date}.md — Focus: {len(focus_today)} items, "
+            f"Carried: {len(carried_items)}, At-risk: {len(at_risk)}"
+        )
+
+    @staticmethod
+    def _read_frontmatter_field(content: str, field_name: str) -> str | None:
+        """Read a single field value from YAML frontmatter."""
+        if not content.startswith("---\n"):
+            return None
+        closing = content.find("\n---\n", 4)
+        if closing == -1:
+            closing = content.find("\n---", 4)
+        if closing == -1:
+            return None
+        frontmatter = content[4:closing]
+        match = re.search(rf"^{re.escape(field_name)}:\s*(.*)$", frontmatter, re.MULTILINE)
+        if match:
+            val = match.group(1).strip().strip('"').strip("'")
+            return val if val else None
+        return None
 
     def tool_createTask(self, arguments: dict[str, Any]) -> dict[str, Any]:
         title = self._sanitize_filename(self._require_non_empty_string(arguments, "title"))

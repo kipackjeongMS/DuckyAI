@@ -149,6 +149,19 @@ def generate_roundup(date: str | None = None) -> str:
     return _call("generateRoundup", arguments)
 
 
+@mcp.tool(name="gatherOpenItems", description="Gather all open tasks, PRs, and carried items from vault. Returns structured JSON.")
+def gather_open_items() -> str:
+    return _call("gatherOpenItems", {})
+
+
+@mcp.tool(name="writeDailyNoteFromPlan", description="Write today's daily note from a structured plan (JSON with focus_today, carried_items, context_note, at_risk).")
+def write_daily_note_from_plan(plan: str, date: str | None = None) -> str:
+    arguments: dict = {"plan": plan}
+    if date is not None:
+        arguments["date"] = date
+    return _call("writeDailyNoteFromPlan", arguments)
+
+
 @mcp.tool(name="prepareWeeklyReview", description="Create the weekly review note.")
 def prepare_weekly_review(week: str | None = None) -> str:
     arguments = {} if week is None else {"week": week}
