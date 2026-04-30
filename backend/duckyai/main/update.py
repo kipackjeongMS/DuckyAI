@@ -107,6 +107,27 @@ def _normalize_version(v: str) -> str:
     return v.lstrip("v") if v else v
 
 
+def _patch_pyproject_version(install_dir: Path, version: str) -> bool:
+    """Patch pyproject.toml version to match the release tag before pip install.
+
+    GitHub release zips may have a stale version in pyproject.toml.
+    This ensures pip builds the wheel with the correct version.
+    """
+    import re
+
+    pyproject = install_dir / "pyproject.toml"
+    if not pyproject.is_file():
+        return False
+    text = pyproject.read_text(encoding="utf-8")
+    new_text, count = re.subn(
+        r'^(version\s*=\s*")[^"]*(")', rf"\g<1>{version}\2", text, count=1, flags=re.MULTILINE
+    )
+    if count == 0:
+        return False
+    pyproject.write_text(new_text, encoding="utf-8")
+    return True
+
+
 def _get_update_log_dir() -> Path:
     """Return the persistent directory for update logs (~/.duckyai/logs/)."""
     log_dir = Path.home() / ".duckyai" / "logs"
@@ -413,7 +434,8 @@ echo pip deps exit code: %PIP_DEPS_EXIT%      >> "%LOGFILE%" 2>&1
 
 REM Verify installed version matches expected
 echo Verifying installed version...
-for /f "tokens=2" %%v in ('"{python_exe}" -m pip show duckyai 2^>NUL ^| findstr /B /C:"Version:"') do set "INSTALLED=%%v"
+set "INSTALLED="
+for /f "usebackq" %%v in (`"{python_exe}" -c "from importlib.metadata import version; print(version('duckyai'))" 2^>NUL`) do set "INSTALLED=%%v"
 echo Installed version after pip: %INSTALLED% >> "%LOGFILE%" 2>&1
 
 if /I "%INSTALLED%"=="%EXPECTED%" (
@@ -722,6 +744,10 @@ def update_cli(force: bool, target_version: Optional[str], list_releases: bool, 
         # pyproject.toml lives in backend/ subdirectory
         backend_path = extracted_path / "backend"
         install_dir = backend_path if backend_path.is_dir() and (backend_path / "pyproject.toml").exists() else extracted_path
+
+        # Patch version in pyproject.toml to match the release tag
+        if _patch_pyproject_version(install_dir, release_ver_normalized):
+            click.echo(f"  Patched pyproject.toml version → {release_ver_normalized}")
 
         # Pre-install cleanup
         cleaned = _cleanup_corrupt_distributions()
