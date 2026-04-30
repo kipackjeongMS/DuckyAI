@@ -123,6 +123,18 @@ nodes:
     readonly: true
 
 - type: agent
+  name: Daily Note Prep (DNP)
+  cron: "0 7 * * MON-FRI"
+  output_path: 04-Periodic/Daily
+  output_type: new_file
+  requires_input_file: false
+  max_parallel: 1
+  enabled: true
+  use_container: false
+  agent_params:
+    lookback_days: 7
+
+- type: agent
   name: Service Sync (SVC)
   requires_input_file: false
   max_parallel: 1
