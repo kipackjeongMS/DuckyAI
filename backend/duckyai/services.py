@@ -247,3 +247,25 @@ def get_service_entry(vault_path: Path, name: str) -> Optional[Dict[str, Any]]:
         if _entry_name(entry) == name:
             return _to_plain(entry) if hasattr(entry, "items") else {"name": name}
     return None
+
+
+def set_service_pr_scan(vault_path: Path, name: str, enabled: bool) -> bool:
+    """Set ``pr_scan`` flag on an existing service entry.
+
+    Returns True if the entry was found and updated.
+    """
+    yml, data, config_path = _load_config(vault_path)
+    if yml is None:
+        return False
+
+    entries = _get_entries(data)
+    for entry in entries:
+        if _entry_name(entry) == name:
+            if enabled:
+                entry["pr_scan"] = True
+            else:
+                if "pr_scan" in entry:
+                    del entry["pr_scan"]
+            _save_config(config_path, yml, data)
+            return True
+    return False

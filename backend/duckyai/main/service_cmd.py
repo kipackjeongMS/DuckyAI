@@ -75,14 +75,17 @@ def service_list(ctx, json_out):
 # duckyai service add
 @service_group.command("add")
 @click.argument("name")
+@click.option("--pr-scan", is_flag=True, help="Enable PR scanning for this service")
 @click.pass_context
-def service_add(ctx, name):
+def service_add(ctx, name, pr_scan):
     """Register a new service and create its directory."""
     from ..services import add_service
 
     vault_root = _resolve_vault_root(ctx)
-    service_dir = add_service(vault_root, name)
+    service_dir = add_service(vault_root, name, pr_scan=pr_scan)
     click.echo(f"  ✅ Service '{name}' created at {service_dir}")
+    if pr_scan:
+        click.echo(f"  🔍 PR scanning enabled for this service.")
     click.echo(f"  Clone repos into this directory to get started.")
 
 
@@ -117,6 +120,37 @@ def service_path(ctx):
 
     vault_root = _resolve_vault_root(ctx)
     click.echo(str(get_services_path(vault_root)))
+
+
+# duckyai service scan
+@service_group.command("scan")
+@click.argument("name")
+@click.option("--enable/--disable", default=None, help="Enable or disable PR scanning")
+@click.pass_context
+def service_scan(ctx, name, enable):
+    """Toggle PR scanning for a service."""
+    from ..services import get_service_entry, set_service_pr_scan
+
+    vault_root = _resolve_vault_root(ctx)
+    entry = get_service_entry(vault_root, name)
+    if not entry:
+        click.echo(f"  ❌ Service '{name}' not found.", err=True)
+        sys.exit(1)
+
+    current = entry.get("pr_scan", False)
+
+    if enable is None:
+        # Toggle
+        enable = not current
+
+    if enable == current:
+        state = "enabled" if current else "disabled"
+        click.echo(f"  PR scanning already {state} for '{name}'.")
+        return
+
+    set_service_pr_scan(vault_root, name, enable)
+    state = "enabled" if enable else "disabled"
+    click.echo(f"  ✅ PR scanning {state} for '{name}'.")
 
 
 # duckyai service add-repo

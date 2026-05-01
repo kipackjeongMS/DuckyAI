@@ -58,6 +58,9 @@ class CronScheduler:
         self._thread.start()
         logger.info("Cron scheduler started")
 
+        # Fire missed cron jobs on startup (e.g., DNP at 7 AM but orchestrator started at 9 AM)
+        threading.Thread(target=self._catch_up_missed_jobs, daemon=True).start()
+
     def stop(self):
         """Stop the cron scheduler thread."""
         if not self._running:
@@ -87,6 +90,51 @@ class CronScheduler:
                     break
 
         logger.info("Cron scheduler loop stopped")
+
+    def _catch_up_missed_jobs(self):
+        """
+        On startup, check if any cron agents missed their window today.
+        If a cron job should have fired earlier today but didn't (because
+        orchestrator wasn't running), fire it now.
+        """
+        time.sleep(5)  # Brief delay to let orchestrator fully initialize
+
+        now = self.config.user_now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        agents_with_cron = [
+            agent for agent in self.agent_registry.agents.values()
+            if agent.cron is not None
+        ]
+
+        if not agents_with_cron:
+            return
+
+        logger.info(f"Checking {len(agents_with_cron)} cron agents for missed runs today...")
+
+        for agent in agents_with_cron:
+            try:
+                cron = croniter(agent.cron, now)
+                prev_fire = cron.get_prev(datetime)
+
+                # Only catch up if the missed fire time was TODAY and before now
+                if prev_fire < today_start:
+                    continue  # Last fire was yesterday or earlier — not a miss today
+
+                # It should have fired today between today_start and now
+                # Check if it's within quiet hours — respect that boundary
+                if self.config.is_quiet_hours():
+                    continue
+
+                logger.info(
+                    f"Catch-up: {agent.abbreviation} ({agent.name}) "
+                    f"missed scheduled run at {prev_fire.strftime('%H:%M')}, firing now"
+                )
+                self._trigger_agent(agent)
+                self.set_cooldown(agent.abbreviation)
+
+            except Exception as e:
+                logger.error(f"Error in catch-up check for {agent.abbreviation}: {e}")
 
     def _check_and_trigger_jobs(self):
         """
