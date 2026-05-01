@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "duckyai"
-version = "0.1.59"
+version = "0.1.60"
 description = "Personal Knowledge Management CLI framework"
 authors = [{name = "DuckyAI Team"}]
 readme = "README.md"
