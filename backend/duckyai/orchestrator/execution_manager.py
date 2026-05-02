@@ -244,7 +244,10 @@ class ExecutionManager:
             ctx.task_file = task_handle
 
         try:
-            logger.debug(f"Starting execution: {agent.abbreviation} (ID: {ctx.execution_id})")
+            logger.info(
+                f"Dispatching {agent.abbreviation}: executor={agent.executor} (ID: {ctx.execution_id})",
+                console=True,
+            )
 
             # Execute based on executor type
             if agent.executor == 'copilot_cli':
@@ -700,6 +703,11 @@ class ExecutionManager:
         leverage Microsoft Teams data (TCS, TMS).  Falls back to copilot_sdk
         executor if the agency binary is not installed.
         """
+        logger.info(
+            f"[{agent.abbreviation}] _execute_agency called (executor={agent.executor})",
+            console=True,
+        )
+
         # Check if agency CLI is available
         agency_bin = shutil.which('agency')
         if not agency_bin:
@@ -709,7 +717,10 @@ class ExecutionManager:
                 "Run `duckyai setup` or `duckyai update` to install it.",
                 console=True,
             )
+            logger.debug(f"[{agent.abbreviation}] PATH={os.environ.get('PATH', 'N/A')}")
             return self._execute_copilot_sdk(agent, ctx, trigger_data)
+
+        logger.info(f"[{agent.abbreviation}] agency binary: {agency_bin}", console=True)
 
         # Build prompt
         if trigger_data.get('event_type') == 'onetime_prompt':

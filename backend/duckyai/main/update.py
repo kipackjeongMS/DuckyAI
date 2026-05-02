@@ -566,11 +566,16 @@ _SYSTEM_FILES = {
 
 
 def _sync_config_nodes(vault_root: Path) -> None:
-    """Add missing agent nodes to the user's duckyai.yml.
+    """Add missing agent nodes and update key fields on existing nodes.
 
     Compares node names in the user's config against the canonical
     nodes-defaults.yml shipped with the package. Any nodes not present
     (by name) are appended to the user's config file.
+
+    For existing nodes, specific "managed fields" (currently: executor)
+    are updated to match the canonical defaults — this allows the
+    package to roll out executor changes (e.g. copilot_sdk → agency)
+    to already-provisioned vaults.
     """
     import yaml
 
@@ -603,7 +608,75 @@ def _sync_config_nodes(vault_root: Path) -> None:
     user_nodes = user_config.get("nodes", []) or []
     existing_names = {n.get("name", "") for n in user_nodes if isinstance(n, dict)}
 
-    # Find missing nodes
+    # ── Phase 1: Update managed fields on existing nodes ──
+    # Fields that the package controls and may upgrade across versions.
+    MANAGED_FIELDS = ("executor",)
+
+    defaults_by_name = {n.get("name", ""): n for n in default_nodes if isinstance(n, dict)}
+    updated_fields: list[str] = []
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    for user_node in user_nodes:
+        if not isinstance(user_node, dict):
+            continue
+        name = user_node.get("name", "")
+        canonical = defaults_by_name.get(name)
+        if not canonical:
+            continue
+
+        for field in MANAGED_FIELDS:
+            canonical_val = canonical.get(field)
+            if canonical_val is None:
+                continue
+            user_val = user_node.get(field)
+            if user_val == canonical_val:
+                continue  # already up-to-date
+
+            # Patch the raw YAML text — find the node's name line and inject/replace the field
+            # Strategy: find `  name: <exact name>` block, then either replace or add the field
+            if user_val is not None:
+                # Replace existing field value
+                # Look for `  field: old_value` after the node's name line
+                import re
+                # Build a pattern that finds 'executor: <old>' within the node block
+                # (between this node's name and the next `- type:`)
+                name_escaped = re.escape(name)
+                field_pattern = re.compile(
+                    rf'(name:\s*{name_escaped}\s*\n(?:(?!^- ).*\n)*?)'
+                    rf'(\s*{field}:\s*){re.escape(str(user_val))}',
+                    re.MULTILINE,
+                )
+                new_content = field_pattern.sub(
+                    rf'\g<1>\g<2>{canonical_val}', content
+                )
+                if new_content != content:
+                    content = new_content
+                    updated_fields.append(f"{name}:{field}={canonical_val}")
+            else:
+                # Add the field — insert after `enabled:` or after `name:` line
+                import re
+                name_escaped = re.escape(name)
+                # Insert after the last known field in that block before agent_params
+                insert_pattern = re.compile(
+                    rf'(name:\s*{name_escaped}\s*\n(?:(?!^- |agent_params).*\n)*?)'
+                    rf'(\s*)(enabled:\s*\S+)',
+                    re.MULTILINE,
+                )
+                match = insert_pattern.search(content)
+                if match:
+                    indent = match.group(2)
+                    insertion = f"{match.group(3)}\n{indent}{field}: {canonical_val}"
+                    content = content[:match.start(3)] + insertion + content[match.end(3):]
+                    updated_fields.append(f"{name}:{field}={canonical_val}")
+
+    if updated_fields:
+        with open(config_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        click.echo(f"  ✓ Updated managed fields: {', '.join(updated_fields)}")
+
+    # ── Phase 2: Add missing nodes ──
     missing = [n for n in default_nodes if n.get("name", "") not in existing_names]
     if not missing:
         return
