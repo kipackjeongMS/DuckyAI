@@ -730,34 +730,17 @@ class ExecutionManager:
 
         cmd = [agency_bin, 'copilot']
 
-        # Prompt passing — use temp file for large prompts to avoid Windows 32K limit
-        if len(ctx.prompt) > 8000:
-            prompt_fd, prompt_path = tempfile.mkstemp(suffix='.txt', prefix='duckyai_agency_prompt_')
-            try:
-                with os.fdopen(prompt_fd, 'w', encoding='utf-8') as f:
-                    f.write(ctx.prompt)
-            except Exception:
-                os.close(prompt_fd)
-                raise
-            cmd.extend(['--prompt-file', prompt_path])
-        else:
-            prompt_path = None
-            cmd.extend(['--prompt', ctx.prompt])
+        # Agency CLI only supports --prompt (no --prompt-file).
+        # Pass the prompt directly — agency handles arbitrarily long values.
+        cmd.extend(['--prompt', ctx.prompt])
 
         # MCP servers — agency uses --mcp flag for built-in MCP server names
         cmd.extend(['--mcp', 'teams'])
 
-        try:
-            self._execute_subprocess(
-                ctx, 'Agency', cmd, agent.timeout_minutes * 60,
-                use_container=False, agent=agent,
-            )
-        finally:
-            if prompt_path:
-                try:
-                    os.unlink(prompt_path)
-                except OSError:
-                    pass
+        self._execute_subprocess(
+            ctx, 'Agency', cmd, agent.timeout_minutes * 60,
+            use_container=False, agent=agent,
+        )
 
     def _adapt_mcp_config_for_container(self, config_json: str) -> str:
         """Translate MCP config for container execution.
