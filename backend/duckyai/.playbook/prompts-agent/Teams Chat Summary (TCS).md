@@ -91,7 +91,7 @@ Print the diagnostic summary in this format:
 Processing M new messages after filtering (skipped K dedup, J channel).
 ```
 
-Track ALL message IDs you saw (including dedup'd ones) — you'll use them in Step 7.
+Track ALL message IDs you saw (including dedup'd ones) — you'll include them in the result block at the end.
 
 
 ### Step 4: Process and summarize
@@ -159,16 +159,24 @@ Track ALL message IDs you saw (including dedup'd ones) — you'll use them in St
 
 > **Note**: Do NOT create tasks or PR reviews here. The Task Manager (TM) agent runs automatically after you finish and handles all task/PR review creation from your highlights.
 
-### Step 7: Update watermark
+### Step 7: Output result block
 
-After all processing is complete, **always** call `updateTeamsChatSyncState` — even when no new messages were found. The overlap-based fetch window means re-running with the same watermark is safe (content dedup prevents duplicates).
+⚠️ **MANDATORY** — as the very last thing in your response, output a fenced code block so the orchestrator can update the sync watermark automatically. **Do NOT call `updateTeamsChatSyncState`** — the orchestrator handles it.
 
-Pass:
-- `lastSynced`: Current ISO timestamp (the time of THIS sync, not the chat timestamps)
-- `processedThreadIds`: **Array of stable per-message IDs** (NOT thread IDs) for ALL messages you observed in this run — both NEW and DEDUP'd. Format: prefer `messageId` from WorkIQ, fallback to `{threadId}:{utc_timestamp}`. Sending these grows the dedup set so future runs can skip them.
-- `processedDates`: Array of all dates (YYYY-MM-DD) that had `appendTeamsChatHighlights` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
+````
+```duckyai-result
+{
+  "processed_ids": ["<stable message IDs for ALL messages observed — NEW + DEDUP'd>"],
+  "processed_dates": ["<YYYY-MM-DD dates you called appendTeamsChatHighlights for>"]
+}
+```
+````
 
-⚠️ **Field naming note**: The parameter is `processedThreadIds` for backwards compatibility, but the **values you send must be message-level stable IDs**, not thread IDs. The watermark system caps this list at 500 entries and dedups internally.
+Rules:
+- `processed_ids`: Array of stable per-message IDs for every message you observed in this run, including dedup'd ones. Format: prefer `messageId` from the response, fallback to `{threadId}:{utc_timestamp}`.
+- `processed_dates`: Array of dates (YYYY-MM-DD) where you called `appendTeamsChatHighlights`. Empty array if no new highlights.
+- If no new chats were found, still output the block with all observed message IDs and an empty `processed_dates` array.
+- This **must** be the LAST thing in your response.
 
 ## Important Rules
 
@@ -180,4 +188,4 @@ Pass:
 - **Never re-process**: Use **content-level dedup** via `processed_message_ids` (per-message stable IDs). Never skip an entire thread just because the thread ID was processed before — check each message individually. The fetch window intentionally overlaps prior runs.
 - **Concise summaries**: Focus on decisions, action items, and key information. Skip pleasantries.
 - **Never modify existing content**: The daily note's existing sections are immutable. Only append new data.
-- **If no new chats**: Always call `updateTeamsChatSyncState` (with `processedThreadIds` containing all observed message IDs, even dedup'd ones) and report "No new Teams chats since last sync."
+- **If no new chats**: Still output the `duckyai-result` block with all observed message IDs (even dedup'd) and an empty `processed_dates` array, then report "No new Teams chats since last sync."

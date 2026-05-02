@@ -264,6 +264,10 @@ class ExecutionManager:
             ctx.status = 'completed'
             logger.info(f"Completed execution: {agent.abbreviation} (ID: {ctx.execution_id})")
 
+            # Run deterministic post-processing (watermark updates, etc.)
+            # so the AI doesn't waste tokens on mechanical bookkeeping.
+            self._run_post_hooks(agent, ctx)
+
         except subprocess.TimeoutExpired:
             ctx.status = 'timeout'
             ctx.error_message = f"{agent.abbreviation} timed out after {agent.timeout_minutes} minute(s)"
@@ -741,6 +745,10 @@ class ExecutionManager:
         mcp_names = agent.mcp_servers if agent.mcp_servers else ['teams']
         for mcp_name in mcp_names:
             cmd.extend(['--mcp', mcp_name])
+
+        # Model — per-agent override from agent_params, then global default
+        if agent.agent_params and agent.agent_params.get('model'):
+            cmd.extend(['--model', agent.agent_params['model']])
 
         self._execute_subprocess(
             ctx, 'Agency', cmd, agent.timeout_minutes * 60,
@@ -1679,6 +1687,140 @@ class ExecutionManager:
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             return []
 
+    # ------------------------------------------------------------------
+    # Post-hook infrastructure: deterministic post-processing after agent
+    # execution so the AI doesn't waste tokens on mechanical bookkeeping.
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _parse_agent_result(response: str) -> Optional[dict]:
+        """Extract structured result from a ``duckyai-result`` fenced code block.
+
+        Returns the parsed dict or *None* if not found / malformed.
+        """
+        import json as _json
+        import re as _re
+
+        if not response:
+            return None
+        match = _re.search(r'```duckyai-result\s*\n(.*?)\n```', response, _re.DOTALL)
+        if not match:
+            return None
+        try:
+            return _json.loads(match.group(1))
+        except (ValueError, _json.JSONDecodeError):
+            return None
+
+    def _write_teams_watermark(
+        self,
+        agent_abbr: str,
+        processed_ids: list,
+        processed_dates: list,
+    ) -> None:
+        """Write updated watermark state for a Teams agent (TCS / TMS).
+
+        Merges *processed_ids* with the existing dedup set (capped at 500),
+        increments *syncCount*, and verifies highlight dates landed in daily
+        notes (adds to *pendingHighlightDates* when missing so the next run
+        can retry).
+        """
+        import json as _json
+        import re as _re
+        from datetime import datetime, timezone
+        from ..config import get_global_runtime_dir
+
+        vault_id = self.config.get("id", "default")
+        filename = "tcs-last-sync.json" if agent_abbr == "TCS" else "tms-last-sync.json"
+        state_file = (
+            get_global_runtime_dir(vault_id, vault_path=self.vault_path) / "state" / filename
+        )
+
+        # Read existing state
+        try:
+            existing = _json.loads(state_file.read_text(encoding="utf-8"))
+        except (FileNotFoundError, _json.JSONDecodeError):
+            existing = {}
+
+        # Merge IDs — incoming first (most recent), then existing, capped at 500
+        id_key = "processedThreads" if agent_abbr == "TCS" else "processedMeetings"
+        existing_ids = existing.get(id_key) or []
+        unique_ids: list = []
+        seen: set = set()
+        for item in [*processed_ids, *existing_ids]:
+            if item not in seen:
+                unique_ids.append(item)
+                seen.add(item)
+            if len(unique_ids) >= 500:
+                break
+
+        # Verify highlight dates landed in daily notes
+        section_header = (
+            "Teams Chat Highlights" if agent_abbr == "TCS" else "Teams Meeting Highlights"
+        )
+        existing_pending = existing.get("pendingHighlightDates") or []
+        pending = list(existing_pending)
+        for target_date in processed_dates:
+            daily_path = self.vault_path / "04-Periodic" / "Daily" / f"{target_date}.md"
+            try:
+                note = daily_path.read_text(encoding="utf-8")
+                pat = rf'^## {_re.escape(section_header)}\s*\n(.*?)(?=^## |\Z)'
+                section_match = _re.search(pat, note, _re.MULTILINE | _re.DOTALL)
+                has_highlights = bool(section_match) and "###" in (section_match.group(1) or "")
+                if not has_highlights and target_date not in pending:
+                    pending.append(target_date)
+                elif has_highlights and target_date in pending:
+                    pending.remove(target_date)
+            except Exception:
+                if target_date not in pending:
+                    pending.append(target_date)
+
+        now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        new_state = {
+            "lastSynced": now_iso,
+            "previousSynced": existing.get("lastSynced") or None,
+            id_key: unique_ids,
+            "syncCount": int(existing.get("syncCount") or 0) + 1,
+            "updatedAt": now_iso,
+            "pendingHighlightDates": pending[-14:],
+        }
+
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        state_file.write_text(_json.dumps(new_state, indent=2), encoding="utf-8")
+
+    def _run_post_hooks(self, agent, ctx) -> None:
+        """Run deterministic post-processing after successful agent execution.
+
+        Parses the agent's ``duckyai-result`` block and handles mechanical
+        tasks (watermark updates) that don't require AI reasoning.
+        """
+        if agent.abbreviation not in ("TCS", "TMS"):
+            return
+
+        result = self._parse_agent_result(ctx.response)
+        if not result:
+            logger.warning(
+                f"[{agent.abbreviation}] No duckyai-result block in response; "
+                f"skipping post-hooks (watermark not updated)",
+                console=True,
+            )
+            return
+
+        processed_ids = result.get("processed_ids") or []
+        processed_dates = result.get("processed_dates") or []
+
+        try:
+            self._write_teams_watermark(agent.abbreviation, processed_ids, processed_dates)
+            logger.info(
+                f"[{agent.abbreviation}] Post-hook: watermark updated "
+                f"({len(processed_ids)} IDs, {len(processed_dates)} dates)",
+                console=True,
+            )
+        except Exception as e:
+            logger.error(
+                f"[{agent.abbreviation}] Post-hook watermark update failed: {e}",
+                console=True,
+            )
+
     def _resolve_teams_fetch_window(self, agent: AgentDefinition) -> Dict:
         """Pre-resolve the fetch window for Teams agents (TCS/TMS).
 
@@ -1854,11 +1996,9 @@ class ExecutionManager:
                 else:
                     task_ref = str(ctx.task_file)
                 prompt += f"- Task File: {task_ref}\n"
-                prompt += f"- **Update upon completion**: Set `status:` and `output:` fields\n"
             except ValueError:
                 # If relative path fails, use as-is
                 prompt += f"- Task File: {ctx.task_file}\n"
-                prompt += f"- **Update upon completion**: Set `status:` and `output:` fields\n"
 
         # Add output configuration
         if agent.output_path:

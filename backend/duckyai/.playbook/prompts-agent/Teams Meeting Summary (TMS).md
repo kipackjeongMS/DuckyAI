@@ -76,7 +76,7 @@ The `processed_meeting_ids` parameter contains stable IDs of meetings already pr
 - Preferred: use the `iCalUId` or `eventId` if available
 - Fallback: `{title}:{start_time_utc}` (e.g., `Sprint Planning:2026-04-27T17:00:00Z`)
 
-**Skip any meeting whose stable ID is in `processed_meeting_ids`.** Track ALL meeting IDs you saw (NEW + DEDUP'd) — you'll send them in Step 6.
+**Skip any meeting whose stable ID is in `processed_meeting_ids`.** Track ALL meeting IDs you saw (NEW + DEDUP'd) — you'll include them in the result block at the end.
 
 Print a diagnostic:
 
@@ -163,14 +163,24 @@ Embed a standard markdown link in the H3 title using `[Meeting Title]({vault_roo
 
 > **Note**: Do NOT create tasks or PR reviews here. The Task Manager (TM) agent runs automatically after you finish and handles all task/PR review creation from your highlights.
 
-### Step 6: Update watermark
+### Step 6: Output result block
 
-After all processing is complete, **always** call `updateTeamsMeetingSyncState` — even when no new meetings were found. The overlap-based fetch window means re-running with the same watermark is safe (content dedup prevents duplicates).
+⚠️ **MANDATORY** — as the very last thing in your response, output a fenced code block so the orchestrator can update the sync watermark automatically. **Do NOT call `updateTeamsMeetingSyncState`** — the orchestrator handles it.
 
-Pass:
-- `lastSynced`: Current ISO timestamp (the time of THIS sync, not the meeting timestamps)
-- `processedMeetingIds`: Array of stable per-meeting IDs for ALL meetings observed in this run — both NEW and DEDUP'd. Format: prefer `iCalUId`/`eventId`, fallback to `{title}:{start_time_utc}`. Sending these grows the dedup set so future runs can skip them.
-- `processedDates`: Array of all dates (YYYY-MM-DD) that had `appendTeamsMeetingHighlights` called — this enables the system to verify highlights actually landed and retry on next sync if they didn't
+````
+```duckyai-result
+{
+  "processed_ids": ["<stable meeting IDs for ALL meetings observed — NEW + DEDUP'd>"],
+  "processed_dates": ["<YYYY-MM-DD dates you called appendTeamsMeetingHighlights for>"]
+}
+```
+````
+
+Rules:
+- `processed_ids`: Array of stable per-meeting IDs for every meeting you observed in this run, including dedup'd ones. Format: prefer `iCalUId`/`eventId`, fallback to `{title}:{start_time_utc}`.
+- `processed_dates`: Array of dates (YYYY-MM-DD) where you called `appendTeamsMeetingHighlights`. Empty array if no new highlights.
+- If no new meetings were found, still output the block with all observed meeting IDs and an empty `processed_dates` array.
+- This **must** be the LAST thing in your response.
 
 ## Important Rules
 
@@ -184,4 +194,4 @@ Pass:
 - **Details in meeting note, bullet points in daily note**: Full discussion/decisions/action items go in the per-meeting note. The daily note gets only concise bullet points per key context with the meeting title linked to the full note.
 - **Never modify existing content**: The daily note's existing sections are immutable. Only append new data.
 - **Separate from chats**: Do NOT include chat messages. Only process calendar meetings with Teams links.
-- **If no new meetings**: Always call `updateTeamsMeetingSyncState` (with `processedMeetingIds` containing all observed meeting IDs, even dedup'd ones) and report "No new Teams meetings since last sync."
+- **If no new meetings**: Still output the `duckyai-result` block with all observed meeting IDs (even dedup'd) and an empty `processed_dates` array, then report "No new Teams meetings since last sync."
