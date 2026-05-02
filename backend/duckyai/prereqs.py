@@ -256,6 +256,21 @@ def check_workiq() -> CheckResult:
     )
 
 
+def check_agency_cli() -> CheckResult:
+    """Check agency CLI is installed."""
+    agency_bin = shutil.which("agency")
+    if agency_bin:
+        output = _run_cmd([agency_bin, "--version"])
+        ver = _parse_version(output) if output else None
+        return CheckResult("Agency CLI", CheckStatus.OK, version=ver)
+    return CheckResult(
+        "Agency CLI", CheckStatus.WARN,
+        message="agency CLI not found — TCS/TMS will fall back to copilot_sdk",
+        fix_command='powershell -Command "iex \\"& { $(irm aka.ms/InstallTool.ps1)} agency\\""',
+        blocking=False,
+    )
+
+
 def check_obsidian_plugin(vault_path: Optional[Path] = None) -> CheckResult:
     """Check if Obsidian plugin is installed in the vault."""
     if not vault_path:
@@ -326,6 +341,7 @@ def check_all(vault_path: Optional[Path] = None) -> PrereqReport:
     report.checks.append(check_az_cli())
     report.checks.append(check_az_devops_ext())
     report.checks.append(check_workiq())
+    report.checks.append(check_agency_cli())
     # Vault-specific (only for doctor, not setup)
     if vault_path:
         report.checks.append(check_obsidian_plugin(vault_path))
@@ -360,7 +376,58 @@ def auto_fix(report: PrereqReport) -> List[str]:
                     check.status = CheckStatus.OK
                     check.message = "Auto-installed"
                     actions.append(f"Installed {check.name}")
+        elif check.name == "Agency CLI" and os.name == "nt":
+            if install_agency_cli():
+                check.status = CheckStatus.OK
+                check.message = "Auto-installed"
+                actions.append(f"Installed {check.name}")
     return actions
+
+
+def install_agency_cli() -> bool:
+    """Install the agency CLI via Microsoft InstallTool (Windows only).
+
+    Returns True if agency is available on PATH after install.
+    """
+    if os.name != "nt":
+        return False
+    ps = shutil.which("powershell")
+    if not ps:
+        return False
+
+    install_cmd = 'iex "& { $(irm aka.ms/InstallTool.ps1)} agency"'
+    result = subprocess.run(
+        [ps, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", install_cmd],
+        capture_output=True, text=True, timeout=120,
+    )
+    if result.returncode != 0:
+        # Retry with debug verbosity
+        install_cmd_debug = 'iex "& { $(irm aka.ms/InstallTool.ps1)} agency --verbosity debug"'
+        result = subprocess.run(
+            [ps, "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", install_cmd_debug],
+            capture_output=True, text=True, timeout=120,
+        )
+
+    # Refresh PATH so shutil.which can find the new binary
+    _refresh_path()
+    return shutil.which("agency") is not None
+
+
+def _refresh_path() -> None:
+    """Reload PATH from registry (Windows) so newly installed tools are visible."""
+    if os.name != "nt":
+        return
+    try:
+        import winreg
+        machine_path = ""
+        user_path = ""
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment") as key:
+            machine_path, _ = winreg.QueryValueEx(key, "Path")
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as key:
+            user_path, _ = winreg.QueryValueEx(key, "Path")
+        os.environ["PATH"] = machine_path + ";" + user_path
+    except (OSError, ImportError):
+        pass
 
 
 def print_report(report: PrereqReport) -> None:

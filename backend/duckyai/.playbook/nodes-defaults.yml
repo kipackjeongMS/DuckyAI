@@ -11,6 +11,7 @@
   max_parallel: 1
   enabled: true
   use_container: false
+  executor: agency
   agent_params:
     lookback_hours: 24
 
@@ -23,6 +24,7 @@
   max_parallel: 1
   enabled: true
   use_container: false
+  executor: agency
   agent_params:
     lookback_hours: 24
 

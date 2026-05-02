@@ -449,6 +449,16 @@ if /I "%INSTALLED%"=="%EXPECTED%" (
     echo Syncing vault files...               >> "%LOGFILE%" 2>&1
     "{python_exe}" -m duckyai update --sync-only  >> "%LOGFILE%" 2>&1
 
+    echo Installing agency CLI...
+    echo Installing agency CLI...             >> "%LOGFILE%" 2>&1
+    where agency >NUL 2>&1
+    if errorlevel 1 (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "iex \\"& {{ $(irm aka.ms/InstallTool.ps1)}} agency\\"" >> "%LOGFILE%" 2>&1
+        echo agency install exit code: %ERRORLEVEL% >> "%LOGFILE%" 2>&1
+    ) else (
+        echo agency CLI already installed     >> "%LOGFILE%" 2>&1
+    )
+
     echo Cleaning up old executables...
     del /F /Q "{scripts_dir}\\duckyai*.exe.old" >NUL 2>&1
 
@@ -790,6 +800,15 @@ def update_cli(force: bool, target_version: Optional[str], list_releases: bool, 
 
     # After pip install, sync vault files with the new package contents
     _sync_all_vaults()
+
+    # Install agency CLI if not present
+    if not shutil.which('agency') and platform.system() == 'Windows':
+        click.echo("Installing agency CLI...")
+        from ..prereqs import install_agency_cli
+        if install_agency_cli():
+            click.echo("  ✓ Agency CLI installed")
+        else:
+            click.echo("  ⚠ Agency CLI install failed (TCS/TMS will fall back to copilot_sdk)")
 
     # Restart previously stopped processes
     if stopped:

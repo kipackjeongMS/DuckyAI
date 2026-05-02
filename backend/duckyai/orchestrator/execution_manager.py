@@ -251,6 +251,8 @@ class ExecutionManager:
                 self._execute_copilot_cli(agent, ctx, trigger_data)
             elif agent.executor == 'claude_code':
                 self._execute_claude_code(agent, ctx, trigger_data)
+            elif agent.executor == 'agency':
+                self._execute_agency(agent, ctx, trigger_data)
             elif agent.executor == 'copilot_sdk':
                 self._execute_copilot_sdk(agent, ctx, trigger_data)
             else:
@@ -690,6 +692,61 @@ class ExecutionManager:
                 cmd.extend(['--mcp-config', config])
 
         self._execute_subprocess(ctx, 'Copilot SDK', cmd, agent.timeout_minutes * 60, use_container=use_container, agent=agent)
+
+    def _execute_agency(self, agent: AgentDefinition, ctx: ExecutionContext, trigger_data: Dict):
+        """Execute agent using the agency CLI.
+
+        Uses `agency copilot --prompt "..." --mcp teams` for agents that
+        leverage Microsoft Teams data (TCS, TMS).  Falls back to copilot_sdk
+        executor if the agency binary is not installed.
+        """
+        # Check if agency CLI is available
+        agency_bin = shutil.which('agency')
+        if not agency_bin:
+            logger.warning(
+                f"[{agent.abbreviation}] agency CLI not found on PATH — "
+                "falling back to copilot_sdk executor. "
+                "Run `duckyai setup` or `duckyai update` to install it.",
+                console=True,
+            )
+            return self._execute_copilot_sdk(agent, ctx, trigger_data)
+
+        # Build prompt
+        if trigger_data.get('event_type') == 'onetime_prompt':
+            ctx.prompt = agent.prompt_body
+        else:
+            ctx.prompt = self._build_prompt(agent, trigger_data, ctx)
+
+        cmd = [agency_bin, 'copilot']
+
+        # Prompt passing — use temp file for large prompts to avoid Windows 32K limit
+        if len(ctx.prompt) > 8000:
+            prompt_fd, prompt_path = tempfile.mkstemp(suffix='.txt', prefix='duckyai_agency_prompt_')
+            try:
+                with os.fdopen(prompt_fd, 'w', encoding='utf-8') as f:
+                    f.write(ctx.prompt)
+            except Exception:
+                os.close(prompt_fd)
+                raise
+            cmd.extend(['--prompt-file', prompt_path])
+        else:
+            prompt_path = None
+            cmd.extend(['--prompt', ctx.prompt])
+
+        # MCP servers — agency uses --mcp flag for built-in MCP server names
+        cmd.extend(['--mcp', 'teams'])
+
+        try:
+            self._execute_subprocess(
+                ctx, 'Agency', cmd, agent.timeout_minutes * 60,
+                use_container=False, agent=agent,
+            )
+        finally:
+            if prompt_path:
+                try:
+                    os.unlink(prompt_path)
+                except OSError:
+                    pass
 
     def _adapt_mcp_config_for_container(self, config_json: str) -> str:
         """Translate MCP config for container execution.
