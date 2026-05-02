@@ -734,8 +734,13 @@ class ExecutionManager:
         # Pass the prompt directly — agency handles arbitrarily long values.
         cmd.extend(['--prompt', ctx.prompt])
 
-        # MCP servers — agency uses --mcp flag for built-in MCP server names
-        cmd.extend(['--mcp', 'teams'])
+        # MCP servers — suppress agency's auto-loaded defaults (workiq, bluebird)
+        # so only the servers we explicitly request are available.
+        # TCS/TMS prompts are written to use the Teams MCP server.
+        cmd.append('--no-default-mcps')
+        mcp_names = agent.mcp_servers if agent.mcp_servers else ['teams']
+        for mcp_name in mcp_names:
+            cmd.extend(['--mcp', mcp_name])
 
         self._execute_subprocess(
             ctx, 'Agency', cmd, agent.timeout_minutes * 60,

@@ -12,6 +12,7 @@
   enabled: true
   use_container: false
   executor: agency
+  mcp_servers: [teams]
   agent_params:
     lookback_hours: 24
 
@@ -25,6 +26,7 @@
   enabled: true
   use_container: false
   executor: agency
+  mcp_servers: [teams]
   agent_params:
     lookback_hours: 24
 

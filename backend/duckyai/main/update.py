@@ -610,7 +610,7 @@ def _sync_config_nodes(vault_root: Path) -> None:
 
     # ── Phase 1: Update managed fields on existing nodes ──
     # Fields that the package controls and may upgrade across versions.
-    MANAGED_FIELDS = ("executor",)
+    MANAGED_FIELDS = ("executor", "mcp_servers")
 
     defaults_by_name = {n.get("name", ""): n for n in default_nodes if isinstance(n, dict)}
     updated_fields: list[str] = []
@@ -634,26 +634,33 @@ def _sync_config_nodes(vault_root: Path) -> None:
             if user_val == canonical_val:
                 continue  # already up-to-date
 
+            # Serialize value for YAML inline format
+            def _yaml_inline(val):
+                if isinstance(val, list):
+                    items = ", ".join(str(v) for v in val)
+                    return f"[{items}]"
+                return str(val)
+
+            canonical_str = _yaml_inline(canonical_val)
+
             # Patch the raw YAML text — find the node's name line and inject/replace the field
             # Strategy: find `  name: <exact name>` block, then either replace or add the field
             if user_val is not None:
                 # Replace existing field value
-                # Look for `  field: old_value` after the node's name line
                 import re
-                # Build a pattern that finds 'executor: <old>' within the node block
-                # (between this node's name and the next `- type:`)
                 name_escaped = re.escape(name)
+                # Match the field line within this node's block (up to next `- type:`)
                 field_pattern = re.compile(
                     rf'(name:\s*{name_escaped}\s*\n(?:(?!^- ).*\n)*?)'
-                    rf'(\s*{field}:\s*){re.escape(str(user_val))}',
+                    rf'(\s*{field}:\s*)(.+)',
                     re.MULTILINE,
                 )
                 new_content = field_pattern.sub(
-                    rf'\g<1>\g<2>{canonical_val}', content
+                    rf'\g<1>\g<2>{canonical_str}', content
                 )
                 if new_content != content:
                     content = new_content
-                    updated_fields.append(f"{name}:{field}={canonical_val}")
+                    updated_fields.append(f"{name}:{field}={canonical_str}")
             else:
                 # Add the field — insert after `enabled:` or after `name:` line
                 import re
@@ -667,9 +674,9 @@ def _sync_config_nodes(vault_root: Path) -> None:
                 match = insert_pattern.search(content)
                 if match:
                     indent = match.group(2)
-                    insertion = f"{match.group(3)}\n{indent}{field}: {canonical_val}"
+                    insertion = f"{match.group(3)}\n{indent}{field}: {canonical_str}"
                     content = content[:match.start(3)] + insertion + content[match.end(3):]
-                    updated_fields.append(f"{name}:{field}={canonical_val}")
+                    updated_fields.append(f"{name}:{field}={canonical_str}")
 
     if updated_fields:
         with open(config_path, "w", encoding="utf-8") as f:
