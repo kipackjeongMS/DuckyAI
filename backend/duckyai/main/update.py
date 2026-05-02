@@ -288,7 +288,20 @@ def _stop_duckyai_processes() -> list[dict]:
                 k in cmdline for k in ("orchestrator", "chat", "daemon", "vault-mcp")
             )
 
-            if is_duckyai_exe or is_duckyai_py:
+            # Match any process whose executable lives inside the duckyai
+            # site-packages tree — these hold .pyc locks that block pip.
+            is_duckyai_sitepkg = (
+                "site-packages" in exe_path and "duckyai" in exe_path
+            )
+
+            # Match generic python.exe that imported duckyai (e.g. spawned by
+            # Obsidian / Claude Desktop / Copilot CLI as an MCP child).
+            is_python_with_duckyai = (
+                pname in ("python.exe", "pythonw.exe", "py.exe")
+                and "duckyai" in cmdline
+            )
+
+            if is_duckyai_exe or is_duckyai_py or is_duckyai_sitepkg or is_python_with_duckyai:
                 proc.terminate()
                 proc.wait(timeout=5)
                 click.echo(f"  Terminated process PID {proc.pid} ({pname})")
@@ -420,17 +433,49 @@ if not errorlevel 1 (
     goto wait
 )
 
+REM ---- Pre-pip lock cleanup -----------------------------------------------
+REM Host apps (Obsidian, Claude Desktop, Copilot CLI) may respawn
+REM duckyai-vault-mcp.exe between the parent's kill and pip's run.
+REM Loop a few times to drain any respawned children before pip starts.
+echo Killing any lingering duckyai processes...      >> "%LOGFILE%" 2>&1
+for /L %%i in (1,1,5) do (
+    taskkill /F /IM duckyai-vault-mcp.exe >NUL 2>&1
+    taskkill /F /IM duckyai.exe >NUL 2>&1
+    timeout /t 1 /nobreak >NUL
+)
+
+REM Re-rename any freshly-respawned .exe shims so pip can write them.
+echo Re-renaming locked .exe shims...                >> "%LOGFILE%" 2>&1
+if exist "{scripts_dir}\\duckyai.exe" (
+    move /Y "{scripts_dir}\\duckyai.exe" "{scripts_dir}\\duckyai.exe.old" >> "%LOGFILE%" 2>&1
+)
+if exist "{scripts_dir}\\duckyai-vault-mcp.exe" (
+    move /Y "{scripts_dir}\\duckyai-vault-mcp.exe" "{scripts_dir}\\duckyai-vault-mcp.exe.old" >> "%LOGFILE%" 2>&1
+)
+
 echo Running pip install...
 echo Running pip install...                   >> "%LOGFILE%" 2>&1
-"{python_exe}" -m pip install --upgrade --force-reinstall --no-deps "{package_dir}"  >> "%LOGFILE%" 2>&1
-set PIP_EXIT=%ERRORLEVEL%
-echo pip --no-deps exit code: %PIP_EXIT%      >> "%LOGFILE%" 2>&1
+set PIP_EXIT=1
+for /L %%a in (1,1,3) do (
+    if !PIP_EXIT! NEQ 0 (
+        echo pip attempt %%a ...                >> "%LOGFILE%" 2>&1
+        "{python_exe}" -m pip install --upgrade --force-reinstall --no-deps "{package_dir}"  >> "%LOGFILE%" 2>&1
+        set PIP_EXIT=!ERRORLEVEL!
+        if !PIP_EXIT! NEQ 0 (
+            echo pip attempt %%a failed (exit !PIP_EXIT!), draining locks... >> "%LOGFILE%" 2>&1
+            taskkill /F /IM duckyai-vault-mcp.exe >NUL 2>&1
+            taskkill /F /IM duckyai.exe >NUL 2>&1
+            timeout /t 3 /nobreak >NUL
+        )
+    )
+)
+echo pip --no-deps final exit code: !PIP_EXIT!  >> "%LOGFILE%" 2>&1
 
 echo Updating dependencies...
 echo Updating dependencies...                 >> "%LOGFILE%" 2>&1
 "{python_exe}" -m pip install --upgrade "{package_dir}"  >> "%LOGFILE%" 2>&1
-set PIP_DEPS_EXIT=%ERRORLEVEL%
-echo pip deps exit code: %PIP_DEPS_EXIT%      >> "%LOGFILE%" 2>&1
+set PIP_DEPS_EXIT=!ERRORLEVEL!
+echo pip deps exit code: !PIP_DEPS_EXIT!      >> "%LOGFILE%" 2>&1
 
 REM Verify installed version matches expected
 echo Verifying installed version...
@@ -476,7 +521,10 @@ if /I "%INSTALLED%"=="%EXPECTED%" (
     echo Got:      %INSTALLED%
     echo.
     echo Most likely cause: a duckyai.exe or duckyai-vault-mcp.exe was
-    echo locked by Obsidian, Copilot CLI, or a daemon during install.
+    echo locked by Obsidian, Copilot CLI, Claude Desktop, or another
+    echo MCP host that respawned a child during install.
+    echo.
+    echo pip exit codes: --no-deps=!PIP_EXIT!  deps=!PIP_DEPS_EXIT!
     echo.
     echo Log file: %LOGFILE%
     echo.
