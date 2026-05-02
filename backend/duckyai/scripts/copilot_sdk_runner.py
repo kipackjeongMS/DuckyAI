@@ -204,6 +204,11 @@ async def _create_session(client, *, model: str | None, mcp_servers: dict[str, d
     approve = getattr(_Handler, "approve_all", None) if _Handler else None
     if approve is not None:
         session_opts["on_permission_request"] = approve
+    else:
+        # Newer SDK requires on_permission_request; auto-approve for non-interactive use
+        async def _auto_approve(*args, **kwargs):
+            return True
+        session_opts["on_permission_request"] = _auto_approve
     if model:
         session_opts["model"] = model
     if mcp_servers:
@@ -212,7 +217,12 @@ async def _create_session(client, *, model: str | None, mcp_servers: dict[str, d
     try:
         return await client.create_session(**session_opts)
     except TypeError:
-        return await client.create_session(session_opts)
+        # Older SDK versions that don't accept on_permission_request
+        session_opts.pop("on_permission_request", None)
+        try:
+            return await client.create_session(**session_opts)
+        except TypeError:
+            return await client.create_session(session_opts)
 
 
 async def _send_prompt(session, prompt: str):
