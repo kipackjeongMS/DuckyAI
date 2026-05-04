@@ -750,6 +750,8 @@ class ExecutionManager:
         if agent.agent_params and agent.agent_params.get('model'):
             cmd.extend(['--model', agent.agent_params['model']])
 
+        cmd.append('--yolo')
+
         self._execute_subprocess(
             ctx, 'Agency', cmd, agent.timeout_minutes * 60,
             use_container=False, agent=agent,
