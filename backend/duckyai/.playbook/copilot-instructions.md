@@ -362,16 +362,15 @@ When asked to restructure a document:
 
 When the user says they "did" something, "submitted" something, "sent" something, or otherwise indicates a completed action:
 1. Update today's daily note (`04-Periodic/Daily/YYYY-MM-DD.md`)
-2. Add to "Tasks Completed" section if it's a completion
-3. Add to "Notes" section if it's progress/context
-4. Add follow-up items to "Carry forward to tomorrow" if needed
+2. Add to "Notes" section if it's progress/context
+3. Add follow-up items to "Carry forward to tomorrow" if needed
 
 ### Updating Blocked Items
 
 When an item is unblocked:
 1. Update status from `blocked` → `in-progress`
 2. Update `modified` date
-3. Log the unblock in today's daily note (Tasks Completed section)
+3. Log the unblock in today's daily note (Notes section)
 4. Add next action to Focus Today or Carry Forward
 
 ### Logging PR Reviews
@@ -588,7 +587,6 @@ Every daily note follows this exact H2 section order. Do NOT add, remove, or ren
 ## Carried from yesterday
 ## Tasks
 ## PRs & Code Reviews
-## Tasks Completed
 ## Notes
 ## Teams Meeting Highlights
 ## Teams Chat Highlights
@@ -605,22 +603,22 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 - `## Focus Today` — **User-curated**: planned work for the day. Only the user (or carry-forward logic) adds items here.
 - `## Carried from yesterday` — **System-generated**: auto-populated with unchecked Focus Today items from the previous day.
 - `## Tasks` — **Agent-populated**: when TCS, TMS, or other agents discover action items during the day, they go here (not Focus Today).
-- `## PRs & Code Reviews` — **Agent-populated**: pending PR review tasks go here as `- [ ]` items. Completed reviews move to `## Tasks Completed`.
-- `## Tasks Completed` — **Completion log**: checked-off items from any of the above sections move here.
+- `## PRs & Code Reviews` — **Agent-populated**: pending PR review tasks go here as `- [ ]` items. Completed reviews are marked `- [x]` in-place.
+- `## Notes` — **Free-form**: progress notes, context, completed action log.
 
 ### Task items must be linked
-- Every task item in `## Focus Today`, `## Carried from yesterday`, `## Tasks`, or `## Tasks Completed` must:
+- Every task item in `## Focus Today`, `## Carried from yesterday`, or `## Tasks` must:
   1. Have a corresponding file in `01-Work/Tasks/{Task Title}.md`
   2. Be written as a deep Obsidian link: `- [ ] [[01-Work/Tasks/{Task Title}|{Task Title}]]`
   3. Call `createTask` MCP tool to create the task file, then call `logTask` to add it to `## Tasks` in the daily note
 
 ### PR review tasks go in PRReviews/
 - When a PR review task arises: call `logPRReview` with `action: "requested"` — creates `01-Work/PRReviews/{title}.md` and adds `- [ ]` entry to `## PRs & Code Reviews`
-- When a PR review is completed: call `logPRReview` with `action: "reviewed"` or `"commented"` — logs `- [x]` entry to `## Tasks Completed`
+- When a PR review is completed: call `logPRReview` with `action: "reviewed"` or `"commented"` — logs `- [x]` entry to `## PRs & Code Reviews`
 - Daily note pending format: `- [ ] [[01-Work/PRReviews/{PR Title}|PR {number}]] - {description}`
 
 ### Completing tasks
-- When a task in `## Focus Today`, `## Carried from yesterday`, **or `## Tasks`** is checked off (`- [x]`), move it to `## Tasks Completed`
+- When a task in `## Focus Today`, `## Carried from yesterday`, **or `## Tasks`** is checked off (`- [x]`), leave it in place
 - Update the task file status to `done` via `updateTaskStatus`
 
 ### Carry-forward logic

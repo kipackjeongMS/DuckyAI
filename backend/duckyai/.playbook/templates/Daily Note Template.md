@@ -22,9 +22,6 @@ tags:
 ### Requested
 ### Discovered
 
-## Tasks Completed
-- [ ]
-
 ## Notes
 
 
