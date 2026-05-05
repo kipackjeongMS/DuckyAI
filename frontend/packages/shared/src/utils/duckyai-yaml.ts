@@ -8,10 +8,13 @@
 
 /** Available AI model options for agent execution */
 export const AVAILABLE_MODELS = [
-  { id: "claude-sonnet-4-5", label: "Claude Sonnet 4.5" },
-  { id: "claude-haiku-4-5", label: "Claude Haiku 4.5 (Fast)" },
-  { id: "claude-opus-4", label: "Claude Opus 4 (Premium)" },
-  { id: "claude-sonnet-4", label: "Claude Sonnet 4" },
+  { id: "claude-sonnet-4.6", label: "Claude Sonnet 4.6" },
+  { id: "claude-haiku-4.6", label: "Claude Haiku 4.6 (Fast)" },
+  { id: "claude-opus-4.6", label: "Claude Opus 4.6" },
+  { id: "claude-opus-4.7", label: "Claude Opus 4.7 (Premium)" },
+  { id: "gpt-5.5", label: "GPT-5.5" },
+  { id: "gpt-5.4", label: "GPT-5.4" },
+  { id: "gpt-5.4-mini", label: "GPT-5.4 Mini (Fast)" },
 ] as const;
 
 export type ModelId = (typeof AVAILABLE_MODELS)[number]["id"] | string;
@@ -164,6 +167,110 @@ function findNodeEnd(lines: string[], nodeStart: number): number {
     }
   }
   return lines.length;
+}
+
+/**
+ * Extract the default model from `defaults.agent_params.model` in duckyai.yml.
+ */
+export function getDefaultModel(yamlContent: string): string | null {
+  const lines = yamlContent.split("\n");
+  let inDefaults = false;
+  let inAgentParams = false;
+  let defaultsIndent = -1;
+  let agentParamsIndent = -1;
+
+  for (const line of lines) {
+    // Detect `defaults:` top-level key
+    const dMatch = line.match(/^(defaults):\s*$/);
+    if (dMatch) {
+      inDefaults = true;
+      defaultsIndent = 0;
+      inAgentParams = false;
+      continue;
+    }
+    if (inDefaults) {
+      // Non-indented line that isn't empty = new top-level key → stop
+      if (line.trim() !== "" && !line.startsWith(" ") && !line.startsWith("\t")) {
+        break;
+      }
+      const apMatch = line.match(/^(\s+)agent_params:\s*$/);
+      if (apMatch) {
+        inAgentParams = true;
+        agentParamsIndent = apMatch[1].length;
+        continue;
+      }
+      if (inAgentParams) {
+        const leadingMatch = line.match(/^(\s+)/);
+        const indent = leadingMatch ? leadingMatch[1].length : 0;
+        if (indent <= agentParamsIndent && line.trim() !== "") break;
+        const modelMatch = line.match(/^\s+model:\s*(.+)/);
+        if (modelMatch) return modelMatch[1].trim();
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Set the default model in `defaults.agent_params.model`.
+ * If model is null/empty, removes the model line.
+ */
+export function setDefaultModel(yamlContent: string, model: string | null): string {
+  const lines = yamlContent.split("\n");
+  let defaultsLineIdx = -1;
+  let agentParamsLineIdx = -1;
+  let modelLineIdx = -1;
+  let agentParamsIndent = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^defaults:\s*$/.test(line)) {
+      defaultsLineIdx = i;
+      continue;
+    }
+    if (defaultsLineIdx >= 0 && i > defaultsLineIdx) {
+      // End of defaults block
+      if (line.trim() !== "" && !line.startsWith(" ") && !line.startsWith("\t")) break;
+
+      const apMatch = line.match(/^(\s+)agent_params:\s*$/);
+      if (apMatch) {
+        agentParamsLineIdx = i;
+        agentParamsIndent = apMatch[1].length;
+        continue;
+      }
+      if (agentParamsLineIdx >= 0 && i > agentParamsLineIdx) {
+        const leadingMatch = line.match(/^(\s+)/);
+        const indent = leadingMatch ? leadingMatch[1].length : 0;
+        if (indent <= agentParamsIndent && line.trim() !== "") break;
+        if (/^\s+model:/.test(line)) {
+          modelLineIdx = i;
+          break;
+        }
+      }
+    }
+  }
+
+  if (model) {
+    const childIndent = " ".repeat((agentParamsIndent >= 0 ? agentParamsIndent : 2) + 2);
+    if (modelLineIdx >= 0) {
+      lines[modelLineIdx] = `${childIndent}model: ${model}`;
+    } else if (agentParamsLineIdx >= 0) {
+      lines.splice(agentParamsLineIdx + 1, 0, `${childIndent}model: ${model}`);
+    } else if (defaultsLineIdx >= 0) {
+      lines.splice(defaultsLineIdx + 1, 0, `  agent_params:`, `    model: ${model}`);
+    } else {
+      // No defaults section at all — append before nodes:
+      const nodesIdx = lines.findIndex((l) => /^nodes:\s*$/.test(l));
+      const insertAt = nodesIdx >= 0 ? nodesIdx : lines.length;
+      lines.splice(insertAt, 0, `defaults:`, `  agent_params:`, `    model: ${model}`, ``);
+    }
+  } else {
+    if (modelLineIdx >= 0) {
+      lines.splice(modelLineIdx, 1);
+    }
+  }
+
+  return lines.join("\n");
 }
 
 /** Path to duckyai.yml relative to vault root */

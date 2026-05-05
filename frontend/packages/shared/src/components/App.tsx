@@ -82,6 +82,23 @@ export default function DuckyAIApp({
     await api.vault.writeFile(DUCKYAI_YML_PATH, updated);
   }, [api]);
 
+  const handleGetDefaultModel = useCallback(async (): Promise<string | null> => {
+    try {
+      const { getDefaultModel, DUCKYAI_YML_PATH } = await import("../utils/duckyai-yaml");
+      const content = await api.vault.readFile(DUCKYAI_YML_PATH);
+      return getDefaultModel(content);
+    } catch {
+      return null;
+    }
+  }, [api]);
+
+  const handleSaveDefaultModel = useCallback(async (model: string | null): Promise<void> => {
+    const { setDefaultModel, DUCKYAI_YML_PATH } = await import("../utils/duckyai-yaml");
+    const content = await api.vault.readFile(DUCKYAI_YML_PATH);
+    const updated = setDefaultModel(content, model);
+    await api.vault.writeFile(DUCKYAI_YML_PATH, updated);
+  }, [api]);
+
   // Ensure terminal server is running and show loading overlay whenever terminal opens
   useEffect(() => {
     if (terminalOpen) {
@@ -272,6 +289,8 @@ export default function DuckyAIApp({
                       onOpenWorkspace={onOpenWorkspace}
                       onGetAgentModel={handleGetAgentModel}
                       onSaveAgentModel={handleSaveAgentModel}
+                      onGetDefaultModel={handleGetDefaultModel}
+                      onSaveDefaultModel={handleSaveDefaultModel}
                       activityEntries={activity.entries}
                       activityLoading={activity.loading}
                       activityAgentFilter={activity.agentFilter}
@@ -425,6 +444,8 @@ export default function DuckyAIApp({
                     onOpenWorkspace={onOpenWorkspace}
                     onGetAgentModel={handleGetAgentModel}
                     onSaveAgentModel={handleSaveAgentModel}
+                    onGetDefaultModel={handleGetDefaultModel}
+                    onSaveDefaultModel={handleSaveDefaultModel}
                     activityEntries={activity.entries}
                     activityLoading={activity.loading}
                     activityAgentFilter={activity.agentFilter}
@@ -491,6 +512,8 @@ export default function DuckyAIApp({
                       onOpenWorkspace={onOpenWorkspace}
                       onGetAgentModel={handleGetAgentModel}
                       onSaveAgentModel={handleSaveAgentModel}
+                      onGetDefaultModel={handleGetDefaultModel}
+                      onSaveDefaultModel={handleSaveDefaultModel}
                       activityEntries={activity.entries}
                       activityLoading={activity.loading}
                       activityAgentFilter={activity.agentFilter}

@@ -15,6 +15,7 @@ import type { Agent } from "../hooks/use-orchestrator";
 import type { ExecutionEntry, ExecutionLogDetail, TokenUsage } from "../types/duckyai";
 import { AgentActivityLog } from "./agent-activity-log";
 import { AgentSettingsModal } from "./agent-settings-modal";
+import { DefaultModelModal } from "./default-model-modal";
 
 type AgentStatus = "idle" | "running" | "offline" | "queued";
 
@@ -47,6 +48,9 @@ export interface SidebarProps {
   // Agent settings
   onGetAgentModel?: (abbreviation: string) => Promise<string | null>;
   onSaveAgentModel?: (abbreviation: string, model: string | null) => Promise<void>;
+  // Default model settings
+  onGetDefaultModel?: () => Promise<string | null>;
+  onSaveDefaultModel?: (model: string | null) => Promise<void>;
   // Activity log
   activityEntries?: ExecutionEntry[];
   activityLoading?: boolean;
@@ -69,6 +73,8 @@ export function Sidebar({
   onTalkWithDucky,
   onGetAgentModel,
   onSaveAgentModel,
+  onGetDefaultModel,
+  onSaveDefaultModel,
   activityEntries,
   activityLoading,
   activityAgentFilter,
@@ -78,6 +84,8 @@ export function Sidebar({
 }: SidebarProps) {
   const [settingsAgent, setSettingsAgent] = useState<{ abbreviation: string; name: string } | null>(null);
   const [settingsCurrentModel, setSettingsCurrentModel] = useState<string | null>(null);
+  const [defaultModelOpen, setDefaultModelOpen] = useState(false);
+  const [defaultCurrentModel, setDefaultCurrentModel] = useState<string | null>(null);
 
   const runningCount = agents.filter((a) => a.status === "running").length;
   const queuedCount = agents.filter((a) => a.status === "queued").length;
@@ -226,6 +234,21 @@ export function Sidebar({
               {agents.filter((a) => a.status === "idle").length} idle
             </span>
           </div>
+          {/* Default model settings button */}
+          <button
+            className="ml-auto p-1 rounded-md transition-colors hover:bg-white/5"
+            style={{ color: "#666" }}
+            title="Default model settings"
+            onClick={async () => {
+              if (onGetDefaultModel) {
+                const model = await onGetDefaultModel();
+                setDefaultCurrentModel(model);
+              }
+              setDefaultModelOpen(true);
+            }}
+          >
+            <Settings size={12} />
+          </button>
         </div>
 
         {/* Token usage summary */}
@@ -519,6 +542,20 @@ export function Sidebar({
             setSettingsAgent(null);
           }}
           onClose={() => setSettingsAgent(null)}
+        />
+      )}
+
+      {/* Default Model Settings Modal */}
+      {defaultModelOpen && (
+        <DefaultModelModal
+          currentModel={defaultCurrentModel}
+          onSave={async (model) => {
+            if (onSaveDefaultModel) {
+              await onSaveDefaultModel(model);
+            }
+            setDefaultModelOpen(false);
+          }}
+          onClose={() => setDefaultModelOpen(false)}
         />
       )}
     </div>
