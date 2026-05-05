@@ -487,6 +487,33 @@ for /L %%a in (1,1,3) do (
 )
 echo pip --no-deps final exit code: !PIP_EXIT!  >> "%LOGFILE%" 2>&1
 
+REM ---- Immediate safety restore if pip --no-deps failed all retries --------
+REM If pip couldn't even install without deps, restore .exe immediately
+REM so the user has a working CLI even if the rest of the script fails.
+if !PIP_EXIT! NEQ 0 (
+    echo pip failed all retries, restoring safety shims...  >> "%LOGFILE%" 2>&1
+    if not exist "{scripts_dir}\\duckyai.exe" (
+        if exist "{scripts_dir}\\duckyai.exe.old" (
+            move /Y "{scripts_dir}\\duckyai.exe.old" "{scripts_dir}\\duckyai.exe" >> "%LOGFILE%" 2>&1
+        )
+    )
+    if not exist "{scripts_dir}\\duckyai-vault-mcp.exe" (
+        if exist "{scripts_dir}\\duckyai-vault-mcp.exe.old" (
+            move /Y "{scripts_dir}\\duckyai-vault-mcp.exe.old" "{scripts_dir}\\duckyai-vault-mcp.exe" >> "%LOGFILE%" 2>&1
+        )
+    )
+    echo.
+    echo ====================================
+    echo  DuckyAI UPDATE FAILED - pip error
+    echo ====================================
+    echo pip could not install after 3 attempts.
+    echo Log: %LOGFILE%
+    echo Your previous CLI has been restored.
+    echo.
+    pause
+    goto cleanup
+)
+
 echo Updating dependencies...
 echo Updating dependencies...                 >> "%LOGFILE%" 2>&1
 "{python_exe}" -m pip install --upgrade "{package_dir}"  >> "%LOGFILE%" 2>&1
@@ -571,16 +598,35 @@ if /I "%INSTALLED%"=="%EXPECTED%" (
 )
 
 :cleanup
+REM ---- Unconditional safety net: ensure user always has a working CLI ------
+REM Regardless of how we got here, if .exe is missing restore from .old.
+if not exist "{scripts_dir}\\duckyai.exe" (
+    if exist "{scripts_dir}\\duckyai.exe.old" (
+        echo SAFETY: Restoring duckyai.exe from .old  >> "%LOGFILE%" 2>&1
+        move /Y "{scripts_dir}\\duckyai.exe.old" "{scripts_dir}\\duckyai.exe" >> "%LOGFILE%" 2>&1
+    )
+)
+if not exist "{scripts_dir}\\duckyai-vault-mcp.exe" (
+    if exist "{scripts_dir}\\duckyai-vault-mcp.exe.old" (
+        echo SAFETY: Restoring duckyai-vault-mcp.exe from .old  >> "%LOGFILE%" 2>&1
+        move /Y "{scripts_dir}\\duckyai-vault-mcp.exe.old" "{scripts_dir}\\duckyai-vault-mcp.exe" >> "%LOGFILE%" 2>&1
+    )
+)
+echo Cleanup complete at %DATE% %TIME%          >> "%LOGFILE%" 2>&1
 rmdir /S /Q "{tmpdir}" >NUL 2>&1
 del /F /Q "%~f0" >NUL 2>&1
 endlocal
 """
     bat_path.write_text(bat_content, encoding="utf-8")
 
-    # Launch the batch script fully detached
+    # Launch the batch script fully detached from parent terminal.
+    # CREATE_NEW_CONSOLE (0x10) gives it its own visible window.
+    # CREATE_NEW_PROCESS_GROUP (0x200) isolates it from parent's Ctrl+C.
+    # CREATE_BREAKAWAY_FROM_JOB (0x01000000) prevents Windows Terminal /
+    # VS Code from killing it when the parent job object is closed.
     subprocess.Popen(
         ["cmd.exe", "/C", str(bat_path)],
-        creationflags=0x00000010 | 0x00000200,  # CREATE_NEW_CONSOLE | CREATE_NEW_PROCESS_GROUP
+        creationflags=0x00000010 | 0x00000200 | 0x01000000,  # CREATE_NEW_CONSOLE | CREATE_NEW_PROCESS_GROUP | CREATE_BREAKAWAY_FROM_JOB
         close_fds=True,
     )
     click.echo(f"  Deferred installer launched (waiting for PID {launcher_pid} to exit)")
