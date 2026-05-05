@@ -433,6 +433,22 @@ if not errorlevel 1 (
     goto wait
 )
 
+REM ---- Defensive recovery: restore shims from a prior interrupted run ------
+REM If a previous deferred-update was killed, .exe.old may exist without .exe.
+REM Restore them now so the user always has a working CLI before we proceed.
+if exist "{scripts_dir}\\duckyai.exe.old" (
+    if not exist "{scripts_dir}\\duckyai.exe" (
+        echo Recovering duckyai.exe from prior failed update...  >> "%LOGFILE%" 2>&1
+        move /Y "{scripts_dir}\\duckyai.exe.old" "{scripts_dir}\\duckyai.exe" >> "%LOGFILE%" 2>&1
+    )
+)
+if exist "{scripts_dir}\\duckyai-vault-mcp.exe.old" (
+    if not exist "{scripts_dir}\\duckyai-vault-mcp.exe" (
+        echo Recovering duckyai-vault-mcp.exe from prior failed update...  >> "%LOGFILE%" 2>&1
+        move /Y "{scripts_dir}\\duckyai-vault-mcp.exe.old" "{scripts_dir}\\duckyai-vault-mcp.exe" >> "%LOGFILE%" 2>&1
+    )
+)
+
 REM ---- Pre-pip lock cleanup -----------------------------------------------
 REM Host apps (Obsidian, Claude Desktop, Copilot CLI) may respawn
 REM duckyai-vault-mcp.exe between the parent's kill and pip's run.
@@ -513,6 +529,24 @@ if /I "%INSTALLED%"=="%EXPECTED%" (
     echo UPDATE FAILED: VERSION MISMATCH      >> "%LOGFILE%" 2>&1
     echo Expected: %EXPECTED%                 >> "%LOGFILE%" 2>&1
     echo Got: %INSTALLED%                     >> "%LOGFILE%" 2>&1
+
+    REM ---- Rollback: restore renamed .exe shims so user keeps a working CLI ----
+    echo Restoring renamed .exe shims...      >> "%LOGFILE%" 2>&1
+    if exist "{scripts_dir}\\duckyai.exe.old" (
+        if not exist "{scripts_dir}\\duckyai.exe" (
+            move /Y "{scripts_dir}\\duckyai.exe.old" "{scripts_dir}\\duckyai.exe" >> "%LOGFILE%" 2>&1
+        ) else (
+            del /F /Q "{scripts_dir}\\duckyai.exe.old" >NUL 2>&1
+        )
+    )
+    if exist "{scripts_dir}\\duckyai-vault-mcp.exe.old" (
+        if not exist "{scripts_dir}\\duckyai-vault-mcp.exe" (
+            move /Y "{scripts_dir}\\duckyai-vault-mcp.exe.old" "{scripts_dir}\\duckyai-vault-mcp.exe" >> "%LOGFILE%" 2>&1
+        ) else (
+            del /F /Q "{scripts_dir}\\duckyai-vault-mcp.exe.old" >NUL 2>&1
+        )
+    )
+
     echo.
     echo ====================================
     echo  DuckyAI UPDATE FAILED
@@ -528,6 +562,7 @@ if /I "%INSTALLED%"=="%EXPECTED%" (
     echo.
     echo Log file: %LOGFILE%
     echo.
+    echo Your previous duckyai install has been restored.
     echo Run 'duckyai doctor' to see this error again.
     echo Run 'duckyai update --force' after closing Obsidian / Copilot
     echo to retry.
