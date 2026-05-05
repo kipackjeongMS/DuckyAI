@@ -478,7 +478,7 @@ for /L %%a in (1,1,3) do (
         "{python_exe}" -m pip install --upgrade --force-reinstall --no-deps "{package_dir}"  >> "%LOGFILE%" 2>&1
         set PIP_EXIT=!ERRORLEVEL!
         if !PIP_EXIT! NEQ 0 (
-            echo pip attempt %%a failed (exit !PIP_EXIT!), draining locks... >> "%LOGFILE%" 2>&1
+            echo pip attempt %%a failed exit=!PIP_EXIT!, draining locks... >> "%LOGFILE%" 2>&1
             taskkill /F /IM duckyai-vault-mcp.exe >NUL 2>&1
             taskkill /F /IM duckyai.exe >NUL 2>&1
             timeout /t 3 /nobreak >NUL
@@ -523,7 +523,11 @@ echo pip deps exit code: !PIP_DEPS_EXIT!      >> "%LOGFILE%" 2>&1
 REM Verify installed version matches expected
 echo Verifying installed version...
 set "INSTALLED="
-for /f "usebackq" %%v in (`"{python_exe}" -c "from importlib.metadata import version; print(version('duckyai'))" 2^>NUL`) do set "INSTALLED=%%v"
+"{python_exe}" -c "from importlib.metadata import version; print(version('duckyai'))" > "%TEMP%\duckyai_ver.txt" 2>NUL
+if exist "%TEMP%\duckyai_ver.txt" (
+    set /p INSTALLED=<"%TEMP%\duckyai_ver.txt"
+    del /F /Q "%TEMP%\duckyai_ver.txt" >NUL 2>&1
+)
 echo Installed version after pip: %INSTALLED% >> "%LOGFILE%" 2>&1
 
 if /I "%INSTALLED%"=="%EXPECTED%" (
