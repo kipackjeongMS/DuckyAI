@@ -446,6 +446,28 @@ export function createObsidianBridge(obsidianApp: App): DuckyAIApi {
         }
         return JSON.stringify(resp);
       },
+      listDir: async (relativePath: string) => {
+        const dirPath = path.join(vaultPath, relativePath);
+        if (!fs.existsSync(dirPath)) return [];
+        const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+        return entries.map((e) => ({
+          name: e.name,
+          type: (e.isDirectory() ? "directory" : "file") as "file" | "directory",
+          relativePath: path.join(relativePath, e.name).replace(/\\/g, "/"),
+        }));
+      },
+      readFile: async (relativePath: string) => {
+        const filePath = path.join(vaultPath, relativePath);
+        return fs.readFileSync(filePath, "utf-8");
+      },
+      writeFile: async (relativePath: string, content: string) => {
+        const filePath = path.join(vaultPath, relativePath);
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(filePath, content, "utf-8");
+      },
     },
 
     window: {

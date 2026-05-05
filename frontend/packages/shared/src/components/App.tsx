@@ -64,6 +64,24 @@ export default function DuckyAIApp({
   const [sidebarTab, setSidebarTab] = useState<"files" | "agents">("files");
   const [obsidianTab, setObsidianTab] = useState<"dashboard" | "ducky">("dashboard");
 
+  // Agent settings callbacks (model configuration via duckyai.yml)
+  const handleGetAgentModel = useCallback(async (abbreviation: string): Promise<string | null> => {
+    try {
+      const { getAgentModel, DUCKYAI_YML_PATH } = await import("../utils/duckyai-yaml");
+      const content = await api.vault.readFile(DUCKYAI_YML_PATH);
+      return getAgentModel(content, abbreviation);
+    } catch {
+      return null;
+    }
+  }, [api]);
+
+  const handleSaveAgentModel = useCallback(async (abbreviation: string, model: string | null): Promise<void> => {
+    const { setAgentModel, DUCKYAI_YML_PATH } = await import("../utils/duckyai-yaml");
+    const content = await api.vault.readFile(DUCKYAI_YML_PATH);
+    const updated = setAgentModel(content, abbreviation, model);
+    await api.vault.writeFile(DUCKYAI_YML_PATH, updated);
+  }, [api]);
+
   // Ensure terminal server is running and show loading overlay whenever terminal opens
   useEffect(() => {
     if (terminalOpen) {
@@ -252,6 +270,8 @@ export default function DuckyAIApp({
                       restarting={orch.restarting}
                       onRestartDaemon={orch.restartDaemon}
                       onOpenWorkspace={onOpenWorkspace}
+                      onGetAgentModel={handleGetAgentModel}
+                      onSaveAgentModel={handleSaveAgentModel}
                       activityEntries={activity.entries}
                       activityLoading={activity.loading}
                       activityAgentFilter={activity.agentFilter}
@@ -403,6 +423,8 @@ export default function DuckyAIApp({
                     restarting={orch.restarting}
                     onRestartDaemon={orch.restartDaemon}
                     onOpenWorkspace={onOpenWorkspace}
+                    onGetAgentModel={handleGetAgentModel}
+                    onSaveAgentModel={handleSaveAgentModel}
                     activityEntries={activity.entries}
                     activityLoading={activity.loading}
                     activityAgentFilter={activity.agentFilter}
@@ -467,6 +489,8 @@ export default function DuckyAIApp({
                       restarting={orch.restarting}
                       onRestartDaemon={orch.restartDaemon}
                       onOpenWorkspace={onOpenWorkspace}
+                      onGetAgentModel={handleGetAgentModel}
+                      onSaveAgentModel={handleSaveAgentModel}
                       activityEntries={activity.entries}
                       activityLoading={activity.loading}
                       activityAgentFilter={activity.agentFilter}

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Play,
   Pause,
@@ -9,10 +9,12 @@ import {
   Code2,
   Activity,
   RotateCcw,
+  Settings,
 } from "lucide-react";
 import type { Agent } from "../hooks/use-orchestrator";
 import type { ExecutionEntry, ExecutionLogDetail, TokenUsage } from "../types/duckyai";
 import { AgentActivityLog } from "./agent-activity-log";
+import { AgentSettingsModal } from "./agent-settings-modal";
 
 type AgentStatus = "idle" | "running" | "offline" | "queued";
 
@@ -42,6 +44,9 @@ export interface SidebarProps {
   onOpenWorkspace?: () => void;
   // Talk with Ducky button (unused — kept for external consumers)
   onTalkWithDucky?: () => void;
+  // Agent settings
+  onGetAgentModel?: (abbreviation: string) => Promise<string | null>;
+  onSaveAgentModel?: (abbreviation: string, model: string | null) => Promise<void>;
   // Activity log
   activityEntries?: ExecutionEntry[];
   activityLoading?: boolean;
@@ -62,6 +67,8 @@ export function Sidebar({
   onRestartDaemon,
   onOpenWorkspace,
   onTalkWithDucky,
+  onGetAgentModel,
+  onSaveAgentModel,
   activityEntries,
   activityLoading,
   activityAgentFilter,
@@ -69,6 +76,8 @@ export function Sidebar({
   onActivityRefresh,
   onFetchLog,
 }: SidebarProps) {
+  const [settingsAgent, setSettingsAgent] = useState<{ abbreviation: string; name: string } | null>(null);
+  const [settingsCurrentModel, setSettingsCurrentModel] = useState<string | null>(null);
 
   const runningCount = agents.filter((a) => a.status === "running").length;
   const queuedCount = agents.filter((a) => a.status === "queued").length;
@@ -378,6 +387,29 @@ export function Sidebar({
                       </motion.button>
                     )}
                   </AnimatePresence>
+                  {/* Settings gear */}
+                  {onGetAgentModel && onSaveAgentModel && (
+                    <motion.button
+                      className="shrink-0 ml-1 p-1.5 rounded-md transition-colors"
+                      style={{
+                        background: "rgba(255,255,255,0.02)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                      }}
+                      whileHover={{
+                        background: "rgba(255,255,255,0.06)",
+                        borderColor: "rgba(255,255,255,0.12)",
+                      }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={async () => {
+                        const model = await onGetAgentModel(agent.id);
+                        setSettingsCurrentModel(model);
+                        setSettingsAgent({ abbreviation: agent.id, name: agent.name });
+                      }}
+                      title={`${agent.name} settings`}
+                    >
+                      <Settings size={10} style={{ color: "#888" }} />
+                    </motion.button>
+                  )}
                   {triggeringId === agent.id && (
                     <motion.div
                       className="shrink-0 ml-2 p-1.5"
@@ -473,6 +505,22 @@ export function Sidebar({
           </span>
         </div>
       </div>
+
+      {/* Agent Settings Modal */}
+      {settingsAgent && (
+        <AgentSettingsModal
+          agentName={settingsAgent.name}
+          agentAbbreviation={settingsAgent.abbreviation}
+          currentModel={settingsCurrentModel}
+          onSave={async (model) => {
+            if (onSaveAgentModel) {
+              await onSaveAgentModel(settingsAgent.abbreviation, model);
+            }
+            setSettingsAgent(null);
+          }}
+          onClose={() => setSettingsAgent(null)}
+        />
+      )}
     </div>
   );
 }

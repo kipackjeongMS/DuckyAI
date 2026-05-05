@@ -24,6 +24,9 @@ export function createMockApi(
     },
     vault: {
       callTool: vi.fn().mockResolvedValue("{}"),
+      listDir: vi.fn().mockResolvedValue([]),
+      readFile: vi.fn().mockResolvedValue(""),
+      writeFile: vi.fn().mockResolvedValue(undefined),
       ...overrides?.vault,
     },
     window: {

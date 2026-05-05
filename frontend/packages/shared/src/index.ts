@@ -37,5 +37,10 @@ export { LoginScreen } from "./components/login-screen";
 export { ToastContainer, useToasts } from "./components/toast";
 export { AgentActivityLog } from "./components/agent-activity-log";
 export type { AgentActivityLogProps } from "./components/agent-activity-log";
+export { AgentSettingsModal } from "./components/agent-settings-modal";
+export type { AgentSettingsModalProps } from "./components/agent-settings-modal";
 export { TerminalPanel } from "./components/terminal-panel";
 export type { TerminalPanelProps } from "./components/terminal-panel";
+
+// Utilities
+export { AVAILABLE_MODELS, DUCKYAI_YML_PATH, getAgentModel, setAgentModel } from "./utils/duckyai-yaml";

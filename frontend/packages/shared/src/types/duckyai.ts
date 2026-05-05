@@ -14,6 +14,7 @@ export interface DuckyAIApi {
     callTool: (name: string, args?: Record<string, unknown>) => Promise<string>;
     listDir: (relativePath: string) => Promise<VaultEntry[]>;
     readFile: (relativePath: string) => Promise<string>;
+    writeFile: (relativePath: string, content: string) => Promise<void>;
   };
   window: {
     minimize: () => Promise<void>;
