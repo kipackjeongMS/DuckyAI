@@ -45,6 +45,7 @@ class CronScheduler:
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._cooldowns: dict[str, float] = {}  # agent_abbr -> last_run_timestamp
+        self._was_quiet = False  # Track quiet-hours state transitions
 
     def start(self):
         """Start the cron scheduler thread."""
@@ -54,12 +55,14 @@ class CronScheduler:
 
         self._stop_event.clear()
         self._running = True
+        self._was_quiet = self.config.is_quiet_hours()  # Initialize state
         self._thread = threading.Thread(target=self._scheduler_loop, daemon=True)
         self._thread.start()
         logger.info("Cron scheduler started")
 
         # Fire missed cron jobs on startup (e.g., DNP at 7 AM but orchestrator started at 9 AM)
-        threading.Thread(target=self._catch_up_missed_jobs, daemon=True).start()
+        if not self._was_quiet:
+            threading.Thread(target=self._catch_up_missed_jobs, daemon=True).start()
 
     def stop(self):
         """Stop the cron scheduler thread."""
@@ -93,9 +96,9 @@ class CronScheduler:
 
     def _catch_up_missed_jobs(self):
         """
-        On startup, check if any cron agents missed their window today.
+        Check if any cron agents missed their window today.
         If a cron job should have fired earlier today but didn't (because
-        orchestrator wasn't running), fire it now.
+        orchestrator wasn't running or quiet hours blocked it), fire it now.
         """
         time.sleep(5)  # Brief delay to let orchestrator fully initialize
 
@@ -121,9 +124,10 @@ class CronScheduler:
                 if prev_fire < today_start:
                     continue  # Last fire was yesterday or earlier — not a miss today
 
-                # It should have fired today between today_start and now
-                # Check if it's within quiet hours — respect that boundary
-                if self.config.is_quiet_hours():
+                # Skip if already triggered recently (cooldown)
+                last_run = self._cooldowns.get(agent.abbreviation, 0)
+                if (now.timestamp() - last_run) < self.COOLDOWN_SECONDS:
+                    logger.debug(f"Catch-up skip {agent.abbreviation}: cooldown active")
                     continue
 
                 logger.info(
@@ -139,9 +143,20 @@ class CronScheduler:
     def _check_and_trigger_jobs(self):
         """
         Check if any agents with cron expressions should be triggered now.
+        Also detects quiet-hours → active transitions to catch up missed jobs.
         """
-        # Quiet hours — skip all cron checks
-        if self.config.is_quiet_hours():
+        is_quiet_now = self.config.is_quiet_hours()
+
+        # Detect transition: was quiet → now active
+        if self._was_quiet and not is_quiet_now:
+            logger.info("Quiet hours ended — checking for missed cron jobs")
+            self._was_quiet = False
+            self._catch_up_missed_jobs()
+            return
+
+        self._was_quiet = is_quiet_now
+
+        if is_quiet_now:
             logger.debug("Quiet hours active — skipping cron check")
             return
 

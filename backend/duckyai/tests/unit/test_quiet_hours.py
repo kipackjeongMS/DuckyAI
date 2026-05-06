@@ -149,6 +149,21 @@ class TestCronSchedulerQuietHours:
 
         assert queue.empty(), "No events should be queued during quiet hours"
 
+    def test_quiet_hours_transition_triggers_catch_up(self, scheduler):
+        """When quiet hours end, missed jobs should be caught up."""
+        sched, queue, config = scheduler
+        # Simulate: was quiet, now not quiet
+        sched._was_quiet = True
+        config.is_quiet_hours.return_value = False
+        config.user_now.return_value = datetime(2026, 4, 24, 8, 1, 0)
+
+        with patch.object(sched, '_catch_up_missed_jobs') as mock_catch_up:
+            sched._check_and_trigger_jobs()
+            mock_catch_up.assert_called_once()
+
+        # _was_quiet should be reset
+        assert sched._was_quiet is False
+
     def test_cron_runs_outside_quiet_hours(self, scheduler):
         sched, queue, config = scheduler
         config.is_quiet_hours.return_value = False
