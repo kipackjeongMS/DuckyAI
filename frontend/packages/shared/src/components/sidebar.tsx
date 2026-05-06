@@ -235,9 +235,17 @@ export function Sidebar({
             </span>
           </div>
           {/* Default model settings button */}
-          <button
-            className="ml-auto p-1 rounded-md transition-colors hover:bg-white/5"
-            style={{ color: "#666" }}
+          <motion.button
+            className="shrink-0 ml-auto p-1.5 rounded-md transition-colors"
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}
+            whileHover={{
+              background: "rgba(255,255,255,0.06)",
+              borderColor: "rgba(255,255,255,0.12)",
+            }}
+            whileTap={{ scale: 0.9 }}
             title="Default model settings"
             onClick={async () => {
               if (onGetDefaultModel) {
@@ -247,8 +255,8 @@ export function Sidebar({
               setDefaultModelOpen(true);
             }}
           >
-            <Settings size={12} />
-          </button>
+            <Settings size={10} style={{ color: "#888" }} />
+          </motion.button>
         </div>
 
         {/* Token usage summary */}
