@@ -110,44 +110,79 @@ This is more reliable than `az repos pr diff` — you get the full diff without 
 
 ## Step 6: Cross-reference with the codebase
 
-For each changed file, go beyond just the diff. Using the repo:
+**CRITICAL: Do not review diffs in isolation.** Your review quality depends on understanding the surrounding code. For each changed file, you MUST read beyond the diff hunks. The goal is to understand the full behavioral context — what flows through this code, what depends on it, and what assumptions it makes.
 
 ### 6a. Read full file context
-For each modified file, read the entire file (not just the diff hunks) to understand the full context of the changes.
+For EVERY modified file, read the **entire file** (not just the diff hunks). Understand:
+- The class/module's responsibility and public contract
+- How the modified code fits into the file's overall logic flow
+- What invariants or assumptions the surrounding code relies on
+- Whether the change is consistent with the file's existing patterns
 
-### 6b. Find callers and consumers
+### 6b. Read neighboring and related files
+For each modified file, also read:
+- Files in the same directory (siblings likely share patterns/contracts)
+- The interface/base class if the file implements one
+- Any file that imports/uses the modified file (downstream consumers)
+- Configuration or DI registration files that wire up the modified code
+
+```bash
+# Find files importing the changed module
+grep -rln "import.*{module_name}\|from.*{module_name}\|using.*{namespace}\|require.*{module_name}" /repo/ --include="*.cs" --include="*.ts" --include="*.py" --include="*.js" --include="*.java"
+```
+
+### 6c. Find callers and consumers
 For each modified function, class, or interface:
 ```bash
 grep -rn "{function_name}" /repo/ --include="*.cs" --include="*.ts" --include="*.py" --include="*.js" --include="*.java"
 ```
-Check if the change breaks any callers or contracts.
+Check if the change breaks any callers or contracts. Pay special attention to:
+- Method signature changes (added/removed/reordered params)
+- Return type or shape changes
+- New exceptions/errors that callers don't handle
+- Changed semantics that callers may not expect (e.g., now async, now nullable)
 
-### 6c. Find related test files
+### 6d. Find related test files
 ```bash
 # Look for test files related to changed source files
 find /repo/ -name "*Test*" -o -name "*test_*" -o -name "*.test.*" -o -name "*.spec.*" | grep -i "{changed_file_stem}"
 ```
-Check if tests exist for the modified code. If new logic was added without tests, flag it.
+Read the tests — they reveal the intended behavior contracts. Check:
+- Do tests exist for the modified code paths?
+- Do existing tests still hold given the change?
+- If new logic was added without tests, flag it
 
-### 6d. Check configuration consistency
+### 6e. Check configuration consistency
 If the PR modifies config files, manifests, or dependency files, verify they're consistent with code changes:
 - Package versions match across related files
 - New dependencies are actually used
 - Removed dependencies aren't still referenced
+- Service registrations match new/removed classes
 
-### 6e. Verify PR description matches code
+### 6f. Trace the execution path
+For non-trivial changes, trace the full request/execution path that touches the modified code:
+- Entry point (API controller, event handler, CLI command)
+- Through middleware/interceptors
+- Into the modified code
+- Out to side effects (DB, network, filesystem)
+
+This reveals whether the change accounts for all the contexts in which the code runs.
+
+### 6g. Verify PR description matches code
 Compare the PR description/title with the actual code changes. Flag mismatches (e.g., description says "fix bug X" but code also refactors Y without mentioning it).
 
 ## Step 7: Produce the code review
 
-Analyze the diffs with full codebase context and produce a structured review. Focus on:
+Analyze the diffs **in the context of the full codebase** (not in isolation). Every finding must be grounded in evidence from the surrounding code — callers you read, contracts you verified, execution paths you traced. Do not guess at impact; confirm it from code you actually read.
 
-- **Correctness**: Logic errors, off-by-one, null/undefined handling, missing error handling
+Focus on:
+
+- **Correctness**: Logic errors, off-by-one, null/undefined handling, missing error handling, broken invariants the surrounding code depends on
 - **Security**: Injection risks, auth bypasses, secrets in code, unsafe deserialization
-- **Performance**: N+1 queries, unnecessary allocations, missing caching opportunities
-- **Design**: SOLID violations, naming, API surface issues, breaking changes
-- **Tests**: Missing test coverage for new logic, edge cases not covered
-- **Impact**: Callers affected by the change, potential regressions in dependent code
+- **Performance**: N+1 queries, unnecessary allocations, missing caching opportunities, hot-path regressions
+- **Design**: SOLID violations, naming, API surface issues, breaking changes to public contracts
+- **Tests**: Missing test coverage for new logic, existing tests invalidated by the change
+- **Impact**: Callers affected by the change, potential regressions in dependent code (cite specific callers you found in Step 6)
 
 Classify each finding by severity:
 - **Critical**: Must fix before merge (bugs, security issues, broken callers)
@@ -181,20 +216,12 @@ tags:
 
 (... existing content unchanged ...)
 
-## PR Metadata
-
 - **Title**: {title from az cli}
 - **Status**: {active|completed|abandoned}
 - **Created**: {creation_date}
 - **Source**: `{source_branch}` → `{target_branch}`
 - **Merge Status**: {merge_status}
 - **URL**: [PR {pull_request_id}]({pr_web_url})
-
-## Reviewers
-
-| Reviewer | Vote |
-|----------|------|
-| Name     | Approved / Waiting / Rejected / No Vote |
 
 ## Changed Files
 
@@ -204,6 +231,16 @@ tags:
 | path/to/new.cs | Add | +42 |
 
 ## Code Review
+
+### High-level Semantics
+
+{Write a concrete paragraph that answers: What is this PR actually doing and why does it matter? Synthesize from the PR description, commit messages, and the actual code changes to explain:
+- The business or technical problem being solved
+- The approach taken (e.g., "introduces a retry mechanism" not "adds a while loop")
+- How it fits into the larger system (e.g., "this is part of the deployment pipeline's rollback story")
+- Any architectural shifts or patterns introduced
+
+Do NOT regurgitate the PR description. Independently derive the semantic intent from the code and compare with the stated description. If the code does more or less than described, say so here.}
 
 ### Summary
 
@@ -240,12 +277,14 @@ tags:
 
 **Rules:**
 - **Never modify or remove** the original `## PR Details` content — only append below it
+- Merge PR metadata (title, status, dates, branches, URL) directly into the `## PR Details` section
 - Set `status: done` in frontmatter (this prevents re-triggering)
 - Set `modified` date in frontmatter
-- If the PR URL was missing, add it now from the az cli response into `## PR Metadata`
+- If the PR URL was missing, add it now from the az cli response into `## PR Details`
 - Use relative markdown links for people (not wiki links)
 - Format changed files as a table sorted by path
-- In `## Code Review`, reference specific files and line numbers
+- In `## Code Review`, write a `### High-level Semantics` paragraph first explaining the WHAT and WHY at a conceptual level
+- In `## Code Review`, reference specific files and line numbers in findings
 - Include **Impact** notes from codebase cross-reference for critical/warning findings
 - If no issues found, write "No issues found — PR looks clean and ready to merge" under `## Code Review`
 - Add an empty `## Review Notes` section at the end for the user's personal notes
