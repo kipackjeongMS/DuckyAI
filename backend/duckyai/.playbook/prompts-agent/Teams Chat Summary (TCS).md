@@ -20,6 +20,10 @@ If a `# User Instructions` section appears at the end of this prompt, treat it a
 
 When user instructions are present, they **override** the default watermark-based date range. Construct the Teams MCP query to match the user's intent.
 
+## Data Source Requirement
+
+⚠️ **You MUST use the Teams MCP server for ALL data fetching.** Do NOT use WorkIQ (`ask_work_iq`) or any other data source to retrieve Teams chat messages. The Teams MCP server is the only authorized data source for this agent. If the Teams MCP server is unavailable or returns an error, report the failure — do NOT fall back to WorkIQ.
+
 ## Execution Flow
 
 ### Step 1: Retry pending highlights (if any)

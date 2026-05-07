@@ -22,6 +22,10 @@ If a `# User Instructions` section appears at the end of this prompt, treat it a
 
 When user instructions are present, they **override** the default watermark-based date range. Construct the Teams MCP query to match the user's intent.
 
+## Data Source Requirement
+
+⚠️ **You MUST use the Teams MCP server for ALL data fetching.** Do NOT use WorkIQ (`ask_work_iq`) or any other data source to retrieve Teams meetings. The Teams MCP server is the only authorized data source for this agent. If the Teams MCP server is unavailable or returns an error, report the failure — do NOT fall back to WorkIQ.
+
 ## Execution Flow
 
 ### Step 1: Retry pending highlights (if any)
@@ -62,7 +66,7 @@ Merge results from all windows and deduplicate by meeting title/time before proc
 
 ### Step 2c: Post-fetch validation — discard future meetings
 
-⚠️ **CRITICAL**: After fetching, you MUST validate each meeting's **end time** against `current_utc` from Agent Parameters. **Discard any meeting whose end time is after `current_utc`** (i.e., hasn't finished yet). Do NOT trust WorkIQ to filter perfectly — Graph API returns calendar events by time range overlap, which can include upcoming meetings.
+⚠️ **CRITICAL**: After fetching, you MUST validate each meeting's **end time** against `current_utc` from Agent Parameters. **Discard any meeting whose end time is after `current_utc`** (i.e., hasn't finished yet). The Teams MCP server may return calendar events by time range overlap, which can include upcoming meetings.
 
 For each meeting returned:
 1. Parse the meeting's end time
