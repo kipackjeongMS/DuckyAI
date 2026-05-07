@@ -525,9 +525,16 @@ class Orchestrator:
         # Find matching agents
         matching_agents = self.agent_registry.find_matching_agents(event_data)
 
-        # If the event targets a specific agent, filter to only that agent
+        # If the event targets a specific agent, filter to only that agent.
+        # For catch-up / direct-target events the cron-time window check in
+        # find_matching_agents may exclude the agent, so look it up directly
+        # as a fallback.
         if trigger_event.target_agent:
             matching_agents = [a for a in matching_agents if a.abbreviation == trigger_event.target_agent]
+            if not matching_agents:
+                target = self.agent_registry.agents.get(trigger_event.target_agent)
+                if target:
+                    matching_agents = [target]
 
         if not matching_agents:
             logger.debug(f"No agents match event: {trigger_event.path}")

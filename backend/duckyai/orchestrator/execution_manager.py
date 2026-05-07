@@ -734,13 +734,8 @@ class ExecutionManager:
 
         cmd = [agency_bin, 'copilot']
 
-        # Agency CLI only supports --prompt (no --prompt-file).
-        # Pass the prompt directly — agency handles arbitrarily long values.
-        cmd.extend(['--prompt', ctx.prompt])
-
         # MCP servers — suppress agency's auto-loaded defaults (workiq, bluebird)
         # so only the servers we explicitly request are available.
-        # TCS/TMS prompts are written to use the Teams MCP server.
         cmd.append('--no-default-mcps')
         mcp_names = agent.mcp_servers if agent.mcp_servers else ['teams']
         for mcp_name in mcp_names:
@@ -752,9 +747,11 @@ class ExecutionManager:
 
         cmd.append('--yolo')
 
+        # Pass prompt via stdin to avoid Windows 32KB command-line length
+        # limit (WinError 206).  Agency CLI reads piped stdin as the prompt.
         self._execute_subprocess(
             ctx, 'Agency', cmd, agent.timeout_minutes * 60,
-            use_container=False, agent=agent,
+            stdin_input=ctx.prompt, use_container=False, agent=agent,
         )
 
     def _adapt_mcp_config_for_container(self, config_json: str) -> str:
