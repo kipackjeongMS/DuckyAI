@@ -368,9 +368,7 @@ class VaultService:
         raw_date = arguments.get("date")
         target_date = self._get_today_date() if raw_date is None else self._coerce_target_date(raw_date)
         target_path = self._daily_note_path(target_date)
-
-        if target_path.exists():
-            return self._text_response(f"Daily note for {target_date} already exists. Skipped.")
+        existing = target_path.exists()
 
         # Extract plan fields
         focus_today: list[str] = plan.get("focus_today", [])
@@ -384,8 +382,12 @@ class VaultService:
         carry_section = "\n".join(f"- [ ] {item}" if not item.startswith("- ") else item for item in carried_items) if carried_items else "- (none)"
         pr_section = "\n".join(f"- [ ] {item}" for item in pr_items) if pr_items else ""
 
-        # Build note from template
-        note_content = self._build_daily_note_from_template(target_date, carry_section)
+        if existing:
+            # Update existing note — merge plan sections without clobbering user edits
+            note_content = self._read_text(target_path)
+        else:
+            # Create new note from template
+            note_content = self._build_daily_note_from_template(target_date, carry_section)
 
         # Replace Focus Today section with AI-prioritized items
         note_content = self._replace_or_append_h2_section(
@@ -410,11 +412,18 @@ class VaultService:
                 note_content, section_header="Notes", new_content=notes_content.strip()
             )
 
+        # Add carried items section for existing notes too
+        if existing and carried_items:
+            note_content = self._replace_or_append_h2_section(
+                note_content, section_header="Carry Forward", new_content=carry_section
+            )
+
         self.daily_dir.mkdir(parents=True, exist_ok=True)
         target_path.write_text(note_content, encoding="utf-8")
 
+        verb = "Updated" if existing else "Created"
         return self._text_response(
-            f"Created {target_date}.md — Focus: {len(focus_today)} items, "
+            f"{verb} {target_date}.md — Focus: {len(focus_today)} items, "
             f"Carried: {len(carried_items)}, At-risk: {len(at_risk)}"
         )
 

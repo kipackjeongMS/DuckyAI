@@ -79,7 +79,8 @@ Call `writeDailyNoteFromPlan` with a JSON object:
 ## Constraints
 
 - Do NOT call `prepareDailyNote` — you replace it.
-- Do NOT create the note if it already exists (the tool handles this).
-- If `gatherOpenItems` returns nothing open, still create the note with a clean slate.
+- If the note already exists, `writeDailyNoteFromPlan` will **update** it — merging your prioritized Focus Today, PRs, Notes, and Carry Forward sections into the existing note without clobbering other user-written content (Tasks, Meetings, etc.).
+- Always call `writeDailyNoteFromPlan` regardless of whether the note exists. The tool handles both create and update.
+- If `gatherOpenItems` returns nothing open, still call the tool with empty lists for a clean slate.
 - Keep the context_note brief — one sentence max.
 - Be realistic: a human can do 3-5 focused items per day, not 15.
