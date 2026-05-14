@@ -420,7 +420,7 @@ def test_prepare_daily_note_creates_note_with_carry_forward(monkeypatch, tmp_pat
     _write_daily_note(
         vault,
         "2026-03-25",
-        "## Focus Today\n- [ ] keep this\n- [x] done\n\n## Carried from yesterday\n- (none)\n\n## Tasks\n- [ ] \n\n## End of Day\n### Carry forward to tomorrow\n- [ ] follow up\n",
+        "## Focus Today\n- [ ] keep this\n- [x] done\n\n## Carried from past\n- (none)\n\n## Tasks\n- [ ] \n\n## End of Day\n### Carry forward to tomorrow\n- [ ] follow up\n",
     )
 
     service = VaultService(vault)
@@ -428,7 +428,7 @@ def test_prepare_daily_note_creates_note_with_carry_forward(monkeypatch, tmp_pat
     created = (vault / "04-Periodic" / "Daily" / "2026-03-26.md").read_text(encoding="utf-8")
 
     assert result == {"content": [{"type": "text", "text": "Created 2026-03-26.md with 2 carried items from 2026-03-25.md"}]}
-    assert "## Carried from yesterday\n- [ ] keep this\n- [ ] follow up" in created
+    assert "## Carried from past\n- [ ] keep this\n- [ ] follow up" in created
     assert "# Thursday, March 26, 2026" in created
 
 

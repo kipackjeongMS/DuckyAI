@@ -584,7 +584,7 @@ Every daily note follows this exact H2 section order. Do NOT add, remove, or ren
 
 ```
 ## Focus Today
-## Carried from yesterday
+## Carried from past
 ## Tasks
 ## PRs & Code Reviews
 ## Notes
@@ -600,14 +600,14 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 ## Task Management in Daily Notes
 
 ### Section purposes
-- `## Focus Today` — **User-curated**: planned work for the day. Only the user (or carry-forward logic) adds items here.
-- `## Carried from yesterday` — **System-generated**: auto-populated with unchecked Focus Today items from the previous day.
+- `## Focus Today` — **User-curated**: planned work for the day. Only the user adds items here. DNP never writes to this section.
+- `## Carried from past` — **System-generated**: auto-populated by DNP with unchecked Focus Today items from past daily notes.
 - `## Tasks` — **Agent-populated**: when TCS, TMS, or other agents discover action items during the day, they go here (not Focus Today).
 - `## PRs & Code Reviews` — **Agent-populated**: pending PR review tasks go here as `- [ ]` items. Completed reviews are marked `- [x]` in-place.
 - `## Notes` — **Free-form**: progress notes, context, completed action log.
 
 ### Task items must be linked
-- Every task item in `## Focus Today`, `## Carried from yesterday`, or `## Tasks` must:
+- Every task item in `## Focus Today`, `## Carried from past`, or `## Tasks` must:
   1. Have a corresponding file in `01-Work/Tasks/{Task Title}.md`
   2. Be written as a deep Obsidian link: `- [ ] [[01-Work/Tasks/{Task Title}|{Task Title}]]`
   3. Call `createTask` MCP tool to create the task file, then call `logTask` to add it to `## Tasks` in the daily note
@@ -618,11 +618,11 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 - Daily note pending format: `- [ ] [[01-Work/PRReviews/{PR Title}|PR {number}]] - {description}`
 
 ### Completing tasks
-- When a task in `## Focus Today`, `## Carried from yesterday`, **or `## Tasks`** is checked off (`- [x]`), leave it in place
+- When a task in `## Focus Today`, `## Carried from past`, **or `## Tasks`** is checked off (`- [x]`), leave it in place
 - Update the task file status to `done` via `updateTaskStatus`
 
 ### Carry-forward logic
-- When generating a new daily note, the `## Carried from yesterday` section should contain all **unchecked** items from the previous day's `## Focus Today`
+- When generating a new daily note, the `## Carried from past` section should contain all **unchecked** items from past days' `## Focus Today` sections
 - These items keep their deep links: `- [ ] [[01-Work/Tasks/{Task Title}|{Task Title}]]`
 
 ### Task deduplication

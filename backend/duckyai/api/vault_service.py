@@ -345,7 +345,7 @@ class VaultService:
             "date": today,
             "open_tasks": open_tasks,
             "open_prs": open_prs,
-            "carried_from_yesterday": carried_items,
+            "carried_from_past": carried_items,
             "forgotten_items": deep_items,
         }
         return self._text_response(json.dumps(result, indent=2))
@@ -371,14 +371,12 @@ class VaultService:
         existing = target_path.exists()
 
         # Extract plan fields
-        focus_today: list[str] = plan.get("focus_today", [])
         carried_items: list[str] = plan.get("carried_items", [])
         context_note: str = plan.get("context_note", "")
         at_risk: list[str] = plan.get("at_risk", [])
         pr_items: list[str] = plan.get("pr_items", [])
 
         # Build sections
-        focus_section = "\n".join(f"- [ ] {item}" for item in focus_today) if focus_today else "- [ ]"
         carry_section = "\n".join(f"- [ ] {item}" if not item.startswith("- ") else item for item in carried_items) if carried_items else "- (none)"
         pr_section = "\n".join(f"- [ ] {item}" for item in pr_items) if pr_items else ""
 
@@ -389,10 +387,11 @@ class VaultService:
             # Create new note from template
             note_content = self._build_daily_note_from_template(target_date, carry_section)
 
-        # Replace Focus Today section with AI-prioritized items
-        note_content = self._replace_or_append_h2_section(
-            note_content, section_header="Focus Today", new_content=focus_section
-        )
+        # Update Carried from past section (undone Focus Today items from past notes)
+        if carried_items:
+            note_content = self._replace_or_append_h2_section(
+                note_content, section_header="Carried from past", new_content=carry_section
+            )
 
         # Add PR items if provided
         if pr_section:
@@ -412,18 +411,12 @@ class VaultService:
                 note_content, section_header="Notes", new_content=notes_content.strip()
             )
 
-        # Add carried items section for existing notes too
-        if existing and carried_items:
-            note_content = self._replace_or_append_h2_section(
-                note_content, section_header="Carry Forward", new_content=carry_section
-            )
-
         self.daily_dir.mkdir(parents=True, exist_ok=True)
         target_path.write_text(note_content, encoding="utf-8")
 
         verb = "Updated" if existing else "Created"
         return self._text_response(
-            f"{verb} {target_date}.md — Focus: {len(focus_today)} items, "
+            f"{verb} {target_date}.md — "
             f"Carried: {len(carried_items)}, At-risk: {len(at_risk)}"
         )
 
@@ -1294,7 +1287,7 @@ class VaultService:
             return []
 
         uncompleted: list[str] = []
-        focus_match = re.search(r"## Focus Today\n([\s\S]*?)(?=\n## Carried from yesterday|\n## Tasks|$)", content)
+        focus_match = re.search(r"## Focus Today\n([\s\S]*?)(?=\n## Carried from past|\n## Tasks|$)", content)
         if focus_match:
             for line in focus_match.group(1).split("\n"):
                 if re.match(r"^- \[ \]", line):
@@ -1317,7 +1310,7 @@ class VaultService:
         template = template.replace("{{date:dddd, MMMM D, YYYY}}", day_heading)
         return self._replace_or_append_h2_section(
             template,
-            section_header="Carried from yesterday",
+            section_header="Carried from past",
             new_content=carry_section,
         )
 
@@ -1331,7 +1324,7 @@ class VaultService:
                 return candidate.read_text(encoding="utf-8")
         return (
             '---\ncreated: "{{date}}"\ntype: daily\ndate: "{{date}}"\ntags:\n  - daily\n---\n\n'
-            '# {{dayHeading}}\n\n## Focus Today\n- [ ]\n\n## Carried from yesterday\n- (none)\n\n## Tasks\n- [ ]\n\n'
+            '# {{dayHeading}}\n\n## Focus Today\n- [ ]\n\n## Carried from past\n- (none)\n\n## Tasks\n- [ ]\n\n'
             '## PRs & Code Reviews\n- [ ]\n\n## Notes\n\n\n## Teams Meeting Highlights\n\n## Teams Chat Highlights\n\n'
             '## End of Day\n### What went well?\n-\n\n### What could improve?\n-\n\n### Carry forward to tomorrow\n- [ ]\n'
         )
