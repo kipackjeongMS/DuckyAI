@@ -168,6 +168,36 @@ def prepare_weekly_review(week: str | None = None) -> str:
     return _call("prepareWeeklyReview", arguments)
 
 
+@mcp.tool(
+    name="gatherWeekData",
+    description="Gather a week's data from vault (daily notes, tasks, meetings) for the Weekly Roundup agent. Returns structured JSON.",
+)
+def gather_week_data(week_start: str | None = None, week_end: str | None = None) -> str:
+    arguments: dict = {}
+    if week_start is not None:
+        arguments["week_start"] = week_start
+    if week_end is not None:
+        arguments["week_end"] = week_end
+    return _call("gatherWeekData", arguments)
+
+
+@mcp.tool(
+    name="writeWeeklyRoundup",
+    description="Write the weekly roundup note from a structured plan (JSON with highlights, tasks, prs, decisions, teams_by_date, blockers, next_week).",
+)
+def write_weekly_roundup(
+    plan: str,
+    week_start: str | None = None,
+    week_end: str | None = None,
+) -> str:
+    arguments: dict = {"plan": plan}
+    if week_start is not None:
+        arguments["week_start"] = week_start
+    if week_end is not None:
+        arguments["week_end"] = week_end
+    return _call("writeWeeklyRoundup", arguments)
+
+
 @mcp.tool(name="getTeamsChatSyncState", description="Read Teams chat sync watermark state.")
 def get_teams_chat_sync_state() -> str:
     return _call("getTeamsChatSyncState", {})

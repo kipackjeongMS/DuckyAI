@@ -117,9 +117,34 @@ Track ALL message IDs you saw (including dedup'd ones) — you'll include them i
    - **Never create an H3 named after a topic/context** — H3 headings are always person names.
 4. For each person's H3 section:
    - Collect all conversation threads (both 1:1 and group) involving that person on that date
-   - For each thread, extract key points and action items as bullet points
-   - If a group chat had other participants, mention them inline (e.g., "I discussed with John and Chuck about...")
-   - Skip threads that are trivial (e.g., single emoji reactions, "thanks", "ok")
+   - Apply the **Substance Filter** (below) to each thread — keep only threads that carry real signal
+   - For each retained thread, extract key points as bullet points using **impersonal outcome voice** (see Step 5)
+   - If a group chat had other participants, mention them inline by name only when relevant (e.g., "Aligned with John and Chuck on S360 flag rollout")
+
+#### Substance Filter — what to keep vs. drop
+
+A thread is **substantive** and MUST be kept only if it contains at least one of these **signal types**:
+
+- **Decision** — a choice made or direction set (e.g., "Use Bicep over Terraform for prod")
+- **Action item** — something someone must do, with an implied or stated owner
+- **Blocker** — something preventing progress (people, tooling, dependency, access)
+- **Deadline / date commitment** — a specific date, deploy window, or due date
+- **Escalation** — issue raised to leadership, on-call, or another team
+- **Technical info** — non-obvious facts: config values, env names, repo paths, error codes, root cause, design choices
+- **Ownership change** — handoff, assignment, or role shift
+- **Status with consequence** — a status update that changes someone's plan (e.g., "Service X is down, deploy paused")
+
+**Drop the thread entirely** if it only contains:
+
+- Greetings, sign-offs, pleasantries ("hi", "morning", "have a good weekend")
+- Acknowledgments without info ("ok", "thanks", "got it", "sounds good", "👍")
+- Single emoji or reaction-only messages
+- Scheduling chitchat without an outcome ("are you free?" → "yes" with no meeting decided)
+- Status pings with no consequence ("just checking in", "any update?" with no answer)
+- Small talk (weather, weekend plans, sports, food)
+- Repeated/self-evident context already captured elsewhere
+
+**After filtering, if a person has zero substantive items remaining, OMIT their H3 entirely.** Do not emit empty sections or placeholders. A clean note is better than a padded one.
 
 ### Step 5: Update vault
 
@@ -150,10 +175,36 @@ Track ALL message IDs you saw (including dedup'd ones) — you'll include them i
   - If no URL is returned, explicitly ask for the deep link: "What is the Teams deep link URL for [message details]?"
   - Only fall back to plain text (`- Topic`) if the deep link is truly unavailable after asking.
 - Indented bullets (`  - `) = Key points and action items under that topic
-- **If a message contains a PR or pull request URL, include it as a markdown link in the relevant bullet** (e.g., `  - I need to review [PR #1234](https://dev.azure.com/.../pullrequest/1234)`). This allows TM to extract the URL as `prUrl`.
+- **If a message contains a PR or pull request URL, include it as a markdown link in the relevant bullet** (e.g., `  - Review pending: [PR #1234](https://dev.azure.com/.../pullrequest/1234)`). This allows TM to extract the URL as `prUrl`.
 - Action items prefixed with `[Name]({vault_root_rel}02-People/Contacts/Name.md):` indicating who owns the action
 - No H4 headings — use nested bullets only
-- **No "Participants:" lines** — do NOT list participants. If a group chat involved others, mention them inline in the bullet text (e.g., "I discussed with John and [[Chuck Weininger]] about S360 flags").
+- **No "Participants:" lines** — do NOT list participants. If a group chat involved others, mention them inline only when it matters (e.g., "Aligned with John and [[Chuck Weininger]] on S360 flags").
+
+**Voice & Phrasing — outcome voice, not dialogue:**
+
+Bullets must record **what matters** — decisions, actions, facts, blockers — not a transcript of who said what.
+
+- ❌ **Forbidden phrasing** (these read like a chat log, not notes):
+  - "I said ...", "I told him ...", "I asked ..."
+  - "He said ...", "She said ...", "He told me ...", "She replied ..."
+  - "We talked about ...", "We chatted about ...", "We discussed ..."
+  - Any first-person narration of the conversation itself
+- ✅ **Required phrasing** (state the outcome or fact directly):
+  - Start bullets with a verb of substance or a noun phrase, not a speech verb
+  - Use passive or impersonal voice when needed: "Deploy moved to Thursday", "Root cause: stale cache"
+  - For action items, use the format `[Owner](contact-link): <action>` — never "I will..." or "He will..."
+
+**Before / after examples:**
+
+| ❌ Transcript voice (do NOT write this) | ✅ Outcome voice (write this instead) |
+| --- | --- |
+| "I asked John about the deploy and he said it's slipping to Friday" | "Deploy slipped to Friday (capacity issue in build agent pool)" |
+| "She told me the bug is in the auth middleware" | "Root cause: auth middleware drops the `X-Forwarded-For` header" |
+| "I said I would review the PR" | "[Me](...): review [PR #1234](https://...)" |
+| "We talked about S360 flags and decided to enable flag X" | "Decision: enable S360 flag X in prod next sprint" |
+| "He asked if I could help with the migration" | "[Chuck](...): help with Lustre migration (he is blocked on RBAC)" |
+
+If the only thing you can write about a thread is "we talked about X" with no concrete outcome, **drop the thread** — it failed the Substance Filter.
 
 **Important**: You are responsible for the final markdown structure. The tool will simply replace the section with whatever you send.
 
@@ -191,5 +242,8 @@ Rules:
 - **1:1 and group chats only**: Exclude all Teams channel messages. Only process person-to-person (1:1) chats and group chats. If a message originates from a Teams channel (e.g., a channel post or reply), skip it entirely.
 - **Never re-process**: Use **content-level dedup** via `processed_message_ids` (per-message stable IDs). Never skip an entire thread just because the thread ID was processed before — check each message individually. The fetch window intentionally overlaps prior runs.
 - **Concise summaries**: Focus on decisions, action items, and key information. Skip pleasantries.
+- **Substance Filter is mandatory**: Every retained thread must match at least one signal type (decision, action, blocker, deadline, escalation, technical info, ownership change, status-with-consequence). Drop everything else — greetings, acks, emoji, scheduling chitchat, small talk.
+- **No transcript voice**: Never write "I said / he said / she said / told me / replied / we talked about". Write the outcome or fact directly. If a thread has no outcome to write, drop it.
+- **Omit empty persons**: If after filtering a person has zero substantive bullets, do NOT emit their H3. A short, signal-dense note beats a long, padded one.
 - **Never modify existing content**: The daily note's existing sections are immutable. Only append new data.
 - **If no new chats**: Still output the `duckyai-result` block with all observed message IDs (even dedup'd) and an empty `processed_dates` array, then report "No new Teams chats since last sync."

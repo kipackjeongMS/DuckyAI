@@ -840,3 +840,141 @@ def test_update_topic_index_creates_topic_file(monkeypatch, tmp_path):
     assert "modified: 2026-03-26" in topic_file
     assert "- [Managed Identity Task](../../01-Work/Tasks/Managed%20Identity%20Task.md)" in topic_file
     assert "- [Identity Guide](../Documentation/Identity%20Guide.md)" in topic_file
+
+def test_gather_week_data_aggregates_daily_notes_tasks_and_meetings(tmp_path):
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+
+    _write_daily_note(
+        vault,
+        "2026-03-23",
+        "## Tasks\n- [x] shipped API\n- [ ] write docs\n\n"
+        "## Teams Chat Highlights\n### [John](contacts/John.md)\n- Aligned on retry policy\n\n"
+        "## Teams Meeting Highlights\n### [Standup](meet.md)\n- Decision: cut feature X\n\n"
+        "## PRs & Code Reviews\n- [PR #1](https://example/1) Merged\n",
+    )
+    _write_daily_note(
+        vault,
+        "2026-03-25",
+        "## Tasks\n- [x] reviewed PR\n\n## Teams Chat Highlights\n(empty)\n",
+    )
+    # Outside window — should NOT be included
+    _write_daily_note(
+        vault,
+        "2026-03-30",
+        "## Tasks\n- [x] next week task\n",
+    )
+
+    meetings_dir = vault / "02-People" / "Meetings"
+    meetings_dir.mkdir(parents=True, exist_ok=True)
+    (meetings_dir / "2026-03-23 Standup.md").write_text("notes", encoding="utf-8")
+    (meetings_dir / "2026-03-25 Design Review.md").write_text("notes", encoding="utf-8")
+    (meetings_dir / "2026-03-30 Out of window.md").write_text("notes", encoding="utf-8")
+
+    service = VaultService(vault)
+    result = service.call_tool(
+        "gatherWeekData",
+        {"week_start": "2026-03-23", "week_end": "2026-03-27"},
+    )
+    payload = json.loads(result["content"][0]["text"])
+
+    assert payload["week_start"] == "2026-03-23"
+    assert payload["week_end"] == "2026-03-27"
+    assert [d["date"] for d in payload["daily_notes"]] == ["2026-03-23", "2026-03-25"]
+    assert payload["tasks"]["completed"] == ["- [x] shipped API", "- [x] reviewed PR"]
+    assert payload["tasks"]["carried"] == ["- [ ] write docs"]
+    assert [m["title"] for m in payload["meetings"]] == ["Standup", "Design Review"]
+    # PR items extracted from PRs & Code Reviews section
+    assert payload["daily_notes"][0]["pr_items"] == ["- [PR #1](https://example/1) Merged"]
+
+
+def test_write_weekly_roundup_writes_locked_structure_with_emoji_prefixes(monkeypatch, tmp_path):
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-27")
+
+    plan = {
+        "highlights": ["Shipped v2 of API", "Resolved auth blocker"],
+        "tasks": {
+            "completed": ["- [x] shipped API"],
+            "carried": ["- [ ] write docs"],
+        },
+        "prs": {
+            "merged": ["[PR #1234](https://example/1) - API v2"],
+            "reviewed": ["[PR #5678](https://example/5) - design feedback"],
+            "open": [],
+        },
+        "decisions": ["Decision: Bicep for prod (Terraform state issues)"],
+        "teams_by_date": [
+            {
+                "date": "2026-03-23",
+                "day": "Mon",
+                "meetings": [
+                    {"name": "Standup", "highlights": ["Decision: cut feature X"]}
+                ],
+                "chats": [
+                    {"person": "John Smith", "highlights": ["Aligned on retry policy"]}
+                ],
+            },
+            {
+                "date": "2026-03-25",
+                "day": "Wed",
+                "meetings": [
+                    {"name": "Design Review", "highlights": ["Root cause: stale cache"]}
+                ],
+                "chats": [],
+            },
+        ],
+        "blockers": ["Awaiting RBAC approval for prod deploy"],
+        "next_week": ["Ship v2.1", "Land doc updates"],
+    }
+
+    result = service.call_tool(
+        "writeWeeklyRoundup",
+        {"plan": plan, "week_start": "2026-03-23", "week_end": "2026-03-27"},
+    )
+
+    file_path = vault / "04-Periodic" / "Weekly" / "2026-W13.md"
+    written = file_path.read_text(encoding="utf-8")
+
+    assert result == {"content": [{"type": "text", "text": "Created weekly roundup 2026-W13.md (2026-03-23 to 2026-03-27)"}]}
+    assert "created: 2026-03-27" in written
+    assert "week: 2026-W13" in written
+    assert "start: 2026-03-23" in written
+    assert "end: 2026-03-27" in written
+    assert "# Weekly Roundup — Week of 2026-03-23" in written
+    assert "## Highlights\n- Shipped v2 of API\n- Resolved auth blocker" in written
+    assert "## Tasks\n### Completed\n- [x] shipped API\n### Carried over\n- [ ] write docs" in written
+    assert "### Merged\n- [PR #1234](https://example/1) - API v2" in written
+    assert "### Still open\n- (none)" in written
+    assert "## Decisions\n- Decision: Bicep for prod (Terraform state issues)" in written
+    assert "## Teams\n### 2026-03-23 — Mon\n#### 📅 Standup\n- Decision: cut feature X\n#### 💬 John Smith\n- Aligned on retry policy" in written
+    assert "### 2026-03-25 — Wed\n#### 📅 Design Review\n- Root cause: stale cache" in written
+    assert "## Blockers & Risks\n- Awaiting RBAC approval for prod deploy" in written
+    assert "## Next Week Focus\n- [ ] Ship v2.1\n- [ ] Land doc updates" in written
+
+
+def test_write_weekly_roundup_replaces_existing_file(monkeypatch, tmp_path):
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    weekly_dir = vault / "04-Periodic" / "Weekly"
+    weekly_dir.mkdir(parents=True, exist_ok=True)
+    (weekly_dir / "2026-W13.md").write_text("stale content", encoding="utf-8")
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-27")
+
+    result = service.call_tool(
+        "writeWeeklyRoundup",
+        {"plan": {"highlights": ["new"]}, "week_start": "2026-03-23"},
+    )
+
+    written = (weekly_dir / "2026-W13.md").read_text(encoding="utf-8")
+    assert result == {"content": [{"type": "text", "text": "Updated weekly roundup 2026-W13.md (2026-03-23 to 2026-03-27)"}]}
+    assert "stale content" not in written
+    assert "- new" in written

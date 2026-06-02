@@ -162,6 +162,16 @@ class VaultService:
             description="Write today's daily note from a structured plan (JSON with focus_today, carried_items, context_note, at_risk).",
             implemented=True,
         ),
+        ToolDefinition(
+            name="gatherWeekData",
+            description="Gather a week's data from vault (daily notes, tasks, meetings) for the Weekly Roundup agent. Returns structured JSON.",
+            implemented=True,
+        ),
+        ToolDefinition(
+            name="writeWeeklyRoundup",
+            description="Write the weekly roundup note from a structured plan (JSON with highlights, tasks, prs, decisions, teams_by_date, blockers, next_week).",
+            implemented=True,
+        ),
     )
 
     _TOOL_MAP: dict[str, ToolDefinition] = {tool.name: tool for tool in TOOL_DEFINITIONS}
@@ -912,6 +922,287 @@ class VaultService:
         return self._text_response(
             f"Created {filename} ({monday_str} to {friday_str}) with {len(completed_tasks)} completed tasks aggregated"
         )
+
+    # ------------------------------------------------------------------
+    # Weekly Roundup (WRS agent) — gather + write
+    # ------------------------------------------------------------------
+
+    def tool_gatherWeekData(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Aggregate a week's vault data for the Weekly Roundup Summary agent.
+
+        Inputs:
+          - week_start (optional, YYYY-MM-DD): defaults to Monday of current week
+          - week_end   (optional, YYYY-MM-DD): defaults to Friday of current week
+
+        Output JSON includes:
+          - week_start, week_end
+          - daily_notes: per-day extracts (tasks, chat_highlights, meeting_highlights, prs)
+          - tasks: {completed, carried} across the week from daily notes' Tasks section
+          - meetings: meeting note files in 02-People/Meetings/ within the window
+        """
+        raw_start = arguments.get("week_start")
+        raw_end = arguments.get("week_end")
+
+        if raw_start and raw_end:
+            week_start = self._coerce_target_date(raw_start)
+            week_end = self._coerce_target_date(raw_end)
+        else:
+            week_id = self._get_current_week_id()
+            week_start, week_end = self._week_bounds(week_id)
+
+        daily_notes: list[dict[str, Any]] = []
+        completed_tasks: list[str] = []
+        carried_tasks: list[str] = []
+
+        if self.daily_dir.exists():
+            for note_path in sorted(self.daily_dir.glob("*.md")):
+                file_date = note_path.stem
+                if file_date < week_start or file_date > week_end:
+                    continue
+                try:
+                    content = self._read_text(note_path)
+                except OSError:
+                    continue
+
+                tasks_section = self._get_h2_section_content(content, "Tasks")
+                chat_section = self._get_h2_section_content(content, "Teams Chat Highlights")
+                meeting_section = self._get_h2_section_content(content, "Teams Meeting Highlights")
+                pr_section = self._get_h2_section_content(content, "PRs & Code Reviews")
+
+                day_tasks: list[str] = []
+                for line in tasks_section.split("\n"):
+                    stripped = line.strip()
+                    if not stripped.startswith("- ["):
+                        continue
+                    day_tasks.append(stripped)
+                    if stripped.startswith("- [x]"):
+                        completed_tasks.append(stripped)
+                    elif stripped.startswith("- [ ]"):
+                        carried_tasks.append(stripped)
+
+                daily_notes.append({
+                    "date": file_date,
+                    "tasks": day_tasks,
+                    "chat_highlights": chat_section,
+                    "meeting_highlights": meeting_section,
+                    "pr_items": [
+                        line.strip()
+                        for line in pr_section.split("\n")
+                        if line.strip().startswith("- ")
+                    ],
+                })
+
+        meetings: list[dict[str, str]] = []
+        if self.meetings_dir.exists():
+            for meeting_path in sorted(self.meetings_dir.glob("*.md")):
+                # Meeting filenames start with YYYY-MM-DD
+                stem = meeting_path.stem
+                if len(stem) < 10:
+                    continue
+                meeting_date = stem[:10]
+                if not re.match(r"\d{4}-\d{2}-\d{2}", meeting_date):
+                    continue
+                if meeting_date < week_start or meeting_date > week_end:
+                    continue
+                title = stem[10:].lstrip(" -_")
+                meetings.append({
+                    "date": meeting_date,
+                    "title": title or stem,
+                    "filename": meeting_path.name,
+                })
+
+        result = {
+            "week_start": week_start,
+            "week_end": week_end,
+            "daily_notes": daily_notes,
+            "tasks": {
+                "completed": completed_tasks,
+                "carried": carried_tasks,
+            },
+            "meetings": meetings,
+        }
+        return self._text_response(json.dumps(result, indent=2))
+
+    def tool_writeWeeklyRoundup(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        """Write the weekly roundup note from a structured plan.
+
+        Expected plan fields (all optional except as noted):
+          - highlights: list[str]
+          - tasks: {completed: list[str], carried: list[str]}
+          - prs: {merged: list[str], reviewed: list[str], open: list[str]}
+          - decisions: list[str]
+          - teams_by_date: list[{date, day, meetings: [{name, highlights: [str]}], chats: [{person, highlights: [str]}]}]
+          - blockers: list[str]
+          - next_week: list[str]
+
+        Writes to 04-Periodic/Weekly/YYYY-Www.md. Replaces existing file if present.
+        """
+        plan_raw = arguments.get("plan")
+        if not plan_raw:
+            raise ValueError("Field 'plan' is required (JSON object)")
+
+        if isinstance(plan_raw, str):
+            try:
+                plan = json.loads(plan_raw)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"Field 'plan' must be valid JSON: {exc}") from exc
+        elif isinstance(plan_raw, dict):
+            plan = plan_raw
+        else:
+            raise ValueError("Field 'plan' must be a JSON object or JSON string")
+
+        raw_week_start = arguments.get("week_start")
+        if raw_week_start:
+            week_start = self._coerce_target_date(raw_week_start)
+            week_end_raw = arguments.get("week_end")
+            week_end = self._coerce_target_date(week_end_raw) if week_end_raw else self._friday_of(week_start)
+            week_id = self._week_id_for_date(week_start)
+        else:
+            week_id = self._get_current_week_id()
+            week_start, week_end = self._week_bounds(week_id)
+
+        filename = f"{week_id}.md"
+        file_path = self.weekly_dir / filename
+        today_str = self._get_today_date()
+
+        # Build content sections
+        sections: list[str] = []
+        sections.append(
+            "---\n"
+            f"created: {today_str}\n"
+            "type: weekly\n"
+            f"week: {week_id}\n"
+            f"start: {week_start}\n"
+            f"end: {week_end}\n"
+            "tags:\n"
+            "  - weekly\n"
+            "---\n"
+        )
+        sections.append(f"# Weekly Roundup — Week of {week_start}\n")
+
+        sections.append(self._format_bullet_section("Highlights", plan.get("highlights")))
+
+        tasks = plan.get("tasks") or {}
+        sections.append(
+            "## Tasks\n"
+            f"{self._format_subsection('Completed', tasks.get('completed'))}\n"
+            f"{self._format_subsection('Carried over', tasks.get('carried'))}"
+        )
+
+        prs = plan.get("prs") or {}
+        sections.append(
+            "## PRs & Code Reviews\n"
+            f"{self._format_subsection('Merged', prs.get('merged'))}\n"
+            f"{self._format_subsection('Reviewed', prs.get('reviewed'))}\n"
+            f"{self._format_subsection('Still open', prs.get('open'))}"
+        )
+
+        sections.append(self._format_bullet_section("Decisions", plan.get("decisions")))
+
+        sections.append(self._format_teams_section(plan.get("teams_by_date")))
+
+        sections.append(self._format_bullet_section("Blockers & Risks", plan.get("blockers")))
+
+        sections.append(
+            self._format_bullet_section(
+                "Next Week Focus",
+                plan.get("next_week"),
+                bullet_prefix="- [ ] ",
+            )
+        )
+
+        content = "\n".join(sections).rstrip() + "\n"
+        existed = file_path.exists()
+        self._write_text(file_path, content)
+        verb = "Updated" if existed else "Created"
+        return self._text_response(
+            f"{verb} weekly roundup {filename} ({week_start} to {week_end})"
+        )
+
+    # ------------------------------------------------------------------
+    # Weekly roundup helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _format_bullet_section(header: str, items: Any, *, bullet_prefix: str = "- ") -> str:
+        if not items:
+            return f"## {header}\n- (none)\n"
+        lines = []
+        for item in items:
+            text = str(item).strip()
+            if not text:
+                continue
+            if text.startswith("- "):
+                lines.append(text)
+            else:
+                lines.append(f"{bullet_prefix}{text}")
+        body = "\n".join(lines) if lines else "- (none)"
+        return f"## {header}\n{body}\n"
+
+    @staticmethod
+    def _format_subsection(header: str, items: Any) -> str:
+        if not items:
+            return f"### {header}\n- (none)"
+        lines = []
+        for item in items:
+            text = str(item).strip()
+            if not text:
+                continue
+            lines.append(text if text.startswith("- ") else f"- {text}")
+        body = "\n".join(lines) if lines else "- (none)"
+        return f"### {header}\n{body}"
+
+    @staticmethod
+    def _format_teams_section(teams_by_date: Any) -> str:
+        if not teams_by_date:
+            return "## Teams\n- (none)\n"
+        day_blocks: list[str] = []
+        for day in teams_by_date:
+            if not isinstance(day, dict):
+                continue
+            date = str(day.get("date", "")).strip()
+            day_label = str(day.get("day", "")).strip()
+            heading = f"### {date} — {day_label}" if day_label else f"### {date}"
+            entries: list[str] = [heading]
+
+            for meeting in day.get("meetings") or []:
+                if not isinstance(meeting, dict):
+                    continue
+                name = str(meeting.get("name", "")).strip() or "(untitled)"
+                entries.append(f"#### 📅 {name}")
+                for hl in meeting.get("highlights") or []:
+                    text = str(hl).strip()
+                    if not text:
+                        continue
+                    entries.append(text if text.startswith("- ") else f"- {text}")
+
+            for chat in day.get("chats") or []:
+                if not isinstance(chat, dict):
+                    continue
+                person = str(chat.get("person", "")).strip() or "(unknown)"
+                entries.append(f"#### 💬 {person}")
+                for hl in chat.get("highlights") or []:
+                    text = str(hl).strip()
+                    if not text:
+                        continue
+                    entries.append(text if text.startswith("- ") else f"- {text}")
+
+            day_blocks.append("\n".join(entries))
+
+        body = "\n\n".join(day_blocks) if day_blocks else "- (none)"
+        return f"## Teams\n{body}\n"
+
+    @staticmethod
+    def _friday_of(date_str: str) -> str:
+        d = datetime.strptime(date_str, "%Y-%m-%d").date()
+        friday = d.fromordinal(d.toordinal() + (4 - d.weekday()))
+        return friday.isoformat()
+
+    @staticmethod
+    def _week_id_for_date(date_str: str) -> str:
+        d = datetime.strptime(date_str, "%Y-%m-%d").date()
+        iso = d.isocalendar()
+        return f"{iso[0]}-W{iso[1]:02d}"
 
     def tool_generateRoundup(self, arguments: dict[str, Any]) -> dict[str, Any]:
         raw_date = arguments.get("date")

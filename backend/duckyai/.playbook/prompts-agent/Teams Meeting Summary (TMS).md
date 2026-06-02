@@ -96,16 +96,40 @@ Processing M new meetings after filtering.
 For each meeting:
 
 1. **Check for transcript/recap/notes** — if the meeting has NO transcript, recap, or meeting notes available, **skip it entirely**. Do not create a meeting note or daily note entry for it.
-2. **Summarize** the meeting in 3-5 sentences capturing the key discussion points
-3. **Extract attendees** (names of all participants)
-4. **Identify decisions made** — any conclusions or agreements reached
-5. **Identify action items** — tasks assigned, follow-ups needed, deadlines mentioned
-6. **Note the meeting title and time**
+2. **Apply the Substance Filter** (below) — keep only meetings that carry real signal. If after filtering a meeting has zero substantive bullets, skip it entirely.
+3. **Summarize** the meeting in 3-5 concise bullets capturing decisions, action items, blockers, and technical info — using **outcome voice**, not transcript voice (see Step 4b "Voice & Phrasing")
+4. **Extract attendees** (names of all participants)
+5. **Identify decisions made** — any conclusions or agreements reached
+6. **Identify action items** — tasks assigned, follow-ups needed, deadlines mentioned
+7. **Note the meeting title and time**
 
 Skip meetings that are:
 - **Missing transcript/recap/notes** — no content to summarize
 - Canceled, declined, or no-shows
-- Trivial (e.g., brief check-ins with no substance)
+- **Fail the Substance Filter** — only pleasantries, status pings, or small talk with no decisions/actions/info
+
+#### Substance Filter — what to keep vs. drop
+
+A meeting is **substantive** and MUST be kept only if it produces at least one of these **signal types**:
+
+- **Decision** — a choice made or direction set (e.g., "Use Bicep over Terraform for prod")
+- **Action item** — something someone must do, with an implied or stated owner
+- **Blocker** — something preventing progress (people, tooling, dependency, access)
+- **Deadline / date commitment** — a specific date, deploy window, or due date
+- **Escalation** — issue raised to leadership, on-call, or another team
+- **Technical info** — non-obvious facts: config values, env names, repo paths, error codes, root cause, design choices
+- **Ownership change** — handoff, assignment, or role shift
+- **Status with consequence** — a status update that changes someone's plan (e.g., "Service X is down, deploy paused")
+
+**Drop the meeting entirely** if the transcript/recap only contains:
+
+- Greetings, sign-offs, pleasantries, small talk
+- Status round-robins with no decisions or follow-ups
+- "Walkthrough" or "demo" with no actionable outcome and no new technical info
+- Recurring sync where nothing changed since last time
+- Acknowledgments without info ("ok", "thanks", "got it", "sounds good")
+
+**After filtering, if a meeting has zero substantive bullets, OMIT it entirely** — do not create a per-meeting note, do not append to daily highlights. A clean note is better than a padded one.
 
 ### Step 4: Update vault
 
@@ -161,6 +185,33 @@ Embed a standard markdown link in the H3 title using `[Meeting Title]({vault_roo
 
 ⚠️ **Do NOT include attendees in the daily note highlights.** No `**Attendees**:` line. Attendee lists belong ONLY in the per-meeting note (Step 4a). The daily note is a lightweight summary — keep it short.
 
+**Voice & Phrasing — outcome voice, not dialogue:**
+
+Bullets must record **what matters** — decisions, actions, facts, blockers — not a transcript of who said what.
+
+- ❌ **Forbidden phrasing** (these read like a meeting transcript, not notes):
+  - "I proposed ...", "I said ...", "I asked ..."
+  - "He proposed ...", "She agreed to ...", "John said ..."
+  - "We talked about ...", "We discussed ...", "The team chatted about ..."
+  - Any narration of who spoke or what was said
+- ✅ **Required phrasing** (state the outcome or fact directly):
+  - Start bullets with a noun phrase or a verb of substance, not a speech verb
+  - Use impersonal or passive voice: "Deploy moved to Thursday", "Root cause: stale cache"
+  - For action items, use the format `[Owner](contact-link): <action>` — never "He will..." or "I will..."
+  - For decisions, prefer the prefix `Decision: <what was decided> (<why>)`
+
+**Before / after examples:**
+
+| ❌ Transcript voice (do NOT write this) | ✅ Outcome voice (write this instead) |
+| --- | --- |
+| "I proposed using Bicep and John agreed" | "Decision: Bicep for prod (Terraform state issues raised by John)" |
+| "She said the bug is in the auth middleware" | "Root cause: auth middleware drops the `X-Forwarded-For` header" |
+| "I will review the PR by Friday" | "[Me](...): review [PR #1234](https://...) by Fri" |
+| "We talked about S360 flags" | (drop — no outcome → fails Substance Filter) |
+| "Chuck said he'd take the Lustre migration" | "[Chuck](...): own Lustre migration (handoff from Bob)" |
+
+If the only thing you can write about a meeting is "we talked about X" with no concrete outcome, **drop the meeting** — it failed the Substance Filter.
+
 **Also update contacts**:
 - If you mention new people, call `ensureContactExists` for them.
 - If you have specific notes about a person, call `appendPersonNote`.
@@ -191,7 +242,9 @@ Rules:
 - **Append-only**: Send ONLY new content to `appendTeamsMeetingHighlights`. Never read existing highlights, never re-send previously synced content. The tool handles dedup and placement automatically.
 - **Attendees in meeting note only**: Do NOT include `**Attendees**:` in daily note highlights. Attendee lists belong only in the per-meeting note (Step 4a).
 - **In attendee lists, write "I"**: Replace the user's name with "I" in meeting note attendee lists.
-- **Always-explicit subjects**: Every bullet in meeting notes and daily highlights must have a clear subject. Write "I proposed..." or "John agreed to..." — never just "proposed..." where the actor is ambiguous.
+- **Substance Filter is mandatory**: Every retained meeting must produce at least one signal-type bullet (decision, action, blocker, deadline, escalation, technical info, ownership change, status-with-consequence). Drop everything else.
+- **No transcript voice**: Never write "I proposed / he said / she agreed / we talked about / we discussed". Write the outcome or fact directly. If a meeting has no outcome to write, drop it.
+- **Omit empty meetings**: If after filtering a meeting has zero substantive bullets, do NOT create a per-meeting note and do NOT add it to daily highlights.
 - **Skip meetings without transcripts**: If a meeting has no transcript, recap, or notes available, do NOT create a meeting note or daily note entry for it. Only process meetings with actual content.
 - **Never re-process**: Use **content-level dedup** via `processed_meeting_ids`. The fetch window intentionally overlaps prior runs to defeat indexing lag — duplicates are caught by ID, not by narrowing the time range.
 - **Idempotent**: If a meeting note already exists in `02-People/Meetings/`, skip creating it.
