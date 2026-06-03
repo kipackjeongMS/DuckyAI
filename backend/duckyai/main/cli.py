@@ -629,10 +629,6 @@ main.add_command(doctor_command)
 from .update import update_cli
 main.add_command(update_cli)
 
-# Chat server
-from .chat_cmd import chat_group
-main.add_command(chat_group)
-
 # Terminal server
 from .terminal_cmd import terminal_group
 main.add_command(terminal_group)

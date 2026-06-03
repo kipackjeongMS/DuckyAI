@@ -18,9 +18,6 @@ contextBridge.exposeInMainWorld("duckyai", {
     maximize: () => ipcRenderer.invoke("win:maximize"),
     close: () => ipcRenderer.invoke("win:close"),
   },
-  chat: {
-    send: (text) => ipcRenderer.invoke("chat:send", text),
-  },
   terminal: {
     wsUrl: "ws://127.0.0.1:52847/ws/terminal",
   },

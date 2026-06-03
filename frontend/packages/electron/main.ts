@@ -14,8 +14,6 @@ let apiClient: DuckyAIClient | null = null;
 let lastRecoveryAttemptAt = 0;
 let userStoppedDaemon = false;
 
-const CHAT_URL = "http://127.0.0.1:52846";
-
 const isDev = process.env.ELECTRON_IS_DEV === "1";
 const DAEMON_RECOVERY_COOLDOWN_MS = 15_000;
 const DAEMON_RECOVERY_POLL_MS = 750;
@@ -41,56 +39,6 @@ function notify(
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** Check if the chat server is reachable. */
-async function chatHealthCheck(): Promise<boolean> {
-  try {
-    const resp = await fetch(`${CHAT_URL}/api/chat/health`, { signal: AbortSignal.timeout(2000) });
-    return resp.ok;
-  } catch {
-    return false;
-  }
-}
-
-/** Ensure the chat server is running, spawning it on demand. */
-async function ensureChatServer(vaultPath: string): Promise<void> {
-  if (await chatHealthCheck()) return;
-
-  console.log("[main] Chat server not running — starting on demand...");
-  const { spawn } = await import("node:child_process");
-
-  for (const candidate of getCliCandidates(vaultPath)) {
-    try {
-      const args = [...candidate.baseArgs, "chat", "start"];
-      const spawnOpts: Record<string, unknown> = {
-        cwd: candidate.cwd,
-        stdio: "ignore",
-        detached: true,
-      };
-      if (process.platform === "win32") {
-        spawnOpts.windowsHide = true;
-        (spawnOpts as any).creationflags = 0x00000200 | 0x08000000;
-      }
-      const child = spawn(candidate.command, args, spawnOpts as any);
-      child.unref();
-      console.log(`[main] Spawned chat server: ${candidate.command} ${args.join(" ")}`);
-      break;
-    } catch {
-      continue;
-    }
-  }
-
-  // Poll until healthy (max 15s)
-  const deadline = Date.now() + 15_000;
-  while (Date.now() < deadline) {
-    await sleep(500);
-    if (await chatHealthCheck()) {
-      console.log("[main] Chat server is ready");
-      return;
-    }
-  }
-  throw new Error("Chat server failed to start within timeout");
 }
 
 async function spawnDaemon(vaultPath: string): Promise<void> {
@@ -385,28 +333,6 @@ function registerIpcHandlers(api: DuckyAIClient, vaultPath: string): void {
   ipcMain.handle("vault:call-tool", (_, name: string, args: Record<string, unknown>) =>
     api.callTool(name, args),
   );
-
-  // --- Chat (via dedicated chat runtime server) ---
-  ipcMain.handle("chat:send", async (_, text: string) => {
-    try {
-      await ensureChatServer(vaultPath);
-      const resp = await fetch(`${CHAT_URL}/api/chat/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
-      });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
-        return `Error: ${(err as any).error ?? resp.statusText}`;
-      }
-      const data = await resp.json() as { response?: string };
-      return data.response ?? "No response.";
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error("[chat] error:", msg);
-      return `Error: ${msg}`;
-    }
-  });
 
   // --- Window controls ---
   ipcMain.handle("win:minimize", () => mainWindow?.minimize());

@@ -71,7 +71,7 @@ def _get_configured_port() -> int:
     return DEFAULT_PORT
 
 
-# ── PID file helpers (mirrors chat_server.py pattern) ──────────────
+# ── PID file helpers ──────────────
 
 def _get_pid_file(vault_path: str) -> Path:
     pid_dir = Path(vault_path) / ".duckyai"

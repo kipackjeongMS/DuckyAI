@@ -6,10 +6,6 @@ import * as path from "path";
 import { spawn } from "child_process";
 
 const DEFAULT_URL = "http://127.0.0.1:52845";
-const CHAT_URL = "http://127.0.0.1:52846";
-const CHAT_HEALTH_TIMEOUT_MS = 2_000;
-const CHAT_STARTUP_POLL_MS = 500;
-const CHAT_STARTUP_MAX_WAIT_MS = 15_000;
 const DAEMON_RECOVERY_POLL_MS = 750;
 const DAEMON_RECOVERY_ATTEMPTS = 8;
 
@@ -83,42 +79,6 @@ async function spawnDaemon(vaultPath: string): Promise<void> {
   throw new Error("Could not spawn DuckyAI daemon — no working Python found");
 }
 
-/** Spawn the chat server as a detached background process. */
-async function spawnChatServer(vaultPath: string): Promise<void> {
-  for (const candidate of getCliCandidates(vaultPath)) {
-    try {
-      const args = [...candidate.baseArgs, "chat", "start"];
-      const spawnOpts: Record<string, unknown> = {
-        cwd: candidate.cwd,
-        stdio: "ignore",
-      };
-
-      if (process.platform === "win32") {
-        const CREATE_NEW_PROCESS_GROUP = 0x00000200;
-        const CREATE_NO_WINDOW = 0x08000000;
-        spawnOpts.windowsHide = true;
-        (spawnOpts as any).creationflags =
-          CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW;
-      } else {
-        spawnOpts.detached = true;
-      }
-
-      const child = spawn(candidate.command, args, spawnOpts as any);
-      child.unref();
-      console.log(
-        `[duckyai] Spawned chat server: ${candidate.command} ${args.join(" ")}`,
-      );
-      return;
-    } catch (err) {
-      console.warn(
-        `[duckyai] Failed to spawn chat server with ${candidate.command}:`,
-        err,
-      );
-    }
-  }
-  throw new Error("Could not spawn chat server — no working Python found");
-}
-
 /** Spawn the terminal server as a detached background process. */
 async function spawnTerminalServer(vaultPath: string): Promise<void> {
   for (const candidate of getCliCandidates(vaultPath)) {
@@ -181,38 +141,6 @@ async function stopTerminalServer(vaultPath: string): Promise<void> {
   }
 }
 
-
-async function chatHealthCheck(): Promise<boolean> {
-  try {
-    const res = await requestUrl({
-      url: `${CHAT_URL}/api/chat/health`,
-      method: "GET",
-      headers: { Accept: "application/json" },
-    });
-    return res.status === 200;
-  } catch {
-    return false;
-  }
-}
-
-/** Ensure the chat server is running, spawning it on demand if needed. */
-async function ensureChatServer(vaultPath: string): Promise<void> {
-  if (await chatHealthCheck()) return;
-
-  console.log("[duckyai] Chat server not running — starting on demand...");
-  await spawnChatServer(vaultPath);
-
-  // Poll until healthy
-  const deadline = Date.now() + CHAT_STARTUP_MAX_WAIT_MS;
-  while (Date.now() < deadline) {
-    await sleep(CHAT_STARTUP_POLL_MS);
-    if (await chatHealthCheck()) {
-      console.log("[duckyai] Chat server is ready");
-      return;
-    }
-  }
-  throw new Error("Chat server failed to start within timeout");
-}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -475,32 +403,6 @@ export function createObsidianBridge(obsidianApp: App): DuckyAIApi {
       minimize: async () => {},
       maximize: async () => {},
       close: async () => {},
-    },
-
-    chat: {
-      send: async (text: string) => {
-        try {
-          // Lazy-start: spawn chat server on first message if not running
-          await ensureChatServer(vaultPath);
-
-          const res = await requestUrl({
-            url: `${CHAT_URL}/api/chat/send`,
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: text }),
-          });
-          const data = JSON.parse(res.text);
-          return data.response ?? JSON.stringify(data);
-        } catch (err: any) {
-          const msg = err instanceof Error ? err.message : String(err);
-          emitNotification({
-            type: "error",
-            title: "Chat unavailable",
-            body: msg,
-          });
-          return `Chat error: ${msg}`;
-        }
-      },
     },
 
     terminal: {

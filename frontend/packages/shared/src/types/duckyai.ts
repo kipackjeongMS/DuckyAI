@@ -21,9 +21,6 @@ export interface DuckyAIApi {
     maximize: () => Promise<void>;
     close: () => Promise<void>;
   };
-  chat: {
-    send: (text: string) => Promise<string>;
-  };
   terminal: {
     /** WebSocket URL for the terminal server, e.g. ws://127.0.0.1:52847/ws/terminal */
     wsUrl: string;

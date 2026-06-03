@@ -1,10 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Settings, X, Menu, FolderTree, Bot, Terminal, Trash2 } from "lucide-react";
 import { VoiceOrb } from "./voice-orb";
 import { StatusBar, StatusIndicator } from "./status-bar";
-import { QuickActions } from "./quick-actions";
-import { TypewriterOverlay, type TypewriterEntry } from "./typewriter-overlay";
 import { Sidebar } from "./sidebar";
 import { LoginScreen } from "./login-screen";
 import { VaultExplorer } from "./vault-explorer";
@@ -18,14 +16,6 @@ import { useDuckyAI } from "../context/duckyai-provider";
 
 type AppStatus = "idle" | "listening" | "processing" | "speaking";
 
-/** Quick action labels shown in the typewriter overlay. */
-const quickActionLabels: Record<string, string> = {
-  "daily-note": "Prepare today's daily note",
-  tasks: "Show current tasks",
-  triage: "Triage my inbox",
-  status: "Check system status",
-};
-
 export interface DuckyAIAppProps {
   /** Render window controls (minimize/maximize/close). Electron provides these; Obsidian does not. */
   renderWindowControls?: () => React.ReactNode;
@@ -33,7 +23,7 @@ export interface DuckyAIAppProps {
   draggableTitleBar?: boolean;
   /** Use viewport sizing (h-screen/w-screen). True for standalone windows, false for embedded panels. */
   fullscreen?: boolean;
-  /** Show only the sidebar (orchestrator + agents) without the main chat panel. */
+  /** Show only the sidebar (orchestrator + agents) without the voice-assistant view. */
   sidebarOnly?: boolean;
   /** Callback to open the code workspace (e.g. in VS Code). */
   onOpenWorkspace?: () => void;
@@ -50,12 +40,9 @@ export default function DuckyAIApp({
 
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [status, setStatus] = useState<AppStatus>("idle");
-  const [overlayEntries, setOverlayEntries] = useState<TypewriterEntry[]>([]);
-  const [showOverlay, setShowOverlay] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [terminalLoading, setTerminalLoading] = useState(false);
-  const chatRequestIdRef = useRef(0);
 
   const orch = useOrchestrator();
   const { toasts, addToast, dismissToast } = useToasts();
@@ -119,74 +106,10 @@ export default function DuckyAIApp({
     return unsubscribe;
   }, [api, addToast]);
 
-  const dismissOverlay = useCallback(() => {
-    chatRequestIdRef.current++;
-    setStatus("idle");
-    setShowOverlay(false);
-    setOverlayEntries([]);
-  }, []);
-
-  const sendChat = useCallback(
-    async (userText: string) => {
-      const userEntry: TypewriterEntry = {
-        id: `user-${Date.now()}`,
-        role: "user",
-        text: userText,
-      };
-
-      setOverlayEntries((prev) => [...prev, userEntry]);
-      setShowOverlay(true);
-      setStatus("processing");
-
-      const requestId = ++chatRequestIdRef.current;
-
-      try {
-        const response = await api.chat.send(userText);
-        if (chatRequestIdRef.current === requestId) {
-          const assistantEntry: TypewriterEntry = {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            text: response,
-          };
-          setOverlayEntries((prev) => [...prev, assistantEntry]);
-          setStatus("idle");
-        }
-      } catch (err) {
-        if (chatRequestIdRef.current === requestId) {
-          const msg = err instanceof Error ? err.message : String(err);
-          const errEntry: TypewriterEntry = {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            text: `Error: ${msg}`,
-          };
-          setOverlayEntries((prev) => [...prev, errEntry]);
-          setStatus("idle");
-        }
-      }
-    },
-    [api],
-  );
-
-  const executeVaultAction = useCallback(
-    async (actionId: string) => {
-      const userText = quickActionLabels[actionId] ?? actionId;
-      await sendChat(userText);
-    },
-    [sendChat],
-  );
-
   const handleDuckyPress = useCallback(() => {
     if (status !== "idle") return;
-    setShowOverlay(true);
+    // Voice interaction is not currently wired; placeholder for future implementation.
   }, [status]);
-
-  const handleQuickAction = useCallback(
-    (id: string) => {
-      if (status !== "idle") return;
-      executeVaultAction(id);
-    },
-    [status, executeVaultAction],
-  );
 
   const titleBarStyle = draggableTitleBar
     ? ({ WebkitAppRegion: "drag" } as React.CSSProperties)
@@ -587,17 +510,6 @@ export default function DuckyAIApp({
                   className="flex items-center gap-2 md:gap-3"
                   style={noDragStyle}
                 >
-                  {showOverlay && (
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      onClick={dismissOverlay}
-                      className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                      title="Close chat"
-                    >
-                      <X size={18} />
-                    </motion.button>
-                  )}
                   <button
                     onClick={() => setTerminalOpen((v) => !v)}
                     className="p-2 rounded-lg transition-colors"
@@ -659,7 +571,7 @@ export default function DuckyAIApp({
                   </div>
 
                   <AnimatePresence>
-                    {!showOverlay && status === "idle" && (
+                    {status === "idle" && (
                       <motion.p
                         className="text-muted-foreground text-center px-8 max-w-xs md:max-w-md"
                         style={{ fontSize: "0.75rem", letterSpacing: "0.1em" }}
@@ -687,51 +599,8 @@ export default function DuckyAIApp({
                     )}
                   </AnimatePresence>
                 </div>
-
-                <AnimatePresence>
-                  {showOverlay && (
-                    <motion.div
-                      className="absolute inset-0 z-20"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.4 }}
-                      style={{
-                        background:
-                          "linear-gradient(to bottom, rgba(10,14,26,0.92) 0%, rgba(10,14,26,0.88) 40%, rgba(10,14,26,0.95) 100%)",
-                        backdropFilter: "blur(8px)",
-                      }}
-                    >
-                      <TypewriterOverlay
-                        entries={overlayEntries}
-                        isProcessing={status === "processing"}
-                        onSendMessage={sendChat}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
                   </>
                 )}
-              </div>
-
-              {/* Bottom controls */}
-              <div className="relative z-30 pb-6 md:pb-10 pt-3">
-                <div className="flex justify-center">
-                  <div className="w-full md:w-auto">
-                    <div className="md:hidden">
-                      <QuickActions
-                        onAction={handleQuickAction}
-                        layout="compact"
-                      />
-                    </div>
-                    <div className="hidden md:block">
-                      <QuickActions
-                        onAction={handleQuickAction}
-                        layout="horizontal"
-                      />
-                    </div>
-                  </div>
-                </div>
               </div>
               </div>
 

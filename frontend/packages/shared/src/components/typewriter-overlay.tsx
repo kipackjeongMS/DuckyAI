@@ -1,8 +1,7 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send } from "lucide-react";
 
 export interface TypewriterEntry {
   id: string;
@@ -13,7 +12,6 @@ export interface TypewriterEntry {
 interface TypewriterOverlayProps {
   entries: TypewriterEntry[];
   isProcessing?: boolean;
-  onSendMessage?: (text: string) => void;
 }
 
 /** Shared markdown component config to avoid re-creating on every render. */
@@ -135,34 +133,14 @@ function ThinkingIndicator() {
   );
 }
 
-export function TypewriterOverlay({ entries, isProcessing, onSendMessage }: TypewriterOverlayProps) {
+export function TypewriterOverlay({ entries, isProcessing }: TypewriterOverlayProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [inputText, setInputText] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll to bottom on new entries or when processing state changes
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [entries, isProcessing]);
-
-  // Focus input when overlay appears
-  useEffect(() => {
-    const t = setTimeout(() => inputRef.current?.focus(), 300);
-    return () => clearTimeout(t);
-  }, []);
-
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const trimmed = inputText.trim();
-      if (!trimmed || isProcessing) return;
-      onSendMessage?.(trimmed);
-      setInputText("");
-    },
-    [inputText, isProcessing, onSendMessage],
-  );
 
   return (
     <div
@@ -190,32 +168,6 @@ export function TypewriterOverlay({ entries, isProcessing, onSendMessage }: Type
           {/* Scroll anchor */}
           <div ref={bottomRef} />
         </div>
-      </div>
-
-      {/* Input bar */}
-      <div className="px-6 md:px-16 lg:px-24 pb-5 pt-2 max-w-3xl mx-auto w-full">
-        <form
-          onSubmit={handleSubmit}
-          className="flex items-center gap-3 bg-[#0d1220] border border-[rgba(0,212,255,0.12)] rounded-xl px-4 py-2.5 focus-within:border-[rgba(0,212,255,0.3)] transition-colors"
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder={isProcessing ? "DuckyAI is thinking..." : "Type a message..."}
-            disabled={isProcessing}
-            className="flex-1 bg-transparent text-foreground placeholder:text-[#3a4d6b] outline-none text-sm"
-            style={{ fontSize: "0.9rem" }}
-          />
-          <button
-            type="submit"
-            disabled={!inputText.trim() || isProcessing}
-            className="p-1.5 rounded-lg text-[#00d4ff] hover:bg-[rgba(0,212,255,0.1)] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          >
-            <Send size={16} />
-          </button>
-        </form>
       </div>
     </div>
   );

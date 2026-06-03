@@ -50,7 +50,6 @@ describe("DuckyAIPlugin editor-menu", () => {
       },
       vault: { callTool: vi.fn() },
       window: { minimize: vi.fn(), maximize: vi.fn(), close: vi.fn() },
-      chat: { send: vi.fn() },
       onNotification: vi.fn(),
     };
 
@@ -239,7 +238,6 @@ describe("DuckyAIPlugin duckyai-button code block", () => {
       },
       vault: { callTool: mockCallTool },
       window: { minimize: vi.fn(), maximize: vi.fn(), close: vi.fn() },
-      chat: { send: vi.fn() },
       onNotification: vi.fn(),
     };
 

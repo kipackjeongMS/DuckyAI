@@ -243,16 +243,7 @@ def _stop_duckyai_processes() -> list[dict]:
         except Exception:
             pass
 
-        # 2. Stop chat server for this vault
-        try:
-            from ..chat_server import stop_chat_server
-            if stop_chat_server(str(vault_path)):
-                stopped.append({"type": "chat", "vault": str(vault_path)})
-                click.echo(f"  Stopped chat server for {vault_path.name}")
-        except Exception:
-            pass
-
-        # 3. Stop terminal server for this vault
+        # 2. Stop terminal server for this vault
         try:
             from ..terminal_server import stop_terminal_server
             if stop_terminal_server(str(vault_path)):

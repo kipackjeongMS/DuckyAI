@@ -9,7 +9,6 @@ export function createMockApi(
     orchestrator: Partial<DuckyAIApi["orchestrator"]>;
     vault: Partial<DuckyAIApi["vault"]>;
     window: Partial<DuckyAIApi["window"]>;
-    chat: Partial<DuckyAIApi["chat"]>;
     onNotification: DuckyAIApi["onNotification"];
   }>
 ): DuckyAIApi {
@@ -34,10 +33,6 @@ export function createMockApi(
       maximize: vi.fn().mockResolvedValue(undefined),
       close: vi.fn().mockResolvedValue(undefined),
       ...overrides?.window,
-    },
-    chat: {
-      send: vi.fn().mockResolvedValue("mock response"),
-      ...overrides?.chat,
     },
     terminal: {
       wsUrl: "ws://127.0.0.1:52847/ws/terminal",

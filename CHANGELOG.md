@@ -4,7 +4,13 @@ All notable changes to the DuckyAI Template will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.82] — 2026-06-03
+
+### Removed
+- **Chat feature removed entirely.** Eliminated the second-server architecture (port 52846 `chat_server.py`) that was the source of `/api/chat/*` 404 errors and PR-agent hang interactions. Deleted `chat_server.py`, `main/chat_cmd.py`, `shared/components/chat-panel.tsx`. Stripped all chat code from the Electron main/preload, Obsidian plugin bridge, App shell, TypewriterOverlay, shared types, and the `duckyai` CLI. The daemon is now a single orchestrator on port 52845.
+
 ### Added
+- **WRS auto-wires on `duckyai update`**: added `Weekly Roundup Summary (WRS)` to `nodes-defaults.yml` so existing vaults receive the node + cron (5pm Fri) on the next update. WRS prompt is already synced via the standard prompt-sync path.
 - **PR Review agent**: `/repo-cache` mount in `duckyai.yml.template` so cloned PR repos persist across runs. Warm `git fetch` (~1-3s) replaces cold `git clone` (~30-120s). Orchestrator auto-resolves `${repo_cache}` to `<vault>/.duckyai/repo-cache/`.
 - **`vault-update` skill**: Step 5.5 patches existing users' `duckyai.yml` — adds the `/repo-cache` mount to the `PR Review (PR)` node (or inserts the node if missing).
 
