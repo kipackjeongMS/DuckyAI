@@ -4,6 +4,11 @@ All notable changes to the DuckyAI Template will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.83] — 2026-06-03
+
+### Fixed
+- **`duckyai update` crashed on Windows consoles** with `UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-2` when printing the `─── Syncing vault ───` header. The crash happened *after* the self-update check but *before* `sync_vault()`, which silently prevented the chat-free plugin and the new WRS node from being synced into vaults. Fixed by reconfiguring `sys.stdout`/`sys.stderr` to UTF-8 at module load — the existing `─`, `✓`, `⚠` characters now render safely on cp1252 terminals.
+
 ## [0.1.82] — 2026-06-03
 
 ### Removed

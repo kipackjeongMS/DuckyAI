@@ -17,6 +17,14 @@ from importlib.metadata import version as get_installed_version, PackageNotFound
 from typing import Optional
 
 import click
+
+# Ensure unicode output works on Windows consoles (cp1252) that otherwise
+# crash on the ─, ✓, ⚠ characters used throughout this module.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, Exception):
+        pass
 import requests
 import psutil
 
