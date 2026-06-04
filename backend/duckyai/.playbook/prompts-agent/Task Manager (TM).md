@@ -21,7 +21,24 @@ If the trigger context includes **Parent Output Context** with a list of affecte
 
 ## Step 2: Extract action items
 
-Scan the `## Teams Meeting Highlights` and `## Teams Chat Highlights` sections for action items assigned to the user (Me). Look for:
+Scan the `## Teams Meeting Highlights` and `## Teams Chat Highlights` sections for action items. The PRIMARY trigger is the explicit `**Action**` tag emitted by TCS/TMS.
+
+### Primary extraction — `**Action**` tagged bullets
+
+TCS and TMS now emit action items in this exact format:
+
+```
+- **Action** · [Owner]({vault_root_rel}02-People/Contacts/Owner.md): <concrete action>
+```
+
+For EVERY `**Action**`-tagged bullet:
+- Parse the `[Owner](contact-link)` to identify who owns the action.
+- If owner is **`[Me]`** (the user) → create a task or PR review for the user (proceed to Step 3 classification).
+- If owner is **any other person** → record only (do NOT create a task in `## Tasks`). The contact note will pick it up. Skip to next item.
+
+### Secondary extraction — implicit fallback (legacy)
+
+If a highlight clearly assigns work to the user but lacks the `**Action**` tag (e.g., older notes, hand-written entries, or an agent that missed the tag), you may still extract it. Look for:
 
 - Explicit assignments: "you need to...", "can you...", "please review...", "action item for you"
 - PR review requests **directed at the user**: "[Person] asked you to review PR #1234", "review PR #1234", "take a look at PR"
@@ -30,8 +47,8 @@ Scan the `## Teams Meeting Highlights` and `## Teams Chat Highlights` sections f
 - **User's own PRs**: "I asked [Person] to review my PR", "my PR #1234 needs approval", "waiting on review for my PR"
 
 **Skip these:**
-- Items assigned to other people (not the user)
-- Informational statements with no action required
+- Items owned by other people (`**Action** · [SomeoneElse](...)`)
+- Informational summary bullets (top-level `- [Topic](link) — outcome` without an `**Action**` child)
 - Items that are already completed (past tense: "reviewed", "merged", "done")
 - Trivial/generic items ("let's sync later" without specific ask)
 
@@ -139,3 +156,4 @@ If no action items were found, print: "No new action items found in today's high
 - **PR URL construction**: If a PR number is mentioned but no URL is provided, use an empty string for `prUrl`. Do not guess URLs.
 - **No PR number**: When the action item is clearly a PR-related task but no specific PR number is mentioned (e.g., "approve cherry-pick PRs", "review changes"), still use `logPRReview` with an empty `prNumber`. Do NOT fall back to `createTask`/`logTask` for PR items.
 - **Author vs Reviewer**: The most critical classification. If the user says "I asked John to review my PR" — the user is the **author** → `subsection: "my_prs"`. If John says "please review my PR" — the user is the **reviewer** → `subsection: "requested"`. Always determine who authored the PR before classifying.
+- **`**Action**` tag is the primary trigger**: Prefer the explicit `**Action** · [Owner](...): <text>` bullets emitted by TCS/TMS. Only fall back to implicit extraction when the tag is absent. Never create tasks from `**Action**` bullets whose owner is someone other than the user.

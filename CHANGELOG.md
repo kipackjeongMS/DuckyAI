@@ -4,6 +4,14 @@ All notable changes to the DuckyAI Template will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.84] — 2026-06-04
+
+### Changed
+- **TCS / TMS / TM action-item contract**: introduced an explicit `**Action**` tag convention so action items are unambiguous for the downstream Task Manager.
+  - **TCS** and **TMS** now emit action items as `- **Action** · [Owner]({vault_root_rel}02-People/Contacts/Owner.md): <concrete action>` — `[Me](...)` when owned by the user, any other person otherwise. Format rules, voice/phrasing guidance, and before/after examples updated to match.
+  - **TM** restructured Step 2: `**Action**`-tagged bullets are now the **primary** extraction trigger. Bullets owned by someone other than the user are explicitly skipped (no task created in `## Tasks`). The previous heuristic phrase-matching is retained as a legacy fallback for older notes.
+- **TCS** also gained a "scan for action items, especially MINE" instruction so user-owned actions are reliably surfaced for TM.
+
 ## [0.1.83] — 2026-06-03
 
 ### Fixed

@@ -22,7 +22,13 @@ When user instructions are present, they **override** the default watermark-base
 
 ## Data Source Requirement
 
-⚠️ **You MUST use the Teams MCP server for ALL data fetching.** Do NOT use WorkIQ (`ask_work_iq`) or any other data source to retrieve Teams chat messages. The Teams MCP server is the only authorized data source for this agent. If the Teams MCP server is unavailable or returns an error, report the failure — do NOT fall back to WorkIQ.
+⚠️ **The Teams MCP server is the REQUIRED primary data source for ALL chat data.** Always try it first.
+
+**Fallback policy (WorkIQ):**
+- WorkIQ (`ask_work_iq`) may ONLY be used as a fallback when the Teams MCP server is genuinely unavailable — i.e., the tool is missing from your toolset, or every Teams MCP call in this run returned a connection/auth error.
+- A Teams MCP call returning **zero messages** is NOT a failure — it is a valid empty result. Do NOT fall back to WorkIQ in that case.
+- When falling back, explicitly state in your output: "Teams MCP unavailable (<reason>); falling back to WorkIQ for this run."
+- Never mix sources in the same run — pick one and stick with it.
 
 ## Execution Flow
 
@@ -117,8 +123,11 @@ Track ALL message IDs you saw (including dedup'd ones) — you'll include them i
    - **Never create an H3 named after a topic/context** — H3 headings are always person names.
 4. For each person's H3 section:
    - Collect all conversation threads (both 1:1 and group) involving that person on that date
-   - Apply the **Substance Filter** (below) to each thread — keep only threads that carry real signal
-   - For each retained thread, extract key points as bullet points using **impersonal outcome voice** (see Step 5)
+   - Group messages into **logical context groups** — a logical context group is a single coherent topic/exchange (one thread, one decision arc, one Q&A about a single subject). Multiple back-and-forth messages on the same topic = ONE context group.
+   - Apply the **Substance Filter** (below) to each context group — keep only groups that carry real signal
+   - **For each retained context group, write exactly ONE summary bullet** capturing the outcome (decision, action, blocker, fact). Do NOT list message-by-message events. The bullet IS the summary, not a transcript.
+   - **Always scan for action items, especially MINE.** For every context group, identify any concrete action committed by someone — things I said I'd do ("I'll send...", "let me check..."), things handed to me ("can you handle X?", "@Me please take this"), or actions owned by other participants. If found, emit a nested `**Action** · [Owner]({vault_root_rel}02-People/Contacts/Owner.md): <action>` bullet under the summary. Use `[Me](...)` when the owner is the user. If no concrete action exists, do NOT invent one.
+   - Use **impersonal outcome voice** (see Step 5) — never narrate who said what.
    - If a group chat had other participants, mention them inline by name only when relevant (e.g., "Aligned with John and Chuck on S360 flag rollout")
 
 #### Substance Filter — what to keep vs. drop
@@ -169,42 +178,50 @@ A thread is **substantive** and MUST be kept only if it contains at least one of
 **Format rules:**
 - **H3** (`###`) = **Always a person name** as a standard markdown link to their contact file: `### [Full Name]({vault_root_rel}02-People/Contacts/Full%20Name.md)` — exclude "I"/the user. Use `{vault_root_rel}` (from Agent Parameters) as the relative path prefix from the daily note to the vault root.
 - **Never use topic/context names as H3 headings** — topics go as top-level bullets under the person's H3.
-- Top-level bullet (`- `) = Chat context/thread topic **as a markdown link** to the Teams deep link URL: `- [Topic summary](teams-deep-link-url)`
-  - **Deep links are mandatory.** Every top-level bullet MUST be a markdown link with a Teams deep link URL.
-  - If a deep link URL is returned for the message/thread, use it.
-  - If no URL is returned, explicitly ask for the deep link: "What is the Teams deep link URL for [message details]?"
-  - Only fall back to plain text (`- Topic`) if the deep link is truly unavailable after asking.
-- Indented bullets (`  - `) = Key points and action items under that topic
-- **If a message contains a PR or pull request URL, include it as a markdown link in the relevant bullet** (e.g., `  - Review pending: [PR #1234](https://dev.azure.com/.../pullrequest/1234)`). This allows TM to extract the URL as `prUrl`.
-- Action items prefixed with `[Name]({vault_root_rel}02-People/Contacts/Name.md):` indicating who owns the action
-- No H4 headings — use nested bullets only
-- **No "Participants:" lines** — do NOT list participants. If a group chat involved others, mention them inline only when it matters (e.g., "Aligned with John and [[Chuck Weininger]] on S360 flags").
+- **One bullet per logical context group.** Each top-level bullet is a self-contained summary of one coherent topic/exchange — NOT a transcript of the messages. Format:
+  ```
+  - [Topic name](teams-deep-link-url) — one-sentence summary of the outcome/decision/fact
+  ```
+  - The topic name in brackets is the conversation subject (e.g., "Deploy slip", "Auth bug RCA", "Lustre migration handoff").
+  - The text after the em dash (`—`) is the **summary** — what mattered, the decision/outcome/fact. Keep it tight (one sentence; two if there's a decision + the rationale).
+  - **Deep links are mandatory.** The topic MUST be wrapped as a markdown link with the Teams deep link URL.
+  - If no URL is returned, explicitly ask: "What is the Teams deep link URL for [message details]?" Only fall back to plain text if truly unavailable.
+- **Nested bullets are RARE — only for action items or PR links** that need to stand alone for downstream agents (TM extracts them). Do NOT use nested bullets to expand the summary into multiple statements.
+  - **Action item format (MANDATORY tag):** `  - **Action** · [Owner]({vault_root_rel}02-People/Contacts/Owner.md): <concrete action>`
+    - The `**Action**` prefix is REQUIRED — TM uses it as the trigger to create tasks/PR reviews. No `**Action**` tag = no task created.
+    - Use `[Me](.../Me.md)` when the action is owed by the user. ALWAYS surface these — they become tasks in `## Tasks`.
+    - Use `[Other Person](...)` when the action is owed by someone else. TM records these against the person but does NOT create a task in `## Tasks`.
+  - PR link format: `  - [PR #1234](https://dev.azure.com/.../pullrequest/1234) — brief context` (no `**Action**` tag unless it's an action item directed at me)
+- No H4 headings — use the structure above only.
+- **No "Participants:" lines** — do NOT list participants. If a group chat involved others, mention them inline in the summary only when it matters (e.g., "...aligned with John and Chuck on S360 flag rollout").
 
-**Voice & Phrasing — outcome voice, not dialogue:**
+**Voice & Phrasing — one summary per context group, outcome voice:**
 
-Bullets must record **what matters** — decisions, actions, facts, blockers — not a transcript of who said what.
+Each bullet is a **summary**, not a play-by-play. Record **what mattered** — the decision, outcome, fact, blocker — never who said what.
 
 - ❌ **Forbidden phrasing** (these read like a chat log, not notes):
   - "I said ...", "I told him ...", "I asked ..."
   - "He said ...", "She said ...", "He told me ...", "She replied ..."
   - "We talked about ...", "We chatted about ...", "We discussed ..."
-  - Any first-person narration of the conversation itself
-- ✅ **Required phrasing** (state the outcome or fact directly):
-  - Start bullets with a verb of substance or a noun phrase, not a speech verb
-  - Use passive or impersonal voice when needed: "Deploy moved to Thursday", "Root cause: stale cache"
-  - For action items, use the format `[Owner](contact-link): <action>` — never "I will..." or "He will..."
+  - Any narration of the conversation itself (who spoke, what they said, how the other replied)
+  - Breaking one topic into multiple message-by-message bullets
+- ✅ **Required phrasing** (state the outcome or fact directly, once):
+  - One sentence per logical context group. If you find yourself writing a second sentence, it should ONLY be to add the *why* / rationale.
+  - Start with a noun phrase or verb of substance, not a speech verb.
+  - Use impersonal/passive voice: "Deploy moved to Thursday", "Root cause: stale cache", "Decision: Bicep for prod".
+  - For action items, use the nested format `**Action** · [Owner](contact-link): <action>` — never "I will..." or "He will...". The `**Action**` tag is mandatory.
 
 **Before / after examples:**
 
-| ❌ Transcript voice (do NOT write this) | ✅ Outcome voice (write this instead) |
+| ❌ Transcript voice / message-by-message (do NOT write this) | ✅ One-summary-per-context-group (write this instead) |
 | --- | --- |
-| "I asked John about the deploy and he said it's slipping to Friday" | "Deploy slipped to Friday (capacity issue in build agent pool)" |
-| "She told me the bug is in the auth middleware" | "Root cause: auth middleware drops the `X-Forwarded-For` header" |
-| "I said I would review the PR" | "[Me](...): review [PR #1234](https://...)" |
-| "We talked about S360 flags and decided to enable flag X" | "Decision: enable S360 flag X in prod next sprint" |
-| "He asked if I could help with the migration" | "[Chuck](...): help with Lustre migration (he is blocked on RBAC)" |
+| `- Deploy chat`<br>&nbsp;&nbsp;`- I asked John about the deploy`<br>&nbsp;&nbsp;`- He said it's slipping to Friday`<br>&nbsp;&nbsp;`- I asked why`<br>&nbsp;&nbsp;`- He said capacity issue` | `- [Deploy slip](deep-link) — Deploy moved to Friday due to build agent capacity issue` |
+| `- Auth bug`<br>&nbsp;&nbsp;`- She told me the bug is in middleware`<br>&nbsp;&nbsp;`- I asked which one`<br>&nbsp;&nbsp;`- She said the X-Forwarded-For handler` | `- [Auth bug RCA](deep-link) — Root cause: auth middleware drops the `X-Forwarded-For` header` |
+| `- PR thread`<br>&nbsp;&nbsp;`- I said I would review the PR`<br>&nbsp;&nbsp;`- He said thanks` | `- [PR #1234 review](deep-link) — Owns review of PR #1234`<br>&nbsp;&nbsp;`- **Action** · [Me](...): review [PR #1234](https://...)` |
+| `- S360 chat`<br>&nbsp;&nbsp;`- We talked about S360 flags`<br>&nbsp;&nbsp;`- Decided to enable flag X` | `- [S360 flag rollout](deep-link) — Decision: enable S360 flag X in prod next sprint` |
+| `- Migration`<br>&nbsp;&nbsp;`- He asked if I could help with the migration`<br>&nbsp;&nbsp;`- I said yes` | `- [Lustre migration handoff](deep-link) — Chuck taking ownership; blocked on RBAC access`<br>&nbsp;&nbsp;`- **Action** · [Me](...): help Chuck with Lustre migration` |
 
-If the only thing you can write about a thread is "we talked about X" with no concrete outcome, **drop the thread** — it failed the Substance Filter.
+If the only thing you can write about a context group is "we talked about X" with no concrete outcome, **drop the context group** — it failed the Substance Filter.
 
 **Important**: You are responsible for the final markdown structure. The tool will simply replace the section with whatever you send.
 
@@ -238,8 +255,8 @@ Rules:
 - **Append-only**: Send ONLY new content to `appendTeamsChatHighlights`. Never read existing highlights, never re-send previously synced content. The tool handles dedup and placement automatically.
 - **Exclude user from H3 headings**: Only create `### [Name](...)` sections for *other* people — never for "I"/the user.
 - **H3 = person, never topic**: Every `###` heading under Teams Chat Highlights must be a person's name. Group chat topics go as bullets under the primary person's H3. Never create `### Topic Name` headings.
-- **Always-explicit subjects**: Every bullet must have a clear subject. Write "I asked John about..." or "John told me that..." — never just "asked about..." where the actor is ambiguous.
-- **1:1 and group chats only**: Exclude all Teams channel messages. Only process person-to-person (1:1) chats and group chats. If a message originates from a Teams channel (e.g., a channel post or reply), skip it entirely.
+- **One bullet per logical context group**: Each top-level bullet is a SINGLE-sentence summary of one coherent topic — never a list of message-by-message events. The bullet IS the summary.
+- **1:1 and group chats only**: Exclude all Teams channel messages.Only process person-to-person (1:1) chats and group chats. If a message originates from a Teams channel (e.g., a channel post or reply), skip it entirely.
 - **Never re-process**: Use **content-level dedup** via `processed_message_ids` (per-message stable IDs). Never skip an entire thread just because the thread ID was processed before — check each message individually. The fetch window intentionally overlaps prior runs.
 - **Concise summaries**: Focus on decisions, action items, and key information. Skip pleasantries.
 - **Substance Filter is mandatory**: Every retained thread must match at least one signal type (decision, action, blocker, deadline, escalation, technical info, ownership change, status-with-consequence). Drop everything else — greetings, acks, emoji, scheduling chitchat, small talk.

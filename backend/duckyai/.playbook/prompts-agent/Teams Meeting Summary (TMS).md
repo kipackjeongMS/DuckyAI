@@ -24,7 +24,13 @@ When user instructions are present, they **override** the default watermark-base
 
 ## Data Source Requirement
 
-⚠️ **You MUST use the Teams MCP server for ALL data fetching.** Do NOT use WorkIQ (`ask_work_iq`) or any other data source to retrieve Teams meetings. The Teams MCP server is the only authorized data source for this agent. If the Teams MCP server is unavailable or returns an error, report the failure — do NOT fall back to WorkIQ.
+⚠️ **The Teams MCP server is the REQUIRED primary data source for ALL meeting data.** Always try it first.
+
+**Fallback policy (WorkIQ):**
+- WorkIQ (`ask_work_iq`) may ONLY be used as a fallback when the Teams MCP server is genuinely unavailable — i.e., the tool is missing from your toolset, or every Teams MCP call in this run returned a connection/auth error.
+- A Teams MCP call returning **zero meetings** is NOT a failure — it is a valid empty result. Do NOT fall back to WorkIQ in that case.
+- When falling back, explicitly state in your output: "Teams MCP unavailable (<reason>); falling back to WorkIQ for this run."
+- Never mix sources in the same run — pick one and stick with it.
 
 ## Execution Flow
 
@@ -197,7 +203,7 @@ Bullets must record **what matters** — decisions, actions, facts, blockers —
 - ✅ **Required phrasing** (state the outcome or fact directly):
   - Start bullets with a noun phrase or a verb of substance, not a speech verb
   - Use impersonal or passive voice: "Deploy moved to Thursday", "Root cause: stale cache"
-  - For action items, use the format `[Owner](contact-link): <action>` — never "He will..." or "I will..."
+  - For action items, use the format `**Action** · [Owner](contact-link): <action>` — never "He will..." or "I will...". The `**Action**` tag is MANDATORY — TM uses it as the trigger to create tasks/PR reviews. Use `[Me](...)` when the action is owed by the user; use `[Other Person](...)` for others.
   - For decisions, prefer the prefix `Decision: <what was decided> (<why>)`
 
 **Before / after examples:**
@@ -206,9 +212,9 @@ Bullets must record **what matters** — decisions, actions, facts, blockers —
 | --- | --- |
 | "I proposed using Bicep and John agreed" | "Decision: Bicep for prod (Terraform state issues raised by John)" |
 | "She said the bug is in the auth middleware" | "Root cause: auth middleware drops the `X-Forwarded-For` header" |
-| "I will review the PR by Friday" | "[Me](...): review [PR #1234](https://...) by Fri" |
+| "I will review the PR by Friday" | "**Action** · [Me](...): review [PR #1234](https://...) by Fri" |
 | "We talked about S360 flags" | (drop — no outcome → fails Substance Filter) |
-| "Chuck said he'd take the Lustre migration" | "[Chuck](...): own Lustre migration (handoff from Bob)" |
+| "Chuck said he'd take the Lustre migration" | "**Action** · [Chuck](...): own Lustre migration (handoff from Bob)" |
 
 If the only thing you can write about a meeting is "we talked about X" with no concrete outcome, **drop the meeting** — it failed the Substance Filter.
 
