@@ -26,12 +26,12 @@ You follow a 3-stage pipeline:
 Call the `gatherOpenItems` tool. It returns JSON with:
 - `open_tasks` — All task files with status todo/in-progress/blocked
 - `open_prs` — All PR reviews with status todo/in-progress
-- `carried_from_past` — Uncompleted checkboxes from previous notes' Focus Today sections
-- `forgotten_items` — Uncompleted items from older notes (last 7 days) not already carried
+- `carried_from_past` — Deduped unchecked items from recent notes' Focus Today + EOD Carry-forward sections. The newest sighting of each item wins, so items checked off in a later note are already filtered out. Items wiki-linked to a Tasks/ file whose status is `done`/`cancelled` are also excluded.
+- `forgotten_items` — **Deprecated.** Always `[]`. Do not rely on this field; everything is consolidated into `carried_from_past`.
 
 ## Step 2: Analyze and Prioritize
 
-Merge `carried_from_past` and `forgotten_items` into a single carried list. Then apply these rules:
+Use `carried_from_past` as the authoritative carried list (no merge required). Then apply these rules:
 
 **Carried items ordering (most urgent first):**
 - Overdue or due-today items

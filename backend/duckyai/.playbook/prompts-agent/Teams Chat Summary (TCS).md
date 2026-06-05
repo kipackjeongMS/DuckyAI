@@ -87,7 +87,7 @@ The `processed_message_ids` parameter contains stable IDs of messages already pr
 Drop any message that is from a Teams channel, identified by:
 - `chatType` is "channel" (if provided)
 - Topic/thread name matches a Teams channel pattern (e.g., "General", "Announcements", team-scoped names)
-- Large participant count (>15 members is likely a channel, not a group chat)
+- Large participant count (>30 members is likely a channel, not a group chat)
 - Message originates from a Team rather than a direct chat
 
 Print the diagnostic summary in this format:

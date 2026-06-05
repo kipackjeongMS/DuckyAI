@@ -257,9 +257,7 @@ class VaultService:
             return self._text_response(f"Daily note for {target_date} already exists.")
 
         previous_note = self._find_previous_daily_note(target_date)
-        carry_forward: list[str] = []
-        if previous_note is not None:
-            carry_forward = self._extract_carry_forward(previous_note)
+        carry_forward = self._collect_carry_forward(target_date, lookback_days=7)
 
         carry_section = "\n".join(carry_forward) if carry_forward else "- (none)"
         note_content = self._build_daily_note_from_template(target_date, carry_section)
@@ -321,42 +319,16 @@ class VaultService:
                     "created": created,
                 })
 
-        # 3. Carry-forward from recent daily notes (look back up to 7 days)
-        carried_items: list[str] = []
-        prev_note = self._find_previous_daily_note(today)
-        if prev_note is not None:
-            carried_items = self._extract_carry_forward(prev_note)
-
-        # 4. Uncompleted items from recent notes beyond yesterday (deep lookback)
-        deep_items: list[str] = []
-        if self.daily_dir.exists():
-            recent_notes = sorted(
-                (p for p in self.daily_dir.iterdir()
-                 if p.is_file() and p.suffix == ".md" and p.name < f"{today}.md"),
-                reverse=True,
-            )
-            # Scan last 7 notes (skip first — already handled by carry_forward)
-            for note_path in recent_notes[1:7]:
-                try:
-                    content = self._read_text(note_path)
-                except OSError:
-                    continue
-                # Extract unchecked items from Focus Today that aren't already carried
-                focus_match = re.search(
-                    r"## Focus Today\n([\s\S]*?)(?=\n## )", content
-                )
-                if focus_match:
-                    for line in focus_match.group(1).split("\n"):
-                        stripped = line.strip()
-                        if re.match(r"^- \[ \]", stripped) and stripped not in carried_items and stripped not in deep_items:
-                            deep_items.append(stripped)
+        # 3. Carry-forward — dedupe across recent notes (newest-first wins) and
+        #    cross-reference task frontmatter so completed items never re-surface.
+        carried_items = self._collect_carry_forward(today, lookback_days=7)
 
         result = {
             "date": today,
             "open_tasks": open_tasks,
             "open_prs": open_prs,
             "carried_from_past": carried_items,
-            "forgotten_items": deep_items,
+            "forgotten_items": [],
         }
         return self._text_response(json.dumps(result, indent=2))
 
@@ -1590,6 +1562,117 @@ class VaultService:
                 if re.match(r"^- \[ \]", line) and line not in uncompleted:
                     uncompleted.append(line)
         return uncompleted
+
+    # ------------------------------------------------------------------
+    # Carry-forward collection (robust, deduped across recent notes)
+    # ------------------------------------------------------------------
+
+    _CHECKBOX_RE = re.compile(r"^\s*- \[(?P<state>[ xX])\]\s*(?P<body>.*?)\s*$")
+    _WIKILINK_RE = re.compile(r"\[\[([^\]|#]+?)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]")
+    _WS_RE = re.compile(r"\s+")
+
+    def _normalize_item_identity(self, body: str) -> str:
+        """Stable identity for a checkbox body — wiki-link target if present, else lowercased text."""
+        match = self._WIKILINK_RE.search(body)
+        if match:
+            target = match.group(1).strip()
+            # Strip path segments — wiki-links may include folders
+            target = target.rsplit("/", 1)[-1]
+            return f"wiki:{target.lower()}"
+        # Strip markdown links: [text](url) -> text
+        text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", body)
+        text = self._WS_RE.sub(" ", text).strip().lower()
+        return f"text:{text}"
+
+    def _extract_actionable_lines(self, content: str) -> list[tuple[bool, str]]:
+        """Return (checked, raw_line) pairs from Focus Today + Carry forward sections."""
+        results: list[tuple[bool, str]] = []
+        sections = []
+        focus_match = re.search(
+            r"## Focus Today\n([\s\S]*?)(?=\n## |\Z)", content
+        )
+        if focus_match:
+            sections.append(focus_match.group(1))
+        carry_match = re.search(
+            r"### Carry forward to tomorrow\n([\s\S]*?)(?=\n## |\n### |\Z)", content
+        )
+        if carry_match:
+            sections.append(carry_match.group(1))
+
+        for section in sections:
+            for raw_line in section.split("\n"):
+                m = self._CHECKBOX_RE.match(raw_line)
+                if not m:
+                    continue
+                checked = m.group("state").lower() == "x"
+                results.append((checked, raw_line.rstrip()))
+        return results
+
+    def _resolve_task_status_from_line(self, body: str) -> str | None:
+        """If the body wiki-links to a task file, return its frontmatter status. Else None."""
+        match = self._WIKILINK_RE.search(body)
+        if not match:
+            return None
+        target = match.group(1).strip().rsplit("/", 1)[-1]
+        if not self.tasks_dir.exists():
+            return None
+        task_path = self.tasks_dir / f"{target}.md"
+        if not task_path.exists():
+            return None
+        try:
+            return self._read_frontmatter_field(self._read_text(task_path), "status")
+        except OSError:
+            return None
+
+    def _collect_carry_forward(self, target_date: str, lookback_days: int = 7) -> list[str]:
+        """Robustly collect items to carry forward.
+
+        Scans the most recent `lookback_days` daily notes (newest-first, excluding
+        `target_date`). For each actionable checkbox, the newest sighting wins —
+        so an item checked off in a recent note is NOT carried even if an earlier
+        note left it unchecked. Items wiki-linked to a Tasks/ file whose status is
+        done/cancelled are dropped regardless of checkbox state.
+        """
+        if not self.daily_dir.exists():
+            return []
+
+        recent_notes = sorted(
+            (p for p in self.daily_dir.iterdir()
+             if p.is_file() and p.suffix == ".md" and p.name < f"{target_date}.md"),
+            reverse=True,
+        )[:lookback_days]
+
+        # identity -> (checked, line) where the first sighting (= newest note) wins
+        seen: dict[str, tuple[bool, str]] = {}
+        order: list[str] = []
+
+        for note_path in recent_notes:
+            try:
+                content = self._read_text(note_path)
+            except OSError:
+                continue
+            for checked, line in self._extract_actionable_lines(content):
+                m = self._CHECKBOX_RE.match(line)
+                if not m:
+                    continue
+                identity = self._normalize_item_identity(m.group("body"))
+                if identity in seen:
+                    continue  # newer sighting already recorded
+                seen[identity] = (checked, line)
+                order.append(identity)
+
+        carried: list[str] = []
+        for identity in order:
+            checked, line = seen[identity]
+            if checked:
+                continue
+            m = self._CHECKBOX_RE.match(line)
+            body = m.group("body") if m else line
+            task_status = self._resolve_task_status_from_line(body)
+            if task_status in ("done", "cancelled"):
+                continue
+            carried.append(line)
+        return carried
 
     def _build_daily_note_from_template(self, target_date: str, carry_section: str) -> str:
         day_heading = self._format_date_heading(target_date)

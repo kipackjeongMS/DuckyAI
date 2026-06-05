@@ -4,6 +4,14 @@ All notable changes to the DuckyAI Template will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.85] — 2026-06-05
+
+### Fixed
+- **DNP carry-forward dedup**: completed tasks no longer reappear in a new daily note's `## Carried from past` section. Previously, an item that appeared as `- [ ]` on Mon/Tue and `- [x]` on Wed would still be carried forward to Thu because the per-line scan never compared the same logical item across days. Rewrote `gatherOpenItems` and `prepareDailyNote` to use a unified `_collect_carry_forward` that scans recent notes **newest-first**, keeps the first sighting per normalized identity, and drops any item whose latest sighting is checked. Wiki-linked items (`[[Ship feature X]]` & `[[Ship feature X|alias]]`) now share an identity, and items linked to a Tasks/ file with `status: done`/`cancelled` are dropped as well. `forgotten_items` is deprecated to `[]` (key retained for API compat). 4 new unit tests cover the bug repro, multi-day dedup, task-status drop, and alias dedup.
+
+### Changed
+- **TCS channel-detection heuristic**: raised participant threshold from 15 → 30 so large group chats (often 16-29 people) are no longer mis-classified as channels and silently dropped.
+
 ## [0.1.84] — 2026-06-04
 
 ### Changed

@@ -445,6 +445,75 @@ def test_prepare_daily_note_reports_existing_file(tmp_path):
     assert result == {"content": [{"type": "text", "text": "Daily note for 2026-03-26 already exists."}]}
 
 
+def test_gather_open_items_skips_item_completed_in_later_note(monkeypatch, tmp_path):
+    """Bug repro: item unchecked Mon+Tue, checked Wed → must NOT be carried on Thu."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    _write_daily_note(vault, "2026-03-23", "## Focus Today\n- [ ] Fix prod permission\n\n## Tasks\n- [ ]\n")
+    _write_daily_note(vault, "2026-03-24", "## Focus Today\n- [ ] Fix prod permission\n\n## Tasks\n- [ ]\n")
+    _write_daily_note(vault, "2026-03-25", "## Focus Today\n- [x] Fix prod permission\n\n## Tasks\n- [ ]\n")
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-26")
+    raw = service.call_tool("gatherOpenItems", {})
+    payload = json.loads(raw["content"][0]["text"])
+
+    assert payload["carried_from_past"] == []
+    assert payload["forgotten_items"] == []
+
+
+def test_gather_open_items_dedupes_unchecked_across_days(monkeypatch, tmp_path):
+    """Item unchecked on multiple days should appear exactly once."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    _write_daily_note(vault, "2026-03-23", "## Focus Today\n- [ ] keep this\n\n## Tasks\n- [ ]\n")
+    _write_daily_note(vault, "2026-03-24", "## Focus Today\n- [ ] keep this\n\n## Tasks\n- [ ]\n")
+    _write_daily_note(vault, "2026-03-25", "## Focus Today\n- [ ] keep this\n\n## Tasks\n- [ ]\n")
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-26")
+    payload = json.loads(service.call_tool("gatherOpenItems", {})["content"][0]["text"])
+
+    assert payload["carried_from_past"] == ["- [ ] keep this"]
+
+
+def test_gather_open_items_drops_item_linked_to_done_task(monkeypatch, tmp_path):
+    """Items wiki-linked to a Tasks/ file with status done must be dropped."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    _write_task(vault, "Ship feature X", '---\nstatus: done\npriority: P1\n---\n# Ship feature X\n')
+    _write_daily_note(
+        vault,
+        "2026-03-25",
+        "## Focus Today\n- [ ] [[Ship feature X]]\n- [ ] [[Other task]]\n\n## Tasks\n- [ ]\n",
+    )
+    _write_task(vault, "Other task", '---\nstatus: todo\npriority: P2\n---\n# Other task\n')
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-26")
+    payload = json.loads(service.call_tool("gatherOpenItems", {})["content"][0]["text"])
+
+    assert payload["carried_from_past"] == ["- [ ] [[Other task]]"]
+
+
+def test_gather_open_items_dedupes_wikilink_aliases(monkeypatch, tmp_path):
+    """Same task referenced via alias and bare wiki-link should be deduped."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    _write_daily_note(vault, "2026-03-24", "## Focus Today\n- [ ] [[Task A|alias one]]\n\n## Tasks\n- [ ]\n")
+    _write_daily_note(vault, "2026-03-25", "## Focus Today\n- [x] [[Task A]]\n\n## Tasks\n- [ ]\n")
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-26")
+    payload = json.loads(service.call_tool("gatherOpenItems", {})["content"][0]["text"])
+
+    assert payload["carried_from_past"] == []
+
+
 def test_log_action_appends_completed_and_carry_forward(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
