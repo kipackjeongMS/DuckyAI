@@ -11,9 +11,6 @@ tags:
 ## Focus Today
 - [ ]
 
-## Carried from past
-- (none)
-
 ## Tasks
 - [ ]
 

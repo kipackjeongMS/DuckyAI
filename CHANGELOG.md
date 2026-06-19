@@ -4,6 +4,18 @@ All notable changes to the DuckyAI Template will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.86] — 2026-06-19
+
+### Removed
+- **`## Carried from past` section**: removed entirely from daily notes. DNP no longer carries forward unchecked tasks into a new note; the section header is gone from all daily-note templates (`vault-template`, `.playbook/templates`, `.vault-template`, and the `setup.py` fallback). Backend wiring (`_build_daily_note_from_template`, `prepareDailyNote`, `writeDailyNoteFromPlan`) no longer generates or writes the section, so it cannot reappear. The `gatherOpenItems.carried_from_past` data source and its dedup logic remain (informational only). The EOD `### Carry forward to tomorrow` section is unaffected.
+
+### Changed
+- **DNP agent**: refocused to surface open PR reviews only. It now always sends `carried_items: []` to `writeDailyNoteFromPlan`.
+- **TMS agent**: now summarizes **all meetings the user was invited to** (organizer or attendee), regardless of attendance — no-shows are no longer auto-skipped. Added an explicit **office hours exclusion** (drops meetings whose title denotes an office-hours / open drop-in / Q&A session).
+
+### Fixed
+- **pyproject version drift**: `backend/pyproject.toml` `[project].version` is now kept in sync with `version.json`, and both the contributing guide and the vault-publish skill document the dual bump. Prevents `pip install git+...` from building a stale wheel.
+
 ## [0.1.85] — 2026-06-05
 
 ### Fixed

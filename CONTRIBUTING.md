@@ -83,7 +83,12 @@ git checkout -b users/yourname/description
 
 ### 5. Bump the version
 
-Edit `version.json`:
+Bump the version in **both** files (they must stay in sync, or `pip install` from git will pull a stale wheel):
+
+1. `version.json` — canonical version + template repo URL
+2. `backend/pyproject.toml` — `[project].version` field (pip reads this when building the wheel)
+
+Versioning rules:
 - **Patch** (`1.0.0` → `1.0.1`): Bug fix, typo fix
 - **Minor** (`1.0.0` → `1.1.0`): New feature, skill, prompt, or template
 - **Major** (`1.0.0` → `2.0.0`): Breaking change (folder restructure, schema change)
@@ -108,7 +113,7 @@ Create a PR targeting `main` in Azure DevOps.
 - ✅ Keep changes general and reusable
 - ✅ Use placeholders (`[USER_NAME]`, `[USER_ROLE]`) in user-facing config
 - ✅ Test the native vault API and service coverage before submitting
-- ✅ Update CHANGELOG.md and version.json
+- ✅ Update CHANGELOG.md, version.json, **and** backend/pyproject.toml on every release
 - ✅ Add `.gitkeep` files in new empty directories
 
 ### Don't

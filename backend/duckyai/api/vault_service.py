@@ -159,7 +159,7 @@ class VaultService:
         ),
         ToolDefinition(
             name="writeDailyNoteFromPlan",
-            description="Write today's daily note from a structured plan (JSON with focus_today, carried_items, context_note, at_risk).",
+            description="Write today's daily note from a structured plan (JSON with pr_items, context_note, at_risk).",
             implemented=True,
         ),
         ToolDefinition(
@@ -256,18 +256,11 @@ class VaultService:
         if target_path.exists():
             return self._text_response(f"Daily note for {target_date} already exists.")
 
-        previous_note = self._find_previous_daily_note(target_date)
-        carry_forward = self._collect_carry_forward(target_date, lookback_days=7)
-
-        carry_section = "\n".join(carry_forward) if carry_forward else "- (none)"
-        note_content = self._build_daily_note_from_template(target_date, carry_section)
+        note_content = self._build_daily_note_from_template(target_date)
         self.daily_dir.mkdir(parents=True, exist_ok=True)
         target_path.write_text(note_content, encoding="utf-8")
 
-        previous_label = previous_note.name if previous_note is not None else "nowhere"
-        return self._text_response(
-            f"Created {target_date}.md with {len(carry_forward)} carried items from {previous_label}"
-        )
+        return self._text_response(f"Created {target_date}.md")
 
     # ------------------------------------------------------------------
     # gatherOpenItems / writeDailyNoteFromPlan — Daily Note Prep agent
@@ -336,7 +329,7 @@ class VaultService:
         """Write today's daily note using AI-generated plan (structured JSON)."""
         plan_raw = arguments.get("plan")
         if not plan_raw:
-            raise ValueError("Field 'plan' is required (JSON object with focus_today, carried_items, etc.)")
+            raise ValueError("Field 'plan' is required (JSON object with pr_items, context_note, etc.)")
 
         # Accept plan as dict or JSON string
         if isinstance(plan_raw, str):
@@ -353,13 +346,11 @@ class VaultService:
         existing = target_path.exists()
 
         # Extract plan fields
-        carried_items: list[str] = plan.get("carried_items", [])
         context_note: str = plan.get("context_note", "")
         at_risk: list[str] = plan.get("at_risk", [])
         pr_items: list[str] = plan.get("pr_items", [])
 
         # Build sections
-        carry_section = "\n".join(f"- [ ] {item}" if not item.startswith("- ") else item for item in carried_items) if carried_items else "- (none)"
         pr_section = "\n".join(f"- [ ] {item}" for item in pr_items) if pr_items else ""
 
         if existing:
@@ -367,13 +358,7 @@ class VaultService:
             note_content = self._read_text(target_path)
         else:
             # Create new note from template
-            note_content = self._build_daily_note_from_template(target_date, carry_section)
-
-        # Update Carried from past section (undone Focus Today items from past notes)
-        if carried_items:
-            note_content = self._replace_or_append_h2_section(
-                note_content, section_header="Carried from past", new_content=carry_section
-            )
+            note_content = self._build_daily_note_from_template(target_date)
 
         # Add PR items if provided
         if pr_section:
@@ -399,7 +384,7 @@ class VaultService:
         verb = "Updated" if existing else "Created"
         return self._text_response(
             f"{verb} {target_date}.md — "
-            f"Carried: {len(carried_items)}, At-risk: {len(at_risk)}"
+            f"PRs: {len(pr_items)}, At-risk: {len(at_risk)}"
         )
 
     @staticmethod
@@ -1531,17 +1516,8 @@ class VaultService:
         if daily_path.exists():
             return
         self.daily_dir.mkdir(parents=True, exist_ok=True)
-        content = self._build_daily_note_from_template(target_date, "- (none)")
+        content = self._build_daily_note_from_template(target_date)
         self._write_text(daily_path, content)
-
-    def _find_previous_daily_note(self, before_date: str) -> Path | None:
-        if not self.daily_dir.exists():
-            return None
-        candidates = sorted(
-            (path for path in self.daily_dir.iterdir() if path.is_file() and path.suffix == ".md" and path.name < f"{before_date}.md"),
-            reverse=True,
-        )
-        return candidates[0] if candidates else None
 
     def _extract_carry_forward(self, file_path: Path) -> list[str]:
         try:
@@ -1674,7 +1650,7 @@ class VaultService:
             carried.append(line)
         return carried
 
-    def _build_daily_note_from_template(self, target_date: str, carry_section: str) -> str:
+    def _build_daily_note_from_template(self, target_date: str) -> str:
         day_heading = self._format_date_heading(target_date)
         template = self._load_daily_note_template()
         template = self._normalize_line_endings(template)
@@ -1682,11 +1658,7 @@ class VaultService:
         template = template.replace("{{dayHeading}}", day_heading)
         template = template.replace("{{date:YYYY-MM-DD}}", target_date)
         template = template.replace("{{date:dddd, MMMM D, YYYY}}", day_heading)
-        return self._replace_or_append_h2_section(
-            template,
-            section_header="Carried from past",
-            new_content=carry_section,
-        )
+        return template
 
     def _load_daily_note_template(self) -> str:
         candidate_paths = (
@@ -1698,7 +1670,7 @@ class VaultService:
                 return candidate.read_text(encoding="utf-8")
         return (
             '---\ncreated: "{{date}}"\ntype: daily\ndate: "{{date}}"\ntags:\n  - daily\n---\n\n'
-            '# {{dayHeading}}\n\n## Focus Today\n- [ ]\n\n## Carried from past\n- (none)\n\n## Tasks\n- [ ]\n\n'
+            '# {{dayHeading}}\n\n## Focus Today\n- [ ]\n\n## Tasks\n- [ ]\n\n'
             '## PRs & Code Reviews\n- [ ]\n\n## Notes\n\n\n## Teams Meeting Highlights\n\n## Teams Chat Highlights\n\n'
             '## End of Day\n### What went well?\n-\n\n### What could improve?\n-\n\n### Carry forward to tomorrow\n- [ ]\n'
         )

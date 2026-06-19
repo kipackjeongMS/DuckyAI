@@ -244,7 +244,8 @@ Then:
 3. Ask for a one-line change summary
 4. Update `CHANGELOG.md` with new section (use Keep a Changelog format)
 5. Update `version.json` with new version + timestamp + changes array
-6. Commit:
+6. Update `backend/pyproject.toml` → set `[project].version` to the same value (REQUIRED — pip builds wheels from this file; if it drifts, `pip install git+...` will install a stale version)
+7. Commit:
    ```powershell
    git -C $templateDir add -A
    git -C $templateDir commit -m "v{version}: {summary}

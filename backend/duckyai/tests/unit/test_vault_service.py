@@ -413,22 +413,22 @@ def test_create_1on1_creates_note_and_contact(monkeypatch, tmp_path):
     assert "## Notes\n- 1:1 partner" in contact or "## Notes\n- 1:1 partner\n" in contact
 
 
-def test_prepare_daily_note_creates_note_with_carry_forward(monkeypatch, tmp_path):
+def test_prepare_daily_note_creates_note_from_template(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()
     (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
     _write_daily_note(
         vault,
         "2026-03-25",
-        "## Focus Today\n- [ ] keep this\n- [x] done\n\n## Carried from past\n- (none)\n\n## Tasks\n- [ ] \n\n## End of Day\n### Carry forward to tomorrow\n- [ ] follow up\n",
+        "## Focus Today\n- [ ] keep this\n- [x] done\n\n## Tasks\n- [ ] \n\n## End of Day\n### Carry forward to tomorrow\n- [ ] follow up\n",
     )
 
     service = VaultService(vault)
     result = service.call_tool("prepareDailyNote", {"date": "2026-03-26"})
     created = (vault / "04-Periodic" / "Daily" / "2026-03-26.md").read_text(encoding="utf-8")
 
-    assert result == {"content": [{"type": "text", "text": "Created 2026-03-26.md with 2 carried items from 2026-03-25.md"}]}
-    assert "## Carried from past\n- [ ] keep this\n- [ ] follow up" in created
+    assert result == {"content": [{"type": "text", "text": "Created 2026-03-26.md"}]}
+    assert "## Carried from past" not in created
     assert "# Thursday, March 26, 2026" in created
 
 
