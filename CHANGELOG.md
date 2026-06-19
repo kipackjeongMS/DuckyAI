@@ -4,6 +4,11 @@ All notable changes to the DuckyAI Template will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.87] — 2026-06-19
+
+### Added
+- **DNP carry-forward into `## Tasks`**: DNP now pulls unfinished `- [ ]` items from past daily notes (`## Focus Today`, `## Tasks`, and EOD `### Carry forward to tomorrow`) into **today's `## Tasks`** section each morning. The list is **smart-aggregated**: recent notes are scanned newest-first, the latest sighting of each item wins, and anything whose latest sighting is checked (`- [x]`) is dropped — so a task left unchecked on 6/17 but checked on 6/19 does NOT reappear. Items linked to a Tasks/ file with `status: done`/`cancelled` are also excluded. `writeDailyNoteFromPlan` writes carried items with identity-dedup against existing `## Tasks` lines, so re-runs never duplicate. Empty placeholder checkboxes are ignored. 4 new unit tests.
+
 ## [0.1.86] — 2026-06-19
 
 ### Removed

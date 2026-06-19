@@ -159,7 +159,7 @@ class VaultService:
         ),
         ToolDefinition(
             name="writeDailyNoteFromPlan",
-            description="Write today's daily note from a structured plan (JSON with pr_items, context_note, at_risk).",
+            description="Write today's daily note from a structured plan (JSON with carried_items, pr_items, context_note, at_risk).",
             implemented=True,
         ),
         ToolDefinition(
@@ -329,7 +329,7 @@ class VaultService:
         """Write today's daily note using AI-generated plan (structured JSON)."""
         plan_raw = arguments.get("plan")
         if not plan_raw:
-            raise ValueError("Field 'plan' is required (JSON object with pr_items, context_note, etc.)")
+            raise ValueError("Field 'plan' is required (JSON object with carried_items, pr_items, context_note, etc.)")
 
         # Accept plan as dict or JSON string
         if isinstance(plan_raw, str):
@@ -346,6 +346,7 @@ class VaultService:
         existing = target_path.exists()
 
         # Extract plan fields
+        carried_items: list[str] = plan.get("carried_items", [])
         context_note: str = plan.get("context_note", "")
         at_risk: list[str] = plan.get("at_risk", [])
         pr_items: list[str] = plan.get("pr_items", [])
@@ -359,6 +360,12 @@ class VaultService:
         else:
             # Create new note from template
             note_content = self._build_daily_note_from_template(target_date)
+
+        # Carry forward unfinished items into ## Tasks (identity-deduped against
+        # whatever is already there, so re-runs don't duplicate).
+        carried_added = 0
+        if carried_items:
+            note_content, carried_added = self._append_carried_to_tasks(note_content, carried_items)
 
         # Add PR items if provided
         if pr_section:
@@ -384,7 +391,7 @@ class VaultService:
         verb = "Updated" if existing else "Created"
         return self._text_response(
             f"{verb} {target_date}.md — "
-            f"PRs: {len(pr_items)}, At-risk: {len(at_risk)}"
+            f"Carried: {carried_added}, PRs: {len(pr_items)}, At-risk: {len(at_risk)}"
         )
 
     @staticmethod
@@ -1561,7 +1568,7 @@ class VaultService:
         return f"text:{text}"
 
     def _extract_actionable_lines(self, content: str) -> list[tuple[bool, str]]:
-        """Return (checked, raw_line) pairs from Focus Today + Carry forward sections."""
+        """Return (checked, raw_line) pairs from Focus Today + Tasks + Carry forward sections."""
         results: list[tuple[bool, str]] = []
         sections = []
         focus_match = re.search(
@@ -1569,6 +1576,11 @@ class VaultService:
         )
         if focus_match:
             sections.append(focus_match.group(1))
+        tasks_match = re.search(
+            r"## Tasks\n([\s\S]*?)(?=\n## |\Z)", content
+        )
+        if tasks_match:
+            sections.append(tasks_match.group(1))
         carry_match = re.search(
             r"### Carry forward to tomorrow\n([\s\S]*?)(?=\n## |\n### |\Z)", content
         )
@@ -1580,6 +1592,8 @@ class VaultService:
                 m = self._CHECKBOX_RE.match(raw_line)
                 if not m:
                     continue
+                if not m.group("body").strip():
+                    continue  # skip empty placeholder checkboxes (e.g. "- [ ]")
                 checked = m.group("state").lower() == "x"
                 results.append((checked, raw_line.rstrip()))
         return results
@@ -1649,6 +1663,52 @@ class VaultService:
                 continue
             carried.append(line)
         return carried
+
+    def _append_carried_to_tasks(
+        self, note_content: str, carried_items: list[str]
+    ) -> tuple[str, int]:
+        """Append carried-forward items into the note's ## Tasks section.
+
+        Each item is identity-deduped against checkbox lines already present in
+        ## Tasks, so re-running DNP (or an item that was manually re-added) never
+        produces duplicates. Returns (updated_content, number_of_items_added).
+        """
+        if not carried_items:
+            return note_content, 0
+
+        # Identities already present in ## Tasks
+        existing_body = self._get_h2_section_content(note_content, "Tasks")
+        existing_ids: set[str] = set()
+        for raw_line in existing_body.split("\n"):
+            m = self._CHECKBOX_RE.match(raw_line)
+            if m:
+                existing_ids.add(self._normalize_item_identity(m.group("body")))
+
+        new_lines: list[str] = []
+        for item in carried_items:
+            line = item if item.startswith("- ") else f"- [ ] {item}"
+            m = self._CHECKBOX_RE.match(line)
+            body = m.group("body") if m else line.lstrip("- ").strip()
+            identity = self._normalize_item_identity(body)
+            if identity in existing_ids:
+                continue
+            existing_ids.add(identity)
+            new_lines.append(line)
+
+        if not new_lines:
+            return note_content, 0
+
+        if not self._has_h2_section(note_content, "Tasks"):
+            return note_content, 0
+
+        updated = self._append_to_h2_section(
+            note_content,
+            section_header="Tasks",
+            entry="\n".join(new_lines),
+            empty_markers={"- [ ]", "- [x]", "", "-"},
+            append_if_missing=False,
+        )
+        return updated, len(new_lines)
 
     def _build_daily_note_from_template(self, target_date: str) -> str:
         day_heading = self._format_date_heading(target_date)

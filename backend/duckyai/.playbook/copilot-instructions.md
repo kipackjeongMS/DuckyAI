@@ -600,7 +600,7 @@ There is **no `## Meetings` section**. Meeting highlights go under `## Teams Mee
 
 ### Section purposes
 - `## Focus Today` — **User-curated**: planned work for the day. Only the user adds items here. DNP never writes to this section.
-- `## Tasks` — **Agent-populated**: when TCS, TMS, or other agents discover action items during the day, they go here (not Focus Today).
+- `## Tasks` — **Agent-populated**: when TCS, TMS, or other agents discover action items during the day, they go here (not Focus Today). DNP also carries forward unfinished tasks from past notes into this section each morning (smart-aggregated: newest sighting wins, items checked off in a later note are dropped).
 - `## PRs & Code Reviews` — **Agent-populated**: pending PR review tasks go here as `- [ ]` items. Completed reviews are marked `- [x]` in-place.
 - `## Notes` — **Free-form**: progress notes, context, completed action log.
 

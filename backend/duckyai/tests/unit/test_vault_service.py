@@ -514,6 +514,75 @@ def test_gather_open_items_dedupes_wikilink_aliases(monkeypatch, tmp_path):
     assert payload["carried_from_past"] == []
 
 
+def test_gather_open_items_carries_unfinished_task_from_tasks_section(monkeypatch, tmp_path):
+    """Unfinished item in a past note's ## Tasks section is carried forward."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    _write_daily_note(vault, "2026-03-25", "## Focus Today\n- [ ]\n\n## Tasks\n- [ ] Wire up webhook\n")
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-26")
+    payload = json.loads(service.call_tool("gatherOpenItems", {})["content"][0]["text"])
+
+    assert payload["carried_from_past"] == ["- [ ] Wire up webhook"]
+
+
+def test_gather_open_items_drops_task_checked_in_later_note_across_sections(monkeypatch, tmp_path):
+    """6/17 unchecked in Tasks, 6/19 checked in Tasks → not carried on 6/20."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    _write_daily_note(vault, "2026-06-17", "## Tasks\n- [ ] Item A\n")
+    _write_daily_note(vault, "2026-06-18", "## Tasks\n- [ ] Item A\n")
+    _write_daily_note(vault, "2026-06-19", "## Tasks\n- [x] Item A\n")
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-06-20")
+    payload = json.loads(service.call_tool("gatherOpenItems", {})["content"][0]["text"])
+
+    assert payload["carried_from_past"] == []
+
+
+def test_write_daily_note_appends_carried_items_to_tasks(monkeypatch, tmp_path):
+    """writeDailyNoteFromPlan writes carried_items into ## Tasks."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+
+    service = VaultService(vault)
+    plan = json.dumps({
+        "carried_items": ["- [ ] Wire up webhook", "Follow up with Bob"],
+        "context_note": "",
+        "at_risk": [],
+        "pr_items": [],
+    })
+    service.call_tool("writeDailyNoteFromPlan", {"plan": plan, "date": "2026-03-26"})
+    created = (vault / "04-Periodic" / "Daily" / "2026-03-26.md").read_text(encoding="utf-8")
+
+    assert "- [ ] Wire up webhook" in created
+    assert "- [ ] Follow up with Bob" in created
+    # Both land under ## Tasks, before ## End of Day
+    tasks_idx = created.index("## Tasks")
+    eod_idx = created.index("## End of Day")
+    assert tasks_idx < created.index("- [ ] Wire up webhook") < eod_idx
+
+
+def test_write_daily_note_dedupes_carried_items_on_rerun(monkeypatch, tmp_path):
+    """Re-running with the same carried item does not duplicate it in ## Tasks."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+
+    service = VaultService(vault)
+    plan = json.dumps({"carried_items": ["- [ ] [[Ship feature X]]"], "pr_items": []})
+    service.call_tool("writeDailyNoteFromPlan", {"plan": plan, "date": "2026-03-26"})
+    service.call_tool("writeDailyNoteFromPlan", {"plan": plan, "date": "2026-03-26"})
+    created = (vault / "04-Periodic" / "Daily" / "2026-03-26.md").read_text(encoding="utf-8")
+
+    assert created.count("[[Ship feature X]]") == 1
+
+
 def test_log_action_appends_completed_and_carry_forward(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()

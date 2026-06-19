@@ -154,7 +154,7 @@ def gather_open_items() -> str:
     return _call("gatherOpenItems", {})
 
 
-@mcp.tool(name="writeDailyNoteFromPlan", description="Write today's daily note from a structured plan (JSON with pr_items, context_note, at_risk).")
+@mcp.tool(name="writeDailyNoteFromPlan", description="Write today's daily note from a structured plan (JSON with carried_items, pr_items, context_note, at_risk).")
 def write_daily_note_from_plan(plan: str, date: str | None = None) -> str:
     arguments: dict = {"plan": plan}
     if date is not None:
