@@ -1669,17 +1669,19 @@ class VaultService:
     ) -> tuple[str, int]:
         """Append carried-forward items into the note's ## Tasks section.
 
-        Each item is identity-deduped against checkbox lines already present in
-        ## Tasks, so re-running DNP (or an item that was manually re-added) never
-        produces duplicates. Returns (updated_content, number_of_items_added).
+        Each item is identity-deduped against **every** actionable checkbox already
+        present in today's note (## Focus Today, ## Tasks, and the EOD carry-forward
+        subsection) — not just ## Tasks. This means a manually-triggered re-run on an
+        existing note only backfills items that are genuinely missing, and never
+        duplicates an item the user already placed (or completed) elsewhere in today's
+        note. Returns (updated_content, number_of_items_added).
         """
         if not carried_items:
             return note_content, 0
 
-        # Identities already present in ## Tasks
-        existing_body = self._get_h2_section_content(note_content, "Tasks")
+        # Identities already present anywhere actionable in today's note (checked or not)
         existing_ids: set[str] = set()
-        for raw_line in existing_body.split("\n"):
+        for _checked, raw_line in self._extract_actionable_lines(note_content):
             m = self._CHECKBOX_RE.match(raw_line)
             if m:
                 existing_ids.add(self._normalize_item_identity(m.group("body")))

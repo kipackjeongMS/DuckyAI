@@ -583,6 +583,34 @@ def test_write_daily_note_dedupes_carried_items_on_rerun(monkeypatch, tmp_path):
     assert created.count("[[Ship feature X]]") == 1
 
 
+def test_write_daily_note_backfills_missing_into_existing_note(monkeypatch, tmp_path):
+    """Manual re-trigger on an existing note: only genuinely-missing items are added."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    # Today's note already exists: item A already lives in Focus Today, item B already done in Tasks
+    _write_daily_note(
+        vault,
+        "2026-03-26",
+        "## Focus Today\n- [ ] [[Item A]]\n\n## Tasks\n- [x] [[Item B]]\n\n## End of Day\n### Carry forward to tomorrow\n- [ ]\n",
+    )
+
+    service = VaultService(vault)
+    plan = json.dumps({
+        "carried_items": ["- [ ] [[Item A]]", "- [ ] [[Item B]]", "- [ ] [[Item C]]"],
+        "pr_items": [],
+    })
+    service.call_tool("writeDailyNoteFromPlan", {"plan": plan, "date": "2026-03-26"})
+    updated = (vault / "04-Periodic" / "Daily" / "2026-03-26.md").read_text(encoding="utf-8")
+
+    # Item C was missing → added to Tasks
+    assert "- [ ] [[Item C]]" in updated
+    # Item A already in Focus Today → NOT duplicated into Tasks
+    assert updated.count("[[Item A]]") == 1
+    # Item B already (completed) in Tasks → NOT re-added
+    assert updated.count("[[Item B]]") == 1
+
+
 def test_log_action_appends_completed_and_carry_forward(monkeypatch, tmp_path):
     vault = tmp_path / "Vault"
     vault.mkdir()

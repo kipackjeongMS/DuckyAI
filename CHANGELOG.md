@@ -4,6 +4,11 @@ All notable changes to the DuckyAI Template will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.88] — 2026-06-19
+
+### Changed
+- **DNP backfill on existing notes**: when DNP is triggered manually and today's note already exists, it now backfills any unfinished tasks missing from the past notes instead of bailing. Carried items are deduped against **all** actionable sections of today's note (`## Focus Today`, `## Tasks`, and the EOD carry-forward — checked or unchecked), so only genuinely-missing items are added and nothing the user already placed or completed is touched or duplicated. (Previously dedup only considered `## Tasks`.)
+
 ## [0.1.87] — 2026-06-19
 
 ### Added
