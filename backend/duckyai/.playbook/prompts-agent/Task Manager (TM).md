@@ -127,9 +127,9 @@ This will:
 
 ### For General Tasks
 
-Call `logTask` with `title` to append a plain `- [ ] {title}` entry to `## Tasks` in today's daily note.
+Call `logTask` with `title` to add a `- [ ]` entry linking to the task file in `## Tasks` of today's daily note.
 
-Do **not** call `createTask` — no file is created in `01-Work/Tasks/`.
+`logTask` now **also creates a backing task file** at `01-Work/Tasks/{title}.md` (idempotent — if a task with the same or a similar title already exists, no duplicate file is made and the existing one is reused). You do **not** need to call `createTask` separately for general tasks.
 
 ## Step 5: Report results
 
@@ -147,7 +147,7 @@ If no action items were found, print: "No new action items found in today's high
 ## Important Rules
 
 - **Idempotent**: `logPRReview` has built-in deduplication. If a PR review file already exists, the tool will skip creation. Always call the tools — don't try to manually check for duplicates.
-- **Tasks are plain text**: General tasks are added as `- [ ] {title}` via `logTask` only — no file is created in `01-Work/Tasks/`.
+- **Tasks are linked to files**: General tasks are added via `logTask`, which creates a backing file in `01-Work/Tasks/` and links to it in `## Tasks`. The operation is idempotent — re-running never duplicates the file or the daily-note entry.
 - **Only process listed notes**: Process the daily notes from the Parent Output Context (or today's note if none listed). Do not scan older notes beyond what's specified.
 - **Do not modify highlights**: Never edit `## Teams Meeting Highlights` or `## Teams Chat Highlights` content. Those sections belong to TMS/TCS.
 - **User identity**: The vault owner is the "user". When highlights mention them by name, treat those as user-assigned tasks. References to "I" or "me" in highlights also mean the user.

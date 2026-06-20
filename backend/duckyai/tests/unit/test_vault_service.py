@@ -649,6 +649,44 @@ def test_log_task_appends_and_deduplicates(monkeypatch, tmp_path):
     assert first == {"content": [{"type": "text", "text": "Added to ## Tasks: Write tests"}]}
     assert second == {"content": [{"type": "text", "text": 'Task "Write tests" already in daily note. Skipped.'}]}
     assert updated.count("[Write tests](../../01-Work/Tasks/Write%20tests.md)") == 1
+    # logTask must create a backing task file (idempotent — exactly one)
+    assert (vault / "01-Work" / "Tasks" / "Write tests.md").exists()
+
+
+def test_log_task_creates_backing_file_once(monkeypatch, tmp_path):
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+    _write_daily_note(vault, "2026-03-26", "## Tasks\n- [ ]\n\n## Notes\n\n")
+
+    service = VaultService(vault)
+    monkeypatch.setattr(service, "_get_today_date", lambda: "2026-03-26")
+    service.call_tool("logTask", {"title": "Ship the thing"})
+    service.call_tool("logTask", {"title": "Ship the thing"})
+
+    task_files = list((vault / "01-Work" / "Tasks").glob("*.md"))
+    assert [p.name for p in task_files] == ["Ship the thing.md"]
+    assert "type: task" in task_files[0].read_text(encoding="utf-8")
+
+
+def test_write_daily_note_carried_items_create_task_files(monkeypatch, tmp_path):
+    """Carried items written into ## Tasks must each get a backing file, idempotently."""
+    vault = tmp_path / "Vault"
+    vault.mkdir()
+    (vault / "duckyai.yml").write_text('id: v1\nuser:\n  timezone: "UTC"\n', encoding="utf-8")
+
+    service = VaultService(vault)
+    plan = json.dumps({
+        "carried_items": ["- [ ] [[Wire up webhook]]", "- [ ] Follow up with Bob"],
+        "pr_items": [],
+    })
+    service.call_tool("writeDailyNoteFromPlan", {"plan": plan, "date": "2026-03-26"})
+    # Re-run: must not create duplicate files
+    service.call_tool("writeDailyNoteFromPlan", {"plan": plan, "date": "2026-03-26"})
+
+    tasks_dir = vault / "01-Work" / "Tasks"
+    names = sorted(p.name for p in tasks_dir.glob("*.md"))
+    assert names == ["Follow up with Bob.md", "Wire up webhook.md"]
 
 
 def test_update_daily_note_section_creates_note_and_replaces_section(tmp_path):

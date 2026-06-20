@@ -421,13 +421,39 @@ class VaultService:
         if priority not in {"P0", "P1", "P2", "P3"}:
             raise ValueError("Field 'priority' must be one of: P0, P1, P2, P3")
 
+        _canonical, created = self._ensure_task_file(
+            title, priority=priority, description=description, project=project, due=due
+        )
+        if not created:
+            duplicate = self._find_existing_task_title(title)
+            match_kind = duplicate[1] if duplicate else "case-insensitive"
+            if match_kind == "case-insensitive":
+                return self._text_response(f'Task "{_canonical}" already exists (case-insensitive match). Skipped.')
+            return self._text_response(f'Task "{_canonical}" already exists (similar title). Skipped.')
+        return self._text_response(f"Created task: {title} ({priority})")
+
+    def _ensure_task_file(
+        self,
+        title: str,
+        *,
+        priority: str = "P2",
+        description: str | None = None,
+        project: str | None = None,
+        due: str | None = None,
+    ) -> tuple[str, bool]:
+        """Idempotently ensure a task file exists in 01-Work/Tasks/.
+
+        Returns (canonical_title, created). If a task with the same or a similar
+        title already exists, no file is written and the existing title is
+        returned with created=False. Otherwise a new task file is created from
+        the task template and created=True is returned.
+        """
+        title = self._sanitize_filename(title)
         self.tasks_dir.mkdir(parents=True, exist_ok=True)
+
         duplicate = self._find_existing_task_title(title)
         if duplicate is not None:
-            existing_title, match_kind = duplicate
-            if match_kind == "case-insensitive":
-                return self._text_response(f'Task "{existing_title}" already exists (case-insensitive match). Skipped.')
-            return self._text_response(f'Task "{existing_title}" already exists (similar title). Skipped.')
+            return duplicate[0], False
 
         today = self._get_today_date()
         content = self._load_task_template()
@@ -435,7 +461,6 @@ class VaultService:
         content = content.replace("{{title}}", title)
         content = content.replace("{{date:YYYY-MM-DD}}", today)
         content = self._set_frontmatter_field(content, "priority", priority)
-
         if project:
             content = self._set_frontmatter_field(content, "project", project)
         if due:
@@ -445,7 +470,7 @@ class VaultService:
 
         task_path = self.tasks_dir / f"{title}.md"
         self._write_text(task_path, content)
-        return self._text_response(f"Created task: {title} ({priority})")
+        return title, True
 
     def tool_updateTaskStatus(self, arguments: dict[str, Any]) -> dict[str, Any]:
         title = self._require_non_empty_string(arguments, "title")
@@ -1437,21 +1462,25 @@ class VaultService:
         if not isinstance(title, str) or not title.strip():
             raise ValueError("Field 'title' must be a non-empty string")
 
-        normalized_title = title.strip()
+        normalized_title = self._sanitize_filename(title.strip())
         today = self._get_today_date()
         daily_path = self._daily_note_path(today)
         if not daily_path.exists():
             return self._text_response(f"Daily note for {today} doesn't exist. Run prepareDailyNote first.")
 
+        # Ensure a backing task file exists (idempotent). Use the canonical title
+        # so the daily-note link points at the real file even on a dedup hit.
+        canonical_title, _created = self._ensure_task_file(normalized_title)
+
         content = self._read_text(daily_path)
-        marker_plain = f"01-work/tasks/{normalized_title.lower()}"
+        marker_plain = f"01-work/tasks/{canonical_title.lower()}"
         marker_encoded = marker_plain.replace(" ", "%20")
         content_lower = content.lower()
         if marker_plain in content_lower or marker_encoded in content_lower:
-            return self._text_response(f"Task \"{normalized_title}\" already in daily note. Skipped.")
+            return self._text_response(f"Task \"{canonical_title}\" already in daily note. Skipped.")
 
         daily_source = f"04-Periodic/Daily/{today}.md"
-        task_md = md_link(normalized_title, f"01-Work/Tasks/{normalized_title}.md", daily_source)
+        task_md = md_link(canonical_title, f"01-Work/Tasks/{canonical_title}.md", daily_source)
         log_entry = f"- [ ] {task_md}"
         if not self._has_h2_section(content, "Tasks"):
             return self._text_response('"## Tasks" section not found in daily note. Cannot add task.')
@@ -1464,7 +1493,7 @@ class VaultService:
             append_if_missing=False,
         )
         self._write_text(daily_path, content)
-        return self._text_response(f"Added to ## Tasks: {normalized_title}")
+        return self._text_response(f"Added to ## Tasks: {canonical_title}")
 
     def tool_updateDailyNoteSection(self, arguments: dict[str, Any]) -> dict[str, Any]:
         date = arguments.get("date")
@@ -1553,6 +1582,21 @@ class VaultService:
     _CHECKBOX_RE = re.compile(r"^\s*- \[(?P<state>[ xX])\]\s*(?P<body>.*?)\s*$")
     _WIKILINK_RE = re.compile(r"\[\[([^\]|#]+?)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]")
     _WS_RE = re.compile(r"\s+")
+
+    def _task_title_from_body(self, body: str) -> str:
+        """Derive a task title from a checkbox body.
+
+        Handles wiki-links (``[[Folder/Title|alias]]`` → ``Title``), markdown
+        links (``[text](url)`` → ``text``), and plain text. The result is
+        sanitized for use as a filename.
+        """
+        wiki = self._WIKILINK_RE.search(body)
+        if wiki:
+            target = wiki.group(1).strip().rsplit("/", 1)[-1]
+            return self._sanitize_filename(target)
+        md = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", body)
+        md = self._WS_RE.sub(" ", md).strip()
+        return self._sanitize_filename(md)
 
     def _normalize_item_identity(self, body: str) -> str:
         """Stable identity for a checkbox body — wiki-link target if present, else lowercased text."""
@@ -1695,6 +1739,10 @@ class VaultService:
             if identity in existing_ids:
                 continue
             existing_ids.add(identity)
+            # Ensure a backing task file exists for every carried item (idempotent).
+            task_title = self._task_title_from_body(body)
+            if task_title:
+                self._ensure_task_file(task_title)
             new_lines.append(line)
 
         if not new_lines:

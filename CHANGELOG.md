@@ -4,6 +4,11 @@ All notable changes to the DuckyAI Template will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.89] — 2026-06-20
+
+### Changed
+- **Every `## Tasks` entry now has a backing task file.** Both `logTask` (used by TM and others) and DNP's carry-forward now create an idempotent task file at `01-Work/Tasks/{title}.md` for each item written into `## Tasks` — previously `logTask` emitted a markdown link to a file that was never created, leaving broken links. A new shared `_ensure_task_file` helper reuses the same case-insensitive + similar-title dedup as `createTask`, so re-runs never duplicate files. `logTask` links to the canonical (existing) task on a dedup hit. Carried items derive their title from wiki-link target / markdown-link text / plain text. TM prompt updated: `logTask` now creates the file, so a separate `createTask` call is no longer needed for general tasks.
+
 ## [0.1.88] — 2026-06-19
 
 ### Changed
