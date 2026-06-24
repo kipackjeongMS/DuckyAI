@@ -72,6 +72,66 @@ async function spawnDaemon(vaultPath: string): Promise<void> {
   throw new Error("Could not spawn DuckyAI daemon — no working Python found");
 }
 
+/** Spawn the terminal server (`duckyai terminal start`) as a detached background process. */
+async function spawnTerminalServer(vaultPath: string): Promise<void> {
+  const { spawn } = await import("node:child_process");
+
+  for (const candidate of getCliCandidates(vaultPath)) {
+    try {
+      const args = [...candidate.baseArgs, "terminal", "start"];
+      const spawnOpts: Record<string, unknown> = {
+        cwd: vaultPath,
+        stdio: "ignore",
+        detached: true,
+      };
+
+      if (process.platform === "win32") {
+        const CREATE_NEW_PROCESS_GROUP = 0x00000200;
+        const CREATE_NO_WINDOW = 0x08000000;
+        spawnOpts.windowsHide = true;
+        (spawnOpts as any).creationflags = CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW;
+      }
+
+      const child = spawn(candidate.command, args, spawnOpts as any);
+      child.unref();
+      console.log(`[main] Spawned terminal server: ${candidate.command} ${args.join(" ")}`);
+      return;
+    } catch (err) {
+      console.warn(`[main] Failed to spawn terminal server with ${candidate.command}:`, err);
+    }
+  }
+
+  throw new Error("Could not spawn terminal server — no working Python found");
+}
+
+/** Stop the terminal server by reading its PID file and sending SIGTERM. */
+function stopTerminalServer(vaultPath: string): void {
+  const pidFile = path.join(vaultPath, ".duckyai", "terminal.pid");
+  if (!fs.existsSync(pidFile)) return;
+
+  let pid: number | null = null;
+  try {
+    pid = parseInt(fs.readFileSync(pidFile, "utf-8").trim(), 10);
+  } catch {
+    // PID file unreadable — nothing to kill
+  }
+
+  try {
+    if (pid && !Number.isNaN(pid)) {
+      process.kill(pid, "SIGTERM");
+      console.log(`[main] Sent SIGTERM to terminal server (PID ${pid})`);
+    }
+  } catch {
+    // Process already dead — that's fine
+  } finally {
+    try {
+      fs.unlinkSync(pidFile);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 function getCliCandidates(vaultPath: string): CliCandidate[] {
   const candidates: CliCandidate[] = [];
   const repoCliDir = path.join(vaultPath, "cli");
@@ -237,6 +297,16 @@ function registerIpcHandlers(api: DuckyAIClient, vaultPath: string): void {
     return fs.promises.readFile(resolved, "utf-8");
   });
 
+  ipcMain.handle("vault:write-file", async (_, relativePath: string, content: string) => {
+    const filePath = path.join(vaultPath, relativePath);
+    const resolved = path.resolve(filePath);
+    if (!resolved.startsWith(path.resolve(vaultPath))) {
+      throw new Error("Path outside vault");
+    }
+    await fs.promises.mkdir(path.dirname(resolved), { recursive: true });
+    await fs.promises.writeFile(resolved, content, "utf-8");
+  });
+
   // --- Orchestrator (HTTP API) ---
   ipcMain.handle("orch:status", () => getOrchestratorStatus(api, vaultPath));
   ipcMain.handle("orch:list-agents", () => listOrchestratorAgents(api, vaultPath));
@@ -333,6 +403,10 @@ function registerIpcHandlers(api: DuckyAIClient, vaultPath: string): void {
   ipcMain.handle("vault:call-tool", (_, name: string, args: Record<string, unknown>) =>
     api.callTool(name, args),
   );
+
+  // --- Terminal server ---
+  ipcMain.handle("terminal:start", () => spawnTerminalServer(vaultPath));
+  ipcMain.handle("terminal:stop", () => stopTerminalServer(vaultPath));
 
   // --- Window controls ---
   ipcMain.handle("win:minimize", () => mainWindow?.minimize());
