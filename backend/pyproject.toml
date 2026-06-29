@@ -7,7 +7,7 @@ name = "duckyai"
 # IMPORTANT: Must match version.json. Both files bumped together on every release.
 # Pip builds wheels from this field; drift causes `pip install git+...` to install stale versions.
 # See CONTRIBUTING.md "Bump the version" and the vault-publish skill (Step 9).
-version = "0.1.89"
+version = "0.1.90"
 description = "Personal Knowledge Management CLI framework"
 authors = [{name = "DuckyAI Team"}]
 readme = "README.md"

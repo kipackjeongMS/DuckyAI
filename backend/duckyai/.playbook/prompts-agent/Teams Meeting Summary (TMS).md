@@ -114,25 +114,40 @@ Print a diagnostic:
 Processing M new meetings after filtering.
 ```
 
-### Step 3: Process and summarize
+### Step 3: Classify and process
 
-For each meeting:
+For each meeting, first decide which of **three** buckets it falls into. **The FULL vs STUB decision depends ONLY on whether a transcript/recap/notes exists — NOT on whether the user attended.**
 
-1. **Check for transcript/recap/notes** — if the meeting has NO transcript, recap, or meeting notes available, **skip it entirely**. Do not create a meeting note or daily note entry for it.
-2. **Apply the Substance Filter** (below) — keep only meetings that carry real signal. If after filtering a meeting has zero substantive bullets, skip it entirely.
-3. **Summarize** the meeting in 3-5 concise bullets capturing decisions, action items, blockers, and technical info — using **outcome voice**, not transcript voice (see Step 4b "Voice & Phrasing")
-4. **Extract attendees** (names of all participants)
-5. **Identify decisions made** — any conclusions or agreements reached
-6. **Identify action items** — tasks assigned, follow-ups needed, deadlines mentioned
-7. **Note the meeting title and time**
+- **DROP** — never noted. The meeting is: office hours (Step 2b-i), canceled, declined, or a future/not-yet-ended meeting.
+- **FULL** — fully summarized (Step 3a). The meeting **has a transcript/recap/notes** and passes the Substance Filter. ⚠️ **This applies even if the user did NOT attend** — if a recap/transcript exists (someone recorded it, or auto-transcription ran), summarize it normally through the full flow. Non-attendance is irrelevant when content exists.
+- **STUB** — noted as a lightweight metadata-only entry (Step 3b). The meeting happened and the user was invited, but there is **no transcript/recap/notes at all** to summarize. Use this bucket **only** when content is genuinely absent.
 
-Skip meetings that are:
+#### Step 3a: FULL meetings (have a recap/transcript — attendance irrelevant)
+
+For each meeting that has a transcript, recap, or notes — **whether or not the user attended** — run the full summarization flow:
+
+1. **Apply the Substance Filter** (below) — keep only meetings that carry real signal. If after filtering a meeting (that HAS a recap) has zero substantive bullets, **drop it** — a recapped-but-trivial meeting is noise, not a stub. (Stubs are reserved for meetings with **no recap at all**.)
+2. **Summarize** the meeting in 3-5 concise bullets capturing decisions, action items, blockers, and technical info — using **outcome voice**, not transcript voice (see Step 4b "Voice & Phrasing")
+3. **Extract attendees** (names of all participants)
+4. **Identify decisions made** — any conclusions or agreements reached
+5. **Identify action items** — tasks assigned, follow-ups needed, deadlines mentioned
+6. **Note the meeting title and time**
+
+#### Step 3b: STUB meetings (no recap at all)
+
+A meeting with **no transcript, recap, or notes** is no longer dropped — record it as a **lightweight factual stub** so the user has a record they were invited and what it was. (A not-attended meeting that DOES have a recap is a FULL summary, not a stub — see Step 3a.)
+
+⚠️ **Do NOT fabricate a summary.** With no recap there is no content — write **only factual metadata** you actually have: title, time, organizer, and (optionally) whether the user attended. Never invent decisions, action items, or discussion.
+
+Build a one-line stub entry (format in Step 4b). Mark the reason factually:
+- **No recap available** — meeting occurred but no transcript/recap/notes were captured.
+- **Did not attend** — if you can determine from attendee/response data that the user did not join. (If unknown, just use "No recap available".)
+
+Skip (DROP) only meetings that are:
 - **Office hours** — open drop-in/Q&A sessions (see Step 2b-i)
-- **Missing transcript/recap/notes** — no content to summarize
-- Canceled or declined
-- **Fail the Substance Filter** — only pleasantries, status pings, or small talk with no decisions/actions/info
+- **Canceled or declined** — the user declined the invite, or the meeting was canceled / did not occur
 
-> **Note on attendance**: Do NOT skip a meeting solely because the user did not attend (no-show). Invited meetings are in scope as long as they have content and pass the Substance Filter. The only attendance-independent exclusion is office hours.
+> **Note on attendance**: Do NOT skip a meeting because the user did not attend (no-show). Invited meetings are always in scope — they become a FULL summary if a recap exists, otherwise a STUB.
 
 #### Substance Filter — what to keep vs. drop
 
@@ -167,12 +182,14 @@ A meeting is **substantive** and MUST be kept only if it produces at least one o
 
 #### 4a. Create Per-Meeting Note
 
-For each meeting with meaningful content, call `createMeeting` with:
+For each **FULL** meeting (has a recap and passed the Substance Filter), call `createMeeting` with:
 - `title`: Meeting title
 - `date`: Meeting **local date** (YYYY-MM-DD) — call `convertUtcToLocalDate` with the meeting's UTC start time to get the correct local date. Verify against `today_date`.
 - `time`: Meeting start time (HH:MM) in `user_timezone`
 - `attendees`: List of attendee names
 - `project`: Related project if identifiable
+
+⚠️ **STUB meetings (Step 3b) do NOT get a per-meeting note** — they appear only as a single daily-highlight line (Step 4b). Skip `createMeeting` for stubs.
 
 Then **edit the created meeting note** to fill in the detailed sections:
 - `## Discussion`: Full discussion points, context, and quotes
@@ -208,6 +225,22 @@ This is the **primary detailed record** — put everything here.
 ```
 
 Embed a standard markdown link in the H3 title using `[Meeting Title]({vault_root_rel}02-People/Meetings/YYYY-MM-DD%20Meeting%20Title.md)` — use `{vault_root_rel}` (from Agent Parameters) as the relative path prefix, with spaces URL-encoded as `%20`. Do NOT add a separate "Full notes" line. Each entry should be concise — summary only, with the link in the heading.
+
+**STUB format (no-recap meetings — Step 3b):** A stub has **no per-meeting note**, so do NOT link the title. Write a plain H3 title and a single italic metadata bullet stating the factual reason — never a fabricated summary:
+
+```markdown
+### [Meeting Title] ({HH:MM - HH:MM})   
+- *No recap available — invited, not summarized.* Organizer: [Name].
+```
+
+or, when you can confirm the user did not join:
+
+```markdown
+### [Meeting Title] ({HH:MM - HH:MM})   
+- *Did not attend — no recap available.* Organizer: [Name].
+```
+
+A stub is exactly **one** italic metadata bullet. Do not add decisions, action items, or discussion bullets to a stub.
 
 ⚠️ **Do NOT include attendees in the daily note highlights.** No `**Attendees**:` line. Attendee lists belong ONLY in the per-meeting note (Step 4a). The daily note is a lightweight summary — keep it short.
 
@@ -272,8 +305,8 @@ Rules:
 - **All invited meetings in scope**: Process every meeting the user was invited to (organizer or attendee), whether or not the user attended. Do NOT filter by attendance.
 - **Exclude office hours**: Always drop meetings whose title denotes an office-hours / open drop-in / Q&A session (see Step 2b-i), regardless of content.
 - **No transcript voice**: Never write "I proposed / he said / she agreed / we talked about / we discussed". Write the outcome or fact directly. If a meeting has no outcome to write, drop it.
-- **Omit empty meetings**: If after filtering a meeting has zero substantive bullets, do NOT create a per-meeting note and do NOT add it to daily highlights.
-- **Skip meetings without transcripts**: If a meeting has no transcript, recap, or notes available, do NOT create a meeting note or daily note entry for it. Only process meetings with actual content.
+- **Omit empty FULL meetings**: If a meeting HAS a recap but after the Substance Filter yields zero substantive bullets, drop it (do NOT create a per-meeting note, do NOT add a highlight). This applies to recapped-but-trivial meetings only — not to no-recap meetings.
+- **No-recap meetings become stubs**: If a meeting has no transcript, recap, or notes, do NOT drop it — add a single factual stub line to the daily highlights (Step 3b / 4b). This includes meetings the user was invited to but did not attend where no recap exists. **Never fabricate content for a stub** — metadata only. A not-attended meeting that DOES have a recap goes through the FULL summarization flow (attendance is irrelevant when content exists).
 - **Never re-process**: Use **content-level dedup** via `processed_meeting_ids`. The fetch window intentionally overlaps prior runs to defeat indexing lag — duplicates are caught by ID, not by narrowing the time range.
 - **Idempotent**: If a meeting note already exists in `02-People/Meetings/`, skip creating it.
 - **Details in meeting note, bullet points in daily note**: Full discussion/decisions/action items go in the per-meeting note. The daily note gets only concise bullet points per key context with the meeting title linked to the full note.

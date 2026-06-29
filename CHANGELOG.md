@@ -4,6 +4,11 @@ All notable changes to the DuckyAI Template will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.90] — 2026-06-29
+
+### Changed
+- **TMS no-recap meetings are now noted as stubs.** Previously, any meeting without a transcript/recap/notes was dropped entirely. Now TMS classifies each invited meeting into DROP (office hours / canceled / declined / future), FULL (has a recap → full summary), or STUB (no recap at all → a single factual metadata line in Teams Meeting Highlights). Stubs are metadata-only (title, time, organizer, attended/no-recap marker) and never fabricate content; they get no per-meeting note. **The FULL vs STUB decision depends solely on whether a recap exists — not on attendance:** a meeting the user did not attend but which has a recap/transcript still goes through the full summarization flow. Recapped-but-trivial meetings (fail the Substance Filter) are still dropped to avoid clutter.
+
 ## [0.1.89] — 2026-06-20
 
 ### Changed
