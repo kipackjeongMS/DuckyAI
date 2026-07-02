@@ -1,0 +1,20 @@
+{
+  "name": "crosspost",
+  "private": true,
+  "version": "0.1.0",
+  "description": "CrossPost — a SNS content creation hub. Compose once, publish everywhere.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace @crosspost/server",
+    "dev:mobile": "npm run start --workspace @crosspost/mobile",
+    "build:server": "npm run build --workspace @crosspost/server",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

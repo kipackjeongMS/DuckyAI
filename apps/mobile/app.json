@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "CrossPost",
+    "slug": "crosspost",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "crosspost",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.crosspost.app"
+    },
+    "android": {
+      "package": "com.crosspost.app",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CrossPost needs access to your photos so you can attach images and videos to your posts."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_YOUR_EAS_PROJECT_ID"
+      }
+    }
+  }
+}

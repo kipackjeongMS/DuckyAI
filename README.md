@@ -1,112 +1,91 @@
-# 🦆 DuckyAI
+# CrossPost
 
-**AI-powered personal knowledge and task management for engineers.**
+Write once, publish everywhere. CrossPost is a SNS content creation hub:
+compose a post (text, images, video) in one place and shoot it out to
+**Instagram, Facebook, Threads, X (Twitter), and TikTok** — each publish
+transformed into that platform's native post data model.
 
-DuckyAI is an Obsidian vault template with built-in GitHub Copilot integration, Python-native vault automation, Copilot skills, prompts, and structured workflows that give your AI assistant persistent context about your work.
+The UI mirrors the Threads design language: near-monochrome, hairline
+dividers, pill buttons, generous whitespace, automatic light/dark mode.
 
-## Why DuckyAI?
+## Stack
 
-AI assistants forget everything between conversations. DuckyAI gives Copilot a **persistent brain** — your tasks, projects, people, decisions, and domain knowledge — so it can actually help you work instead of starting from scratch every time.
+| Layer  | Tech |
+| ------ | ---- |
+| Mobile | React Native + Expo (SDK 53), expo-router, EAS for builds |
+| API    | Fastify 5 (Node 20+, TypeScript) |
+| Shared | `@crosspost/shared` — universal post model, platform constraints, native payload types |
 
-- 📝 **Structured workflows** — tasks, investigations, meetings, daily notes with consistent frontmatter
-- 🤖 **Native vault tools** — 23 Python automation tools (daily notes, PR reviews, tasks, meetings, sync state, roundup, and more)
-- 💬 **Copilot prompts** — 7 ready-to-use prompts for common operations
-- 🧠 **Copilot skills** — code review, vault setup, vault updates, and a skill builder
-- 📂 **Repo syncing** — clone documentation repos for Copilot to reference
-- 🔄 **Safe updates** — pull template improvements without losing your content
-
-## Quick Start
-
-### Prerequisites
-
-- **Python 3.10+** — required for the `duckyai` package ([download](https://www.python.org/downloads/))
-- [Obsidian](https://obsidian.md/) (free)
-- [VS Code](https://code.visualstudio.com/) with [GitHub Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot)
-- Git
-
-### Setup
-
-1. **Clone this repo:**
-   ```powershell
-   git clone https://dev.azure.com/msazure/Azure%20AppConfig/_git/DuckyAI C:\Users\$env:USERNAME\Documents\Obsidian\DuckyAI
-   ```
-
-2. **Open in VS Code** — open `DuckyAI.code-workspace`
-
-3. **Run the setup skill:**
-   ```
-   @workspace set up my vault
-   ```
-   The OOBE skill will walk you through personalization, configure the Python tooling, and create your first daily note.
-
-4. **Open in Obsidian** — open the vault folder as an Obsidian vault
-
-5. **Install plugins** — Periodic Notes, Templater, Dataview (see [Plugin Setup](03-Knowledge/Documentation/Obsidian%20Plugin%20Setup.md))
-
-For detailed manual setup, see [GETTING_STARTED.md](GETTING_STARTED.md).
-
-## Vault Structure
+Monorepo layout (npm workspaces):
 
 ```
-DuckyAI/
-├── 00-Inbox/          # Quick capture, unsorted items
-├── 01-Work/
-│   ├── Tasks/         # Active work items (P0-P3)
-│   ├── Projects/      # Multi-task initiatives
-│   ├── Investigations/# Technical deep-dives
-│   └── Plans/         # Implementation plans
-├── 02-People/
-│   ├── 1-on-1s/       # Recurring 1:1 notes
-│   ├── Meetings/      # General meeting notes
-│   └── Contacts/      # People profiles
-├── 03-Knowledge/
-│   ├── Documentation/ # Runbooks, how-tos, reference
-│   └── Topics/        # General knowledge
-├── 04-Periodic/
-│   ├── Daily/         # Daily notes
-│   └── Weekly/        # Weekly reviews
-├── 05-Archive/        # Completed items
-├── Templates/         # 9 Obsidian note templates
-├── cli/               # Python CLI, daemon, API, and auxiliary services
-├── scripts/           # Repo sync and utilities
-└── .github/
-    ├── copilot-instructions.md  # Your AI's context
-    ├── prompts/                  # 7 Copilot prompts
-    └── skills/                   # 4 Copilot skills
+apps/
+  mobile/     Expo app (expo-router screens, Threads-style UI, eas.json)
+  server/     Fastify API (routes, platform adapters, in-memory store)
+packages/
+  shared/     Types + per-platform validation shared by both
 ```
 
-## Copilot Prompts
+## How cross-posting works
 
-| Prompt | What it does |
-|--------|-------------|
-| `@workspace /new-task` | Create a task with priority and deadline |
-| `@workspace /new-investigation` | Start a technical investigation |
-| `@workspace /new-meeting` | Create meeting or 1:1 note |
-| `@workspace /add-documentation` | Add to knowledge base |
-| `@workspace /prioritize-work` | Get prioritized work list |
-| `@workspace /archive-task` | Archive completed task |
-| `@workspace /restructure-document` | Format and link a document |
+1. The composer validates your draft **live** against every selected
+   platform's rules (`packages/shared/src/constraints.ts`) — e.g. X caps at
+   280 chars, Threads at 500, Instagram requires media, TikTok requires a
+   video — and shows the tightest character budget.
+2. On publish, the server fans the post out to one **adapter per platform**
+   (`apps/server/src/platforms/`). Each adapter transforms the universal
+   post into the platform's native payload:
+   - **Instagram** → Graph API media container (`IMAGE` / `REELS` / `CAROUSEL` + caption)
+   - **Facebook** → Page publishing (`feed` message / `photos` url / `videos` file_url)
+   - **Threads** → Threads API container (`TEXT` / `IMAGE` / `VIDEO` / `CAROUSEL`)
+   - **X (Twitter)** → `POST /2/tweets` (`text` + `media.media_ids`)
+   - **TikTok** → Content Posting API (`post_info` + `source_info.video_url`)
+3. Platforms publish independently — one failing doesn't block the rest —
+   and per-platform results (id, permalink, error) come back on the post.
 
-## Copilot Skills
+The actual remote API calls are simulated (`simulateRemotePublish`) so the
+whole flow runs locally with zero credentials. Real integrations plug into
+each adapter's `publish()` plus an OAuth flow in
+`apps/server/src/routes/connections.ts`.
 
-| Skill | What it does |
-|-------|-------------|
-| `vault-setup` | Interactive first-time setup |
-| `vault-update` | Pull template updates safely |
-| `code-review` | Review ADO pull requests |
-| `vault-publish` | Contribute changes back to template |
-| `make-skill-template` | Create new custom skills |
+> Note: X and Twitter are the same platform (Twitter rebranded to X), so
+> they're one integration here.
 
-## Updating
+## Getting started
 
-When new template versions are released, update your vault safely:
+```bash
+npm install
 
+# 1. API (http://localhost:4000)
+npm run dev:server
+
+# 2. Expo app (press i / a, or scan the QR with Expo Go)
+npm run dev:mobile
 ```
-@workspace update my vault
+
+In the app: **Accounts** tab → connect platforms (simulated OAuth) →
+**✎** tab → write, attach media, pick targets, Post.
+
+The app targets `http://localhost:4000` by default (`10.0.2.2` on Android
+emulators). Point it elsewhere with `EXPO_PUBLIC_API_URL`.
+
+## Tests & typecheck
+
+```bash
+npm run typecheck          # all workspaces
+npm test                   # server: publish fan-out + payload mapping tests
 ```
 
-The update skill pulls infrastructure changes (Python vault tools, templates, prompts, skills) without touching your personal content.
+## EAS builds
 
-## License
+`apps/mobile/eas.json` defines `development`, `preview`, and `production`
+profiles. After `npm i -g eas-cli && eas login`:
 
-Internal use. See your organization's policies.
+```bash
+cd apps/mobile
+eas init                   # sets your real projectId in app.json
+eas build --profile preview --platform all
+```
+
+Each profile injects `EXPO_PUBLIC_API_URL` for its environment — replace
+the staging/production URLs with your deployed API.

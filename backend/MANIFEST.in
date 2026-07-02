@@ -1,2 +1,0 @@
-recursive-include duckyai/.playbook *
-recursive-include duckyai/.vault-template *

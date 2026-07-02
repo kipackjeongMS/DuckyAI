@@ -1,9 +1,0 @@
-{
-  "id": "duckyai",
-  "name": "DuckyAI",
-  "version": "0.0.1",
-  "minAppVersion": "1.5.0",
-  "description": "AI-powered developer assistant with voice chat, orchestrator control, and vault automation.",
-  "author": "Kipack Jeong",
-  "isDesktopOnly": true
-}
